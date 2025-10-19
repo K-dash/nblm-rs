@@ -23,7 +23,28 @@ pub struct NotebookRef {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateNotebookRequest {
-    pub notebook: Notebook,
+    pub title: String,
+}
+
+/// Batch delete notebooks request.
+///
+/// # Known Issues (as of 2025-10-19)
+///
+/// Despite the API being named "batchDelete" and accepting an array of names,
+/// the API returns HTTP 400 error when multiple notebook names are provided.
+/// Only single notebook deletion works (array with 1 element).
+///
+/// To delete multiple notebooks, call this API multiple times with one notebook at a time.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BatchDeleteNotebooksRequest {
+    pub names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BatchDeleteNotebooksResponse {
+    // API returns empty response or status information
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -31,10 +52,18 @@ pub struct CreateNotebookRequest {
 pub struct BatchCreateSourcesRequest {
     #[serde(rename = "userContents")]
     pub user_contents: Vec<UserContent>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub client_token: Option<String>,
-    #[serde(rename = "validateOnly", skip_serializing_if = "Option::is_none")]
-    pub validate_only: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BatchDeleteSourcesRequest {
+    pub names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BatchDeleteSourcesResponse {
+    // API may return empty response or status information
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,26 +98,33 @@ pub struct WebContent {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct TextContent {
-    pub text: String,
+    pub content: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_name: Option<String>,
 }
 
+/// Google Drive content for adding sources.
+///
+/// # Known Issues
+///
+/// **WARNING**: As of 2025-10-19, the NotebookLM API returns HTTP 500 Internal Server Error
+/// when attempting to add Google Drive sources. This functionality is currently unavailable.
+/// The error occurs even with proper authentication (`gcloud auth login --enable-gdrive-access`)
+/// and correct IAM permissions. No detailed error information is provided in API responses or
+/// Google Cloud logs, indicating a server-side issue with the NotebookLM API.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleDriveContent {
-    #[serde(rename = "resourceName")]
-    pub resource_name: String,
+    pub document_id: String,
+    pub mime_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
 pub struct VideoContent {
+    #[serde(rename = "youtubeUrl")]
     pub url: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -144,21 +180,48 @@ pub struct ShareResponse {
     pub extra: HashMap<String, serde_json::Value>,
 }
 
+/// Response from list recently viewed notebooks API.
+///
+/// Note: The `next_page_token` field is defined for future compatibility,
+/// but the NotebookLM API does not currently implement pagination and
+/// never returns this field in responses.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ListRecentlyViewedResponse {
     #[serde(default)]
     pub notebooks: Vec<serde_json::Value>,
+    /// Pagination token (not currently implemented by NotebookLM API)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next_page_token: Option<String>,
 }
 
+/// Audio Overview creation request.
+///
+/// # Known Issues (as of 2025-10-19)
+///
+/// Despite the API documentation mentioning fields like `sourceIds`, `episodeFocus`,
+/// and `languageCode`, the actual API only accepts an empty request body `{}`.
+/// Any fields sent result in "Unknown name" errors.
+/// These configuration options are likely set through the NotebookLM UI after creation.
+///
+/// The fields below are commented out but kept for future compatibility if the API
+/// implements them.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
 pub struct AudioOverviewRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<serde_json::Value>,
+    // TODO: Uncomment when API supports these fields
+    // #[serde(skip_serializing_if = "Option::is_none", rename = "sourceIds")]
+    // pub source_ids: Option<Vec<SourceId>>,
+    // #[serde(skip_serializing_if = "Option::is_none", rename = "episodeFocus")]
+    // pub episode_focus: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none", rename = "languageCode")]
+    // pub language_code: Option<String>,
 }
+
+// TODO: Uncomment when API supports sourceIds field
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct SourceId {
+//     pub id: String,
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -189,11 +252,11 @@ mod tests {
 
     #[test]
     fn user_content_untagged_text() {
-        let json = r#"{"textContent":{"text":"sample text"}}"#;
+        let json = r#"{"textContent":{"content":"sample text"}}"#;
         let content: UserContent = serde_json::from_str(json).unwrap();
         match content {
             UserContent::Text { text_content } => {
-                assert_eq!(text_content.text, "sample text");
+                assert_eq!(text_content.content, "sample text");
             }
             _ => panic!("expected Text variant"),
         }
@@ -201,13 +264,17 @@ mod tests {
 
     #[test]
     fn user_content_untagged_google_drive() {
-        let json = r#"{"googleDriveContent":{"resourceName":"drive://file/123"}}"#;
+        let json = r#"{"googleDriveContent":{"documentId":"123","mimeType":"application/vnd.google-apps.document"}}"#;
         let content: UserContent = serde_json::from_str(json).unwrap();
         match content {
             UserContent::GoogleDrive {
                 google_drive_content,
             } => {
-                assert_eq!(google_drive_content.resource_name, "drive://file/123");
+                assert_eq!(google_drive_content.document_id, "123");
+                assert_eq!(
+                    google_drive_content.mime_type,
+                    "application/vnd.google-apps.document"
+                );
             }
             _ => panic!("expected GoogleDrive variant"),
         }
@@ -215,7 +282,7 @@ mod tests {
 
     #[test]
     fn user_content_untagged_video() {
-        let json = r#"{"videoContent":{"url":"https://youtube.com/watch?v=123"}}"#;
+        let json = r#"{"videoContent":{"youtubeUrl":"https://youtube.com/watch?v=123"}}"#;
         let content: UserContent = serde_json::from_str(json).unwrap();
         match content {
             UserContent::Video { video_content } => {
@@ -226,26 +293,23 @@ mod tests {
     }
 
     #[test]
-    fn batch_create_sources_request_skips_validate_only_when_none() {
-        let request = BatchCreateSourcesRequest {
-            user_contents: vec![],
-            client_token: None,
-            validate_only: None,
+    fn user_content_video_serializes_correctly() {
+        let content = UserContent::Video {
+            video_content: VideoContent {
+                url: "https://youtube.com/watch?v=123".to_string(),
+            },
         };
-        let json = serde_json::to_string(&request).unwrap();
-        assert!(!json.contains("validateOnly"));
-    }
-
-    #[test]
-    fn batch_create_sources_request_includes_validate_only_when_some() {
-        let request = BatchCreateSourcesRequest {
-            user_contents: vec![],
-            client_token: None,
-            validate_only: Some(true),
-        };
-        let json = serde_json::to_string(&request).unwrap();
-        assert!(json.contains("validateOnly"));
-        assert!(json.contains("true"));
+        let json = serde_json::to_string(&content).unwrap();
+        assert!(
+            json.contains("videoContent"),
+            "JSON should contain videoContent, got: {}",
+            json
+        );
+        assert!(
+            json.contains(r#""youtubeUrl":"https://youtube.com/watch?v=123""#),
+            "JSON should contain youtubeUrl field, got: {}",
+            json
+        );
     }
 
     #[test]

@@ -11,6 +11,7 @@ use crate::util::{
 #[derive(Subcommand)]
 pub enum Command {
     Add(AddArgs),
+    Delete(DeleteArgs),
 }
 
 #[derive(Args)]
@@ -28,21 +29,26 @@ pub struct AddArgs {
     #[arg(long = "text-name", value_name = "DISPLAY")]
     pub text_names: Vec<String>,
 
-    #[arg(long = "drive-resource", value_name = "RESOURCE")]
-    pub drive_resources: Vec<String>,
+    /// Google Drive document ID. WARNING: Currently returns HTTP 500 error - not usable as of 2025-10-19
+    #[arg(long = "drive-document-id", value_name = "DOCUMENT_ID")]
+    pub drive_document_ids: Vec<String>,
+    /// Google Drive MIME type. WARNING: Currently returns HTTP 500 error - not usable as of 2025-10-19
+    #[arg(long = "drive-mime-type", value_name = "MIME_TYPE")]
+    pub drive_mime_types: Vec<String>,
     #[arg(long = "drive-name", value_name = "DISPLAY")]
     pub drive_names: Vec<String>,
 
     #[arg(long = "video-url", value_name = "URL")]
     pub video_urls: Vec<String>,
-    #[arg(long = "video-name", value_name = "DISPLAY")]
-    pub video_names: Vec<String>,
+}
 
-    #[arg(long)]
-    pub client_token: Option<String>,
+#[derive(Args)]
+pub struct DeleteArgs {
+    #[arg(long, value_name = "ID")]
+    pub notebook_id: String,
 
-    #[arg(long)]
-    pub dry_run: bool,
+    #[arg(long = "source-name", value_name = "NAME", required = true)]
+    pub source_names: Vec<String>,
 }
 
 pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<()> {
@@ -66,56 +72,91 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
                 }
                 contents.push(UserContent::Text {
                     text_content: TextContent {
-                        text,
+                        content: text,
                         source_name: name,
                     },
                 });
             }
 
-            let drive_entries =
-                pair_with_names(&args.drive_resources, &args.drive_names, "--drive-name")?;
-            let includes_drive = !drive_entries.is_empty();
-            for (resource, name) in drive_entries {
-                if resource.trim().is_empty() {
-                    bail!("--drive-resource cannot be empty");
+            // NOTE: As of 2025-10-19, adding Google Drive sources returns HTTP 500 Internal Server Error.
+            // This is a server-side issue with the NotebookLM API and cannot be fixed client-side.
+            // The code below is kept for when the API is fixed.
+            let includes_drive = !args.drive_document_ids.is_empty();
+            if args.drive_document_ids.len() != args.drive_mime_types.len() {
+                bail!(
+                    "--drive-document-id and --drive-mime-type must be specified in pairs (got {} document IDs and {} mime types)",
+                    args.drive_document_ids.len(),
+                    args.drive_mime_types.len()
+                );
+            }
+            if args.drive_names.len() > args.drive_document_ids.len() {
+                bail!("--drive-name count exceeds number of document IDs");
+            }
+            for (idx, (document_id, mime_type)) in args
+                .drive_document_ids
+                .iter()
+                .zip(&args.drive_mime_types)
+                .enumerate()
+            {
+                if document_id.trim().is_empty() {
+                    bail!("--drive-document-id cannot be empty");
                 }
+                let source_name = args.drive_names.get(idx).and_then(|s| {
+                    let trimmed = s.trim();
+                    if trimmed.is_empty() {
+                        None
+                    } else {
+                        Some(trimmed.to_string())
+                    }
+                });
                 contents.push(UserContent::GoogleDrive {
                     google_drive_content: GoogleDriveContent {
-                        resource_name: resource,
-                        source_name: name,
+                        document_id: document_id.clone(),
+                        mime_type: mime_type.clone(),
+                        source_name,
                     },
                 });
             }
 
-            for (url, name) in pair_with_names(&args.video_urls, &args.video_names, "--video-name")?
-            {
-                validate_url(&url)?;
+            for url in &args.video_urls {
+                validate_url(url)?;
                 contents.push(UserContent::Video {
-                    video_content: VideoContent {
-                        url,
-                        source_name: name,
-                    },
+                    video_content: VideoContent { url: url.clone() },
                 });
             }
 
             if contents.is_empty() {
                 bail!(
-                    "at least one source must be specified (--url/--web-url/--text/--drive-resource/--video-url)"
+                    "at least one source must be specified (--web-url/--text/--drive-document-id/--video-url)"
                 );
             }
 
-            let response = client
-                .add_sources(
-                    &args.notebook_id,
-                    contents,
-                    args.client_token.clone(),
-                    args.dry_run,
-                )
-                .await?;
+            let response = client.add_sources(&args.notebook_id, contents).await?;
             emit_sources(&args.notebook_id, &response, json_mode)?;
             if includes_drive {
                 eprintln!(
-                    "NOTE: To add Google Drive sources, run `gcloud auth login --enable-gdrive-access` first."
+                    "WARNING: Google Drive source addition currently returns HTTP 500 Internal Server Error (as of 2025-10-19)."
+                );
+                eprintln!(
+                    "This is a server-side NotebookLM API issue. For future use, run `gcloud auth login --enable-gdrive-access` first."
+                );
+            }
+        }
+        Command::Delete(args) => {
+            let response = client
+                .delete_sources(&args.notebook_id, args.source_names.clone())
+                .await?;
+            if !json_mode {
+                println!("Deleted {} source(s) successfully", args.source_names.len());
+            } else {
+                use serde_json::json;
+                crate::util::io::emit_json(
+                    json!({
+                        "status": "deleted",
+                        "count": args.source_names.len(),
+                        "response": response
+                    }),
+                    json_mode,
                 );
             }
         }

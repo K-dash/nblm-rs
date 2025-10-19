@@ -48,6 +48,8 @@ impl ShareRole {
 }
 
 pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<()> {
+    // TODO: Share functionality has not been tested due to the requirement of setting up additional user accounts.
+    // Manual testing is required to verify the implementation works correctly.
     match cmd {
         Command::Add(args) => {
             if args.emails.is_empty() {

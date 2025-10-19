@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
+
 # nblm-rs
 
 Unofficial command-line interface for NotebookLM Enterprise API written in Rust.

@@ -20,6 +20,9 @@ Why use this CLI instead of direct API calls or web UI?
 
 ## Features (Verified as of 2025-10-19)
 
+> [!NOTE]
+> The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
+
 ### Notebooks
 
 | Feature | Command | Status | Notes |

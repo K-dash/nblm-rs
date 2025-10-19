@@ -5,14 +5,17 @@ Thank you for your interest in contributing to nblm-rs!
 ## Prerequisites
 
 - Rust 1.90.0 or later
-- [cargo-make](https://github.com/sagiegurari/cargo-make) – required for all project automation
+- Task runner: [cargo-make](https://github.com/sagiegurari/cargo-make)
 
 ```bash
+# Option 1: cargo-make (traditional)
 cargo install cargo-make
+
+# Option 2: makers (faster alternative)
+cargo install makers
 ```
 
 We rely on `cargo-make` for every task (locally and in CI), so please install it before running any project commands.
-
 ## Development Workflow
 
 ### 1. Fork and Clone
@@ -35,7 +38,11 @@ git checkout -b feature/your-feature-name
 Before submitting a pull request, ensure that all checks pass:
 
 ```bash
+# Using cargo-make
 cargo make all
+
+# Or using makers
+makers all
 ```
 
 This command runs:
@@ -44,48 +51,26 @@ This command runs:
 - `cargo test --all` - Run all tests (60 tests should pass)
 
 > [!IMPORTANT]
-> All pull requests must pass `cargo make all` before being merged.
+> All pull requests must pass `cargo make all` or `makers all` before being merged.
 
 ### 4. Additional Commands
 
 ```bash
 # Format code only
-cargo make fmt
+cargo make fmt    # or: makers fmt
 
 # Run linter only
-cargo make lint
+cargo make lint   # or: makers lint
 
 # Run tests only
-cargo make test
+cargo make test   # or: makers test
 
 # Run CI checks (used in GitHub Actions)
-cargo make ci
+cargo make ci     # or: makers ci
 
 # Generate coverage report
-cargo make coverage
+cargo make coverage   # or: makers coverage
 ```
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests (unit + integration)
-cargo test --all
-
-# Run only unit tests
-cargo test --lib
-
-# Run only integration tests
-cargo test --test '*'
-
-# Run specific test file
-cargo test --test notebooks_delete
-```
-
-All 60 tests should pass:
-- 29 unit tests
-- 31 integration tests
 
 ### Adding New Tests
 
@@ -126,7 +111,7 @@ Example:
 
 ## Pull Request Process
 
-1. Ensure `cargo make all` passes
+1. Ensure `cargo make all` or `makers all` passes
 2. Update tests.md if you've added new test cases
 3. Update README.md if you've added new features
 4. Write clear commit messages

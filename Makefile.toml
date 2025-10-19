@@ -15,6 +15,11 @@ description = "Apply rustfmt to all projects"
 command = "cargo"
 args = ["fmt", "--all"]
 
+[tasks.fmt-ci]
+description = "Verify formatting"
+command = "cargo"
+args = ["fmt", "--all", "--", "--check"]
+
 [tasks.lint]
 description = "Verify zero clippy warnings"
 command = "cargo"
@@ -45,19 +50,27 @@ dependencies = ["before-build"]
 command = "cargo"
 args = ["fetch"]
 
+[tasks.coverage]
+description = "Generate coverage report using cargo-llvm-cov"
+dependencies = ["before-build"]
+command = "cargo"
+args = ["llvm-cov", "--workspace", "--all-features", "--open"]
+
 [tasks.all]
 description = "Run fmt, lint, and test together"
 dependencies = ["fmt", "lint", "test"]
 
-# ---------------------------
+# ------------------------- CI -------------------------
+[tasks.ci]
+description = "Run CI checks (fmt, clippy, tests)"
+dependencies = ["fmt-ci", "clippy-ci", "test-ci"]
 
-# CI
 [tasks.clippy-ci]
-extend = "set-env-local"
 dependencies = ["before-build"]
 command = "cargo"
-args = ["clippy", "--", "--no-deps", "-Dwarnings"]
+args = ["clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings"]
 
 [tasks.test-ci]
 dependencies = ["before-build"]
-run_task = "test"
+command = "cargo"
+args = ["test", "--locked", "--workspace", "--all-targets"]

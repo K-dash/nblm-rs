@@ -1,0 +1,119 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: nblm-linux-x86_64.tar.gz
+            binary: nblm
+            use-cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact: nblm-linux-aarch64.tar.gz
+            binary: nblm
+            use-cross: true
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: nblm-macos-x86_64.tar.gz
+            binary: nblm
+            use-cross: false
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: nblm-macos-aarch64.tar.gz
+            binary: nblm
+            use-cross: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: nblm-windows-x86_64.zip
+            binary: nblm.exe
+            use-cross: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross
+        if: matrix.use-cross == true
+        uses: taiki-e/install-action@e43a5023a747770bfcb71ae048541a681714b951 # v2.62.33
+        with:
+          tool: cross
+
+      - name: Build release binary
+        run: |
+          if [ "${{ matrix.use-cross }}" = "true" ]; then
+            cross build --release --package nblm-cli --target ${{ matrix.target }}
+          else
+            cargo build --release --package nblm-cli --target ${{ matrix.target }}
+          fi
+
+      - name: Package binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          STRIP=strip
+          if command -v ${STRIP} >/dev/null 2>&1; then
+            ${STRIP} target/${{ matrix.target }}/release/${{ matrix.binary }} || true
+          fi
+          tar -C target/${{ matrix.target }}/release -czf dist/${{ matrix.artifact }} ${{ matrix.binary }}
+
+      - name: Package binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item -Path "target\${{ matrix.target }}\release\${{ matrix.binary }}" -Destination "dist\${{ matrix.binary }}" -Force
+          Compress-Archive -Path "dist\${{ matrix.binary }}" -DestinationPath "dist\${{ matrix.artifact }}" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd dist
+          shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.artifact }}.sha256
+          path: dist/${{ matrix.artifact }}.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2.4.1
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

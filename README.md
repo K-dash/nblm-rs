@@ -261,7 +261,7 @@ All of these have been corrected in the implementation.
 
 ## Development
 
-See [CONTRIBUTION.md](CONTRIBUTION.md) for development setup, testing guidelines, and contribution workflow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing guidelines, and contribution workflow.
 
 > [!IMPORTANT]
 > All pull requests must pass `cargo make all` before being merged.

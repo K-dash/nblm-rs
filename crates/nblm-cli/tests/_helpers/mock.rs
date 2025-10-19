@@ -273,12 +273,7 @@ impl MockApi {
     }
 
     /// Stub for DELETE /v1alpha/projects/{project}/locations/{location}/notebooks/{notebook_id}/audioOverviews/default
-    pub async fn stub_audio_delete(
-        &self,
-        project: &str,
-        location: &str,
-        notebook_id: &str,
-    ) {
+    pub async fn stub_audio_delete(&self, project: &str, location: &str, notebook_id: &str) {
         let path_str = format!(
             "/v1alpha/projects/{}/locations/{}/notebooks/{}/audioOverviews/default",
             project, location, notebook_id

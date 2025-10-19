@@ -20,16 +20,11 @@ async fn notebooks_delete_single() {
 
     let mut cmd = _helpers::cmd::nblm();
     args.with_base_url(&mut cmd, &mock.base_url());
-    cmd.args([
-        "notebooks",
-        "delete",
-        "--notebook-name",
-        &notebook_name,
-    ]);
+    cmd.args(["notebooks", "delete", "--notebook-name", &notebook_name]);
 
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Deleted 1 notebook(s) successfully"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "Deleted 1 notebook(s) successfully",
+    ));
 }
 
 #[tokio::test]
@@ -62,7 +57,7 @@ async fn notebooks_delete_multiple() {
         &notebook_name2,
     ]);
 
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Deleted 2 notebook(s) successfully"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "Deleted 2 notebook(s) successfully",
+    ));
 }

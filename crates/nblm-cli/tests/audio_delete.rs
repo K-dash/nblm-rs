@@ -16,14 +16,9 @@ async fn audio_delete_success() {
 
     let mut cmd = _helpers::cmd::nblm();
     args.with_base_url(&mut cmd, &mock.base_url());
-    cmd.args([
-        "audio",
-        "delete",
-        "--notebook-id",
-        notebook_id,
-    ]);
+    cmd.args(["audio", "delete", "--notebook-id", notebook_id]);
 
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Audio overview deleted successfully"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "Audio overview deleted successfully",
+    ));
 }

@@ -121,12 +121,36 @@ nblm --auth env \
 
 ## Configuration
 
+### Project Number
+
+Get your Google Cloud project number:
+
+```bash
+# Using gcloud CLI
+gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)"
+```
+
+The project number is a unique numerical identifier (e.g., `123456789012`).
+
+### Locations
+
+The NotebookLM API supports the following multi-region locations:
+
+- `global` - **Recommended** by Google for best performance and full feature set
+- `us` - United States (for compliance/regulatory requirements)
+- `eu` - European Union (for compliance/regulatory requirements)
+
+> [!NOTE]
+> `NBLM_LOCATION` and `NBLM_ENDPOINT_LOCATION` must be set to the same value. Google recommends using `global` unless you have specific compliance or regulatory requirements. See the [official documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks#create-notebook) for details.
+
+### Environment Variables
+
 You can use environment variables to avoid repeating common options:
 
 ```bash
-export NBLM_PROJECT_NUMBER="123456789"
-export NBLM_LOCATION="global"
-export NBLM_ENDPOINT_LOCATION="us"
+export NBLM_PROJECT_NUMBER="123456789012"  # Your project number
+export NBLM_LOCATION="global"              # Recommended: global
+export NBLM_ENDPOINT_LOCATION="global"     # Must match NBLM_LOCATION
 
 # Now you can run commands without these flags
 nblm notebooks recent

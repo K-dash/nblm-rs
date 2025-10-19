@@ -19,13 +19,33 @@ env:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            use-cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            use-cross: true
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            use-cross: false
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            use-cross: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            use-cross: false
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Cache cargo registry
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -40,13 +60,24 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: target
-          key: ${{ runner.os }}-ci-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-ci-target-
+          key: ${{ runner.os }}-ci-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-ci-${{ matrix.target }}-
 
       - name: Install cargo-make
         uses: taiki-e/install-action@e43a5023a747770bfcb71ae048541a681714b951 # v2.62.33
         with:
           tool: cargo-make
 
+      - name: Install cross
+        if: matrix.use-cross == true
+        uses: taiki-e/install-action@e43a5023a747770bfcb71ae048541a681714b951 # v2.62.33
+        with:
+          tool: cross
+
+      - name: Run CI task (cross)
+        if: matrix.use-cross == true
+        run: cross make ci -- --locked
+
       - name: Run CI task
-        run: cargo make ci
+        if: matrix.use-cross != true
+        run: cargo make ci -- --locked

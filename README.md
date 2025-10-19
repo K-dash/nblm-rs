@@ -5,24 +5,50 @@ Unofficial command-line interface for NotebookLM Enterprise API written in Rust.
 > [!WARNING]
 > This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.
 
-## Features
+## Motivation
+
+Why use this CLI instead of direct API calls or web UI?
+
+- **Credential caching**: Leverages gcloud authentication cache - no need to specify API keys or tokens repeatedly
+- **Type safety**: Rust's type system catches errors at compile time, preventing runtime failures
+- **Batch operations**: Add multiple sources to a notebook in a single command
+- **Better error handling**: Clear, actionable error messages with helpful guidance
+- **Automatic retries**: Built-in retry logic with exponential backoff for transient failures
+- **JSON output**: Machine-readable format for automation and scripting workflows
+- **Cross-platform**: Single binary works on Linux, macOS, and Windows
+- **Developer-friendly**: Command-line interface integrates seamlessly with shell scripts and CI/CD pipelines
+
+## Features (Verified as of 2025-10-19)
+
+### Notebooks
 
 | Feature | Command | Status | Notes |
 |---------|---------|--------|-------|
-| **Notebooks** | | | |
 | Create notebook | `notebooks create` | Working | |
 | List recent notebooks | `notebooks recent` | Working | Pagination not implemented by API |
 | Delete notebook(s) | `notebooks delete` | Working | Sequential deletion (API limitation) |
-| **Sources** | | | |
+
+### Sources
+
+| Feature | Command | Status | Notes |
+|---------|---------|--------|-------|
 | Add web URL | `sources add --web-url` | Working | |
 | Add text content | `sources add --text` | Working | |
 | Add video (YouTube) | `sources add --video-url` | Working | Uses `youtubeUrl` field |
 | Add Google Drive | `sources add --drive-*` | Not Working | API returns HTTP 500 |
 | Delete source(s) | `sources delete` | Working | |
-| **Audio Overview** | | | |
+
+### Audio Overview
+
+| Feature | Command | Status | Notes |
+|---------|---------|--------|-------|
 | Create audio overview | `audio create` | Working | Config fields not supported |
 | Delete audio overview | `audio delete` | Working | |
-| **Sharing** | | | |
+
+### Sharing
+
+| Feature | Command | Status | Notes |
+|---------|---------|--------|-------|
 | Share notebook | `share add` | Untested | Requires additional users |
 
 ## Installation
@@ -235,34 +261,10 @@ All of these have been corrected in the implementation.
 
 ## Development
 
-### Running Tests
+See [CONTRIBUTION.md](CONTRIBUTION.md) for development setup, testing guidelines, and contribution workflow.
 
-```bash
-# Run all tests (unit + integration)
-cargo test --all
-
-# Run only unit tests
-cargo test --lib
-
-# Run only integration tests
-cargo test --test '*'
-
-# Run specific test file
-cargo test --test notebooks_delete
-```
-
-All 60 tests should pass:
-- 29 unit tests
-- 31 integration tests
-
-## Contributing
-
-Contributions are welcome! Please note:
-
-1. All tests must pass before submitting PR
-2. Add integration tests for new features
-3. Document any new API issues discovered
-4. Follow existing code style
+> [!IMPORTANT]
+> All pull requests must pass `cargo make all` before being merged.
 
 ## License
 

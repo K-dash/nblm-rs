@@ -47,7 +47,7 @@ pub struct GlobalArgs {
     #[arg(long, help = "Read Service Account key JSON from stdin")]
     pub sa_key_stdin: bool,
 
-    #[arg(long)]
+    #[arg(long, global = true)]
     pub json: bool,
 
     #[arg(long, value_name = "DURATION", value_parser = parse_duration)]

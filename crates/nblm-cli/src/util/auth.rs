@@ -17,7 +17,7 @@ const CLOUD_PLATFORM_SCOPE: &str = "https://www.googleapis.com/auth/cloud-platfo
 
 pub fn build_token_provider(args: &GlobalArgs) -> Result<Arc<dyn TokenProvider>> {
     Ok(match args.auth {
-        AuthMethod::Gcloud => Arc::new(GcloudTokenProvider::default()),
+        AuthMethod::Gcloud => Arc::new(build_gcloud_provider()?),
         AuthMethod::Env => {
             if let Some(token) = args.token.as_ref().or(args.env_token.as_ref()) {
                 Arc::new(StaticTokenProvider::new(token.clone()))
@@ -27,6 +27,11 @@ pub fn build_token_provider(args: &GlobalArgs) -> Result<Arc<dyn TokenProvider>>
         }
         AuthMethod::Sa => Arc::new(build_service_account_provider(args)?),
     })
+}
+
+fn build_gcloud_provider() -> Result<GcloudTokenProvider> {
+    let binary = env::var("NBLM_GCLOUD_PATH").unwrap_or_else(|_| "gcloud".to_string());
+    Ok(GcloudTokenProvider::new(binary))
 }
 
 fn build_service_account_provider(args: &GlobalArgs) -> Result<ServiceAccountTokenProvider> {

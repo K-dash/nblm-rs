@@ -236,4 +236,59 @@ impl MockApi {
             .mount(&self.server)
             .await;
     }
+
+    /// Stub for POST /v1alpha/projects/{project}/locations/{location}/notebooks:batchDelete
+    pub async fn stub_notebooks_batch_delete(&self, project: &str, location: &str) {
+        let path_str = format!(
+            "/v1alpha/projects/{}/locations/{}/notebooks:batchDelete",
+            project, location
+        );
+
+        Mock::given(method("POST"))
+            .and(path(path_str))
+            .and(header("authorization", "Bearer DUMMY_TOKEN"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&self.server)
+            .await;
+    }
+
+    /// Stub for POST /v1alpha/projects/{project}/locations/{location}/notebooks/{notebook_id}/sources:batchDelete
+    pub async fn stub_sources_batch_delete(
+        &self,
+        project: &str,
+        location: &str,
+        notebook_id: &str,
+    ) {
+        let path_str = format!(
+            "/v1alpha/projects/{}/locations/{}/notebooks/{}/sources:batchDelete",
+            project, location, notebook_id
+        );
+
+        Mock::given(method("POST"))
+            .and(path(path_str))
+            .and(header("authorization", "Bearer DUMMY_TOKEN"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&self.server)
+            .await;
+    }
+
+    /// Stub for DELETE /v1alpha/projects/{project}/locations/{location}/notebooks/{notebook_id}/audioOverviews/default
+    pub async fn stub_audio_delete(
+        &self,
+        project: &str,
+        location: &str,
+        notebook_id: &str,
+    ) {
+        let path_str = format!(
+            "/v1alpha/projects/{}/locations/{}/notebooks/{}/audioOverviews/default",
+            project, location, notebook_id
+        );
+
+        Mock::given(method("DELETE"))
+            .and(path(path_str))
+            .and(header("authorization", "Bearer DUMMY_TOKEN"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .mount(&self.server)
+            .await;
+    }
 }

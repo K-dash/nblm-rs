@@ -8,8 +8,9 @@ use crate::auth::TokenProvider;
 use crate::error::{Error, Result};
 use crate::models::{
     AccountRole, AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesRequest,
-    BatchCreateSourcesResponse, CreateNotebookRequest, ListRecentlyViewedResponse, Notebook,
-    ShareRequest, ShareResponse, UserContent,
+    BatchCreateSourcesResponse, BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse,
+    BatchDeleteSourcesRequest, BatchDeleteSourcesResponse, CreateNotebookRequest,
+    ListRecentlyViewedResponse, Notebook, ShareRequest, ShareResponse, UserContent,
 };
 use crate::retry::{RetryConfig, Retryer};
 
@@ -182,14 +183,47 @@ impl NblmClient {
     pub async fn create_notebook(&self, title: impl Into<String>) -> Result<Notebook> {
         let url = self.build_url(&self.notebooks_collection())?;
         let request = CreateNotebookRequest {
-            notebook: Notebook {
-                name: None,
-                title: title.into(),
-                notebook_id: None,
-                extra: Default::default(),
-            },
+            title: title.into(),
         };
         self.request_json(Method::POST, url, Some(&request)).await
+    }
+
+    /// Delete notebooks using the batchDelete API.
+    ///
+    /// # Known Issues (as of 2025-10-19)
+    ///
+    /// The API only accepts a single notebook name despite being named "batchDelete".
+    /// Multiple names result in HTTP 400 error. Use `delete_notebooks` which handles
+    /// this limitation by calling the API once per notebook.
+    pub async fn batch_delete_notebooks(
+        &self,
+        request: BatchDeleteNotebooksRequest,
+    ) -> Result<BatchDeleteNotebooksResponse> {
+        let path = format!("{}:batchDelete", self.notebooks_collection());
+        let url = self.build_url(&path)?;
+        self.request_json(Method::POST, url, Some(&request)).await
+    }
+
+    /// Delete one or more notebooks.
+    ///
+    /// # Implementation Note
+    ///
+    /// Despite the underlying API being named "batchDelete", it only accepts one notebook
+    /// at a time (as of 2025-10-19). This method works around this limitation by calling
+    /// the API sequentially for each notebook.
+    pub async fn delete_notebooks(
+        &self,
+        notebook_names: Vec<String>,
+    ) -> Result<BatchDeleteNotebooksResponse> {
+        // TODO: Remove sequential processing when API supports true batch deletion
+        for name in &notebook_names {
+            let request = BatchDeleteNotebooksRequest {
+                names: vec![name.clone()],
+            };
+            self.batch_delete_notebooks(request).await?;
+        }
+        // Return empty response after all deletions succeed
+        Ok(BatchDeleteNotebooksResponse::default())
     }
 
     pub async fn batch_create_sources(
@@ -202,6 +236,7 @@ impl NblmClient {
         self.request_json(Method::POST, url, Some(&request)).await
     }
 
+    // TODO: This method has not been tested due to the requirement of setting up additional user accounts.
     pub async fn share_notebook(
         &self,
         notebook_id: &str,
@@ -225,6 +260,26 @@ impl NblmClient {
         self.request_json(Method::POST, url, Some(&request)).await
     }
 
+    pub async fn delete_audio_overview(&self, notebook_id: &str) -> Result<()> {
+        let path = format!("{}/audioOverviews/default", self.notebook_path(notebook_id));
+        let url = self.build_url(&path)?;
+        let _response: serde_json::Value =
+            self.request_json(Method::DELETE, url, None::<&()>).await?;
+        Ok(())
+    }
+
+    /// List recently viewed notebooks.
+    ///
+    /// # Pagination (Not Implemented by API)
+    ///
+    /// While this method accepts `page_size` and `page_token` parameters,
+    /// the NotebookLM API does not currently implement pagination:
+    /// - `page_size` parameter is accepted but ignored by the API
+    /// - `next_page_token` is never returned in the response
+    /// - All available notebooks are returned regardless of page_size
+    ///
+    /// These parameters are included for future compatibility if the API
+    /// implements pagination in the future.
     pub async fn list_recently_viewed(
         &self,
         page_size: Option<u32>,
@@ -250,15 +305,32 @@ impl NblmClient {
         &self,
         notebook_id: &str,
         contents: Vec<UserContent>,
-        client_token: Option<String>,
-        dry_run: bool,
     ) -> Result<BatchCreateSourcesResponse> {
         let request = BatchCreateSourcesRequest {
             user_contents: contents,
-            client_token,
-            validate_only: Some(dry_run).filter(|d| *d),
         };
         self.batch_create_sources(notebook_id, request).await
+    }
+
+    pub async fn batch_delete_sources(
+        &self,
+        notebook_id: &str,
+        request: BatchDeleteSourcesRequest,
+    ) -> Result<BatchDeleteSourcesResponse> {
+        let path = format!("{}/sources:batchDelete", self.notebook_path(notebook_id));
+        let url = self.build_url(&path)?;
+        self.request_json(Method::POST, url, Some(&request)).await
+    }
+
+    pub async fn delete_sources(
+        &self,
+        notebook_id: &str,
+        source_names: Vec<String>,
+    ) -> Result<BatchDeleteSourcesResponse> {
+        let request = BatchDeleteSourcesRequest {
+            names: source_names,
+        };
+        self.batch_delete_sources(notebook_id, request).await
     }
 }
 

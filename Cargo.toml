@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/nblm-core", "crates/nblm-cli"]
+resolver = "2"

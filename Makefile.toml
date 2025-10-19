@@ -1,0 +1,63 @@
+[config]
+skip_core_tasks = true
+default_to_workspace = false
+
+[env]
+
+[tasks.before-build]
+
+[tasks.default]
+description = "Default task"
+dependencies = ["fmt", "lint", "check"]
+
+[tasks.fmt]
+description = "Apply rustfmt to all projects"
+command = "cargo"
+args = ["fmt", "--all"]
+
+[tasks.lint]
+description = "Verify zero clippy warnings"
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+
+[tasks.test]
+description = "Run test suite"
+command = "cargo"
+args = ["test", "--all"]
+
+[tasks.check]
+dependencies = ["before-build"]
+command = "cargo"
+args = ["check", "--all"]
+
+[tasks.build]
+dependencies = ["before-build"]
+command = "cargo"
+args = ["build", "${@}"]
+
+[tasks.clean]
+dependencies = ["before-build"]
+command = "cargo"
+args = ["clean"]
+
+[tasks.fetch]
+dependencies = ["before-build"]
+command = "cargo"
+args = ["fetch"]
+
+[tasks.all]
+description = "Run fmt, lint, and test together"
+dependencies = ["fmt", "lint", "test"]
+
+# ---------------------------
+
+# CI
+[tasks.clippy-ci]
+extend = "set-env-local"
+dependencies = ["before-build"]
+command = "cargo"
+args = ["clippy", "--", "--no-deps", "-Dwarnings"]
+
+[tasks.test-ci]
+dependencies = ["before-build"]
+run_task = "test"

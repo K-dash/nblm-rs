@@ -5,7 +5,13 @@ Thank you for your interest in contributing to nblm-rs!
 ## Prerequisites
 
 - Rust 1.90.0 or later
-- [cargo-make](https://github.com/sagiegurari/cargo-make) - Install with `cargo install cargo-make`
+- [cargo-make](https://github.com/sagiegurari/cargo-make) – required for all project automation
+
+```bash
+cargo install cargo-make
+```
+
+We rely on `cargo-make` for every task (locally and in CI), so please install it before running any project commands.
 
 ## Development Workflow
 

@@ -29,7 +29,7 @@ Unofficial command-line interface for NotebookLM Enterprise API written in Rust.
 
 ### Prerequisites
 
-- Rust 1.70 or later
+- Rust 1.90.0 or later
 - Google Cloud project with NotebookLM API enabled
 - Authentication credentials (gcloud, service account, or access token)
 
@@ -79,7 +79,7 @@ nblm --auth sa \
 ```
 
 > [!IMPORTANT]
-> Service account requires `roles/editor` permission. The `roles/notebooklm.user` role does not exist.
+> Service account requires `roles/editor` permission.
 
 ### Method 3: Environment Variable Token
 
@@ -231,15 +231,6 @@ Despite the API endpoint being named `batchDelete` and accepting an array of not
 
 The `notebooks recent` command accepts `--page-size` and `--page-token` parameters, but the NotebookLM API never returns `nextPageToken` in responses, indicating pagination is not currently implemented.
 
-### API Documentation Errors
-
-The following field names in the API documentation are incorrect:
-
-- `videoContent.url` should be `videoContent.youtubeUrl`
-- `textContent.text` should be `textContent.content`
-- `validateOnly` field does not exist
-- `clientToken` field does not exist
-
 All of these have been corrected in the implementation.
 
 ## Development
@@ -264,29 +255,6 @@ All 60 tests should pass:
 - 29 unit tests
 - 31 integration tests
 
-### Project Structure
-
-```
-nblm-rs/
-├── crates/
-│   ├── nblm-core/         # Core API client library
-│   │   ├── src/
-│   │   │   ├── auth.rs    # Authentication providers
-│   │   │   ├── client.rs  # API client implementation
-│   │   │   ├── error.rs   # Error types
-│   │   │   ├── models.rs  # Request/response models
-│   │   │   └── retry.rs   # Retry logic
-│   │   └── tests/
-│   └── nblm-cli/          # CLI application
-│       ├── src/
-│       │   ├── app.rs     # Application logic
-│       │   ├── args.rs    # CLI argument definitions
-│       │   ├── ops/       # Command implementations
-│       │   └── util/      # Utilities
-│       └── tests/         # Integration tests
-└── README.md
-```
-
 ## Contributing
 
 Contributions are welcome! Please note:
@@ -298,7 +266,7 @@ Contributions are welcome! Please note:
 
 ## License
 
-[Add your license here]
+MIT
 
 ## Acknowledgments
 

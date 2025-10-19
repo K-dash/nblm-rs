@@ -55,13 +55,13 @@ jobs:
         with:
           tool: cross
 
-      - name: Build release binary
-        run: |
-          if [ "${{ matrix.use-cross }}" = "true" ]; then
-            cross build --release --package nblm-cli --target ${{ matrix.target }}
-          else
-            cargo build --release --package nblm-cli --target ${{ matrix.target }}
-          fi
+      - name: Build release binary (cross)
+        if: matrix.use-cross == true
+        run: cross build --release --package nblm-cli --target ${{ matrix.target }}
+
+      - name: Build release binary (native)
+        if: matrix.use-cross != true
+        run: cargo build --release --package nblm-cli --target ${{ matrix.target }}
 
       - name: Package binary (Unix)
         if: runner.os != 'Windows'
@@ -87,10 +87,19 @@ jobs:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}
 
-      - name: Generate SHA256 checksum
+      - name: Generate SHA256 checksum (Unix)
+        if: runner.os != 'Windows'
         run: |
           cd dist
           shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+
+      - name: Generate SHA256 checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-Location dist
+          $hash = Get-FileHash -Path "${{ matrix.artifact }}" -Algorithm SHA256
+          "{0}  {1}" -f $hash.Hash.ToLower(), $hash.Path | Out-File -FilePath "${{ matrix.artifact }}.sha256" -Encoding ascii
 
       - name: Upload checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

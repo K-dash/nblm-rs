@@ -299,4 +299,32 @@ mod tests {
         provider.store_token("token".to_string(), 120).await;
         assert_eq!(provider.cached_token().await, Some("token".to_string()));
     }
+
+    #[tokio::test]
+    async fn static_token_provider_returns_token() {
+        let provider = StaticTokenProvider::new("test-token-123");
+        let token = provider.access_token().await.unwrap();
+        assert_eq!(token, "test-token-123");
+    }
+
+    #[tokio::test]
+    async fn env_token_provider_reads_from_env() {
+        std::env::set_var("TEST_NBLM_TOKEN", "env-token-456");
+        let provider = EnvTokenProvider::new("TEST_NBLM_TOKEN");
+        let token = provider.access_token().await.unwrap();
+        assert_eq!(token, "env-token-456");
+        std::env::remove_var("TEST_NBLM_TOKEN");
+    }
+
+    #[tokio::test]
+    async fn env_token_provider_errors_when_missing() {
+        std::env::remove_var("NONEXISTENT_TOKEN");
+        let provider = EnvTokenProvider::new("NONEXISTENT_TOKEN");
+        let result = provider.access_token().await;
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("environment variable NONEXISTENT_TOKEN missing"));
+    }
 }

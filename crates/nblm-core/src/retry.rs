@@ -194,4 +194,42 @@ mod tests {
         let now = SystemTime::now();
         assert!(parse_retry_after("invalid", now).is_none());
     }
+
+    #[test]
+    fn should_retry_status_for_retryable_codes() {
+        assert!(should_retry_status(StatusCode::TOO_MANY_REQUESTS));
+        assert!(should_retry_status(StatusCode::REQUEST_TIMEOUT));
+        assert!(should_retry_status(StatusCode::INTERNAL_SERVER_ERROR));
+        assert!(should_retry_status(StatusCode::BAD_GATEWAY));
+        assert!(should_retry_status(StatusCode::SERVICE_UNAVAILABLE));
+    }
+
+    #[test]
+    fn should_retry_status_for_non_retryable_codes() {
+        assert!(!should_retry_status(StatusCode::OK));
+        assert!(!should_retry_status(StatusCode::NOT_FOUND));
+        assert!(!should_retry_status(StatusCode::BAD_REQUEST));
+        assert!(!should_retry_status(StatusCode::UNAUTHORIZED));
+    }
+
+    #[test]
+    fn is_retryable_error_for_connect_and_timeout() {
+        // We can't easily construct reqwest::Error with is_connect()/is_timeout() true,
+        // but we can test the Error::Http path
+        let err = Error::Http {
+            status: StatusCode::TOO_MANY_REQUESTS,
+            message: "test".to_string(),
+            body: "test".to_string(),
+        };
+        assert!(is_retryable_error(&err));
+    }
+
+    #[test]
+    fn is_retryable_error_for_non_retryable() {
+        let err = Error::TokenProvider("test".to_string());
+        assert!(!is_retryable_error(&err));
+
+        let err = Error::Endpoint("test".to_string());
+        assert!(!is_retryable_error(&err));
+    }
 }

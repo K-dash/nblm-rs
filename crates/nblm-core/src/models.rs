@@ -170,3 +170,106 @@ pub struct AudioOverviewResponse {
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn user_content_untagged_web() {
+        let json = r#"{"webContent":{"url":"https://example.com"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Web { web_content } => {
+                assert_eq!(web_content.url, "https://example.com");
+            }
+            _ => panic!("expected Web variant"),
+        }
+    }
+
+    #[test]
+    fn user_content_untagged_text() {
+        let json = r#"{"textContent":{"text":"sample text"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Text { text_content } => {
+                assert_eq!(text_content.text, "sample text");
+            }
+            _ => panic!("expected Text variant"),
+        }
+    }
+
+    #[test]
+    fn user_content_untagged_google_drive() {
+        let json = r#"{"googleDriveContent":{"resourceName":"drive://file/123"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::GoogleDrive {
+                google_drive_content,
+            } => {
+                assert_eq!(google_drive_content.resource_name, "drive://file/123");
+            }
+            _ => panic!("expected GoogleDrive variant"),
+        }
+    }
+
+    #[test]
+    fn user_content_untagged_video() {
+        let json = r#"{"videoContent":{"url":"https://youtube.com/watch?v=123"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Video { video_content } => {
+                assert_eq!(video_content.url, "https://youtube.com/watch?v=123");
+            }
+            _ => panic!("expected Video variant"),
+        }
+    }
+
+    #[test]
+    fn batch_create_sources_request_skips_validate_only_when_none() {
+        let request = BatchCreateSourcesRequest {
+            user_contents: vec![],
+            client_token: None,
+            validate_only: None,
+        };
+        let json = serde_json::to_string(&request).unwrap();
+        assert!(!json.contains("validateOnly"));
+    }
+
+    #[test]
+    fn batch_create_sources_request_includes_validate_only_when_some() {
+        let request = BatchCreateSourcesRequest {
+            user_contents: vec![],
+            client_token: None,
+            validate_only: Some(true),
+        };
+        let json = serde_json::to_string(&request).unwrap();
+        assert!(json.contains("validateOnly"));
+        assert!(json.contains("true"));
+    }
+
+    #[test]
+    fn notebook_skips_notebook_id_when_none() {
+        let notebook = Notebook {
+            name: Some("test".to_string()),
+            title: "Test Notebook".to_string(),
+            notebook_id: None,
+            extra: Default::default(),
+        };
+        let json = serde_json::to_string(&notebook).unwrap();
+        assert!(!json.contains("notebookId"));
+    }
+
+    #[test]
+    fn notebook_includes_notebook_id_when_some() {
+        let notebook = Notebook {
+            name: Some("test".to_string()),
+            title: "Test Notebook".to_string(),
+            notebook_id: Some("nb123".to_string()),
+            extra: Default::default(),
+        };
+        let json = serde_json::to_string(&notebook).unwrap();
+        assert!(json.contains("notebookId"));
+        assert!(json.contains("nb123"));
+    }
+}

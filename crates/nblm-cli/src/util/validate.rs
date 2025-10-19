@@ -60,4 +60,41 @@ mod tests {
         let names = vec!["one".to_string(), "two".to_string()];
         assert!(pair_with_names(&values, &names, "--name").is_err());
     }
+
+    #[test]
+    fn validate_url_accepts_http() {
+        assert!(validate_url("http://example.com").is_ok());
+    }
+
+    #[test]
+    fn validate_url_accepts_https() {
+        assert!(validate_url("https://example.com").is_ok());
+    }
+
+    #[test]
+    fn validate_url_rejects_ftp() {
+        let result = validate_url("ftp://example.com");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("unsupported URL scheme"));
+    }
+
+    #[test]
+    fn validate_url_rejects_file() {
+        let result = validate_url("file:///etc/passwd");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("unsupported URL scheme"));
+    }
+
+    #[test]
+    fn validate_url_rejects_invalid() {
+        let result = validate_url("not a url");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("invalid URL"));
+    }
 }

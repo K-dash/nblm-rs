@@ -2,7 +2,14 @@
 name = "nblm-core"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "MIT"
+description = "Core library for NotebookLM Enterprise API client"
+repository = "https://github.com/K-dash/nblm-rs"
+homepage = "https://github.com/K-dash/nblm-rs"
+readme = "../../README.md"
+keywords = ["notebooklm", "api", "google-cloud", "gemini"]
+categories = ["api-bindings"]
+authors = ["K-dash"]
 
 [lib]
 doctest = false

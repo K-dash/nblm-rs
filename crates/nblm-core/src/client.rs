@@ -302,4 +302,53 @@ mod tests {
         let err = normalize_endpoint_location("asia".into()).unwrap_err();
         assert!(format!("{err}").contains("unsupported endpoint location"));
     }
+
+    #[test]
+    fn with_base_url_accepts_absolute_url() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new(provider, "123", "global", "us").unwrap();
+        let result = client.with_base_url("http://localhost:8080/v1alpha");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn with_base_url_trims_trailing_slash() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new(provider, "123", "global", "us")
+            .unwrap()
+            .with_base_url("http://example.com/v1alpha/")
+            .unwrap();
+        assert_eq!(client.base, "http://example.com/v1alpha");
+    }
+
+    #[test]
+    fn with_base_url_rejects_relative_path() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new(provider, "123", "global", "us").unwrap();
+        let result = client.with_base_url("/relative/path");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn build_url_combines_base_and_path_correctly() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new(provider, "123", "global", "us")
+            .unwrap()
+            .with_base_url("http://example.com/v1alpha")
+            .unwrap();
+
+        // Test with leading slash
+        let url = client.build_url("/projects/123/notebooks").unwrap();
+        assert_eq!(
+            url.as_str(),
+            "http://example.com/v1alpha/projects/123/notebooks"
+        );
+
+        // Test without leading slash
+        let url = client.build_url("projects/123/notebooks").unwrap();
+        assert_eq!(
+            url.as_str(),
+            "http://example.com/v1alpha/projects/123/notebooks"
+        );
+    }
 }

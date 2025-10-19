@@ -2,7 +2,14 @@
 name = "nblm-cli"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "MIT"
+description = "Command-line interface for NotebookLM Enterprise API"
+repository = "https://github.com/K-dash/nblm-rs"
+homepage = "https://github.com/K-dash/nblm-rs"
+readme = "../../README.md"
+keywords = ["notebooklm", "cli", "google-cloud", "gemini"]
+categories = ["command-line-utilities"]
+authors = ["K-dash"]
 
 [[bin]]
 name = "nblm"

@@ -35,11 +35,6 @@ jobs:
             artifact: nblm-macos-aarch64.tar.gz
             binary: nblm
             use-cross: false
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact: nblm-windows-x86_64.zip
-            binary: nblm.exe
-            use-cross: false
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -63,8 +58,7 @@ jobs:
         if: matrix.use-cross != true
         run: cargo build --release --package nblm-cli --target ${{ matrix.target }}
 
-      - name: Package binary (Unix)
-        if: runner.os != 'Windows'
+      - name: Package binary
         run: |
           mkdir -p dist
           STRIP=strip
@@ -73,33 +67,16 @@ jobs:
           fi
           tar -C target/${{ matrix.target }}/release -czf dist/${{ matrix.artifact }} ${{ matrix.binary }}
 
-      - name: Package binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item -Path "target\${{ matrix.target }}\release\${{ matrix.binary }}" -Destination "dist\${{ matrix.binary }}" -Force
-          Compress-Archive -Path "dist\${{ matrix.binary }}" -DestinationPath "dist\${{ matrix.artifact }}" -Force
-
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}
 
-      - name: Generate SHA256 checksum (Unix)
-        if: runner.os != 'Windows'
+      - name: Generate SHA256 checksum
         run: |
           cd dist
           shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
-
-      - name: Generate SHA256 checksum (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Set-Location dist
-          $hash = Get-FileHash -Path "${{ matrix.artifact }}" -Algorithm SHA256
-          "{0}  {1}" -f $hash.Hash.ToLower(), $hash.Path | Out-File -FilePath "${{ matrix.artifact }}.sha256" -Encoding ascii
 
       - name: Upload checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

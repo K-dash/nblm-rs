@@ -1,0 +1,102 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "nblm"
+version = "0.1.0"
+description = "Python bindings for NotebookLM Enterprise API client"
+readme = "../README.md"
+requires-python = ">=3.14"
+license = { text = "MIT" }
+keywords = ["notebooklm", "api", "google-cloud", "gemini"]
+authors = [
+    { name = "K-dash" }
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "maturin>=1.0,<2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/K-dash/nblm-rs"
+Repository = "https://github.com/K-dash/nblm-rs"
+"Bug Tracker" = "https://github.com/K-dash/nblm-rs/issues"
+
+[tool.maturin]
+module-name = "nblm"
+manifest-path = "../crates/nblm-python/Cargo.toml"
+python-source = "src"
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+check_untyped_defs = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "nblm.nblm"
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ANN",  # flake8-annotations
+    "TCH",  # flake8-type-checking
+    "ARG",  # flake8-unused-arguments
+    "PIE",  # flake8-pie
+    "BLE",  # flake8-blind-except
+    "RUF",  # Ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

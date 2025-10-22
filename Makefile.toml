@@ -3,6 +3,7 @@ skip_core_tasks = true
 default_to_workspace = false
 
 [env]
+UV_RUN_ARGS = "run;--project;python;--extra;dev;--directory;python"
 
 [tasks.before-build]
 
@@ -74,3 +75,43 @@ args = ["clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "wa
 dependencies = ["before-build"]
 command = "cargo"
 args = ["test", "--locked", "--workspace", "--all-targets"]
+
+# ------------------------- Python -------------------------
+[tasks.py-fmt]
+description = "Format Python code with ruff"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "ruff", "format", "src", "tests"]
+
+[tasks.py-fmt-check]
+description = "Check Python code formatting"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "ruff", "format", "--check", "src", "tests"]
+
+[tasks.py-lint]
+description = "Lint Python code with ruff"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "ruff", "check", "src", "tests"]
+
+[tasks.py-lint-fix]
+description = "Lint and fix Python code with ruff"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "ruff", "check", "--fix", "src", "tests"]
+
+[tasks.py-type]
+description = "Run mypy type checking"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "mypy", "src", "tests"]
+
+[tasks.py-test]
+description = "Run Python tests with pytest"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "pytest", "tests", "-v"]
+
+[tasks.py-build]
+description = "Build Python package with maturin"
+command = "uv"
+args = ["@@split(UV_RUN_ARGS,;)", "maturin", "develop"]
+
+[tasks.py-all]
+description = "Run all Python checks (fmt, lint, type, test)"
+dependencies = ["py-fmt", "py-lint", "py-type"]

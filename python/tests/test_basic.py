@@ -16,10 +16,13 @@ def test_classes_available() -> None:
         DEFAULT_ENV_TOKEN_KEY,
         DEFAULT_GCLOUD_BINARY,
         DEFAULT_SERVICE_ACCOUNT_SCOPES,
+        BatchDeleteNotebooksResponse,
         EnvTokenProvider,
         GcloudTokenProvider,
+        ListRecentlyViewedResponse,
         NblmClient,
         NblmError,
+        Notebook,
         ServiceAccountTokenProvider,
     )
 
@@ -28,6 +31,9 @@ def test_classes_available() -> None:
     assert ServiceAccountTokenProvider is not None
     assert EnvTokenProvider is not None
     assert NblmError is not None
+    assert Notebook is not None
+    assert ListRecentlyViewedResponse is not None
+    assert BatchDeleteNotebooksResponse is not None
     assert DEFAULT_GCLOUD_BINARY == "gcloud"
     assert DEFAULT_ENV_TOKEN_KEY == "NBLM_ACCESS_TOKEN"
     assert DEFAULT_SERVICE_ACCOUNT_SCOPES == ["https://www.googleapis.com/auth/cloud-platform"]

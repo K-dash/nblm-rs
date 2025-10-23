@@ -91,18 +91,13 @@ impl Notebook {
 pub struct ListRecentlyViewedResponse {
     #[pyo3(get)]
     pub notebooks: Py<PyList>,
-    #[pyo3(get)]
-    pub next_page_token: Option<String>,
 }
 
 #[pymethods]
 impl ListRecentlyViewedResponse {
     pub fn __repr__(&self, py: Python) -> String {
         let count = self.notebooks.bind(py).len();
-        format!(
-            "ListRecentlyViewedResponse(notebooks={} items, next_page_token={:?})",
-            count, self.next_page_token
-        )
+        format!("ListRecentlyViewedResponse(notebooks={} items)", count)
     }
 
     pub fn __str__(&self, py: Python) -> String {
@@ -121,7 +116,6 @@ impl ListRecentlyViewedResponse {
         }
         Ok(Self {
             notebooks: notebooks_list.unbind(),
-            next_page_token: response.next_page_token,
         })
     }
 }

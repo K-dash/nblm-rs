@@ -181,18 +181,11 @@ pub struct ShareResponse {
 }
 
 /// Response from list recently viewed notebooks API.
-///
-/// Note: The `next_page_token` field is defined for future compatibility,
-/// but the NotebookLM API does not currently implement pagination and
-/// never returns this field in responses.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ListRecentlyViewedResponse {
     #[serde(default)]
     pub notebooks: Vec<serde_json::Value>,
-    /// Pagination token (not currently implemented by NotebookLM API)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_page_token: Option<String>,
 }
 
 /// Audio Overview creation request.

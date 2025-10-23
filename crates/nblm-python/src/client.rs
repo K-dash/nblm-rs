@@ -58,33 +58,22 @@ impl NblmClient {
     /// List recently viewed notebooks.
     ///
     /// Args:
-    ///     page_size: Maximum number of notebooks to return (optional)
-    ///     page_token: Pagination token from previous request (optional)
+    ///     page_size: Maximum number of notebooks to return (1-500, default: 500)
     ///
     /// Returns:
     ///     ListRecentlyViewedResponse: Response containing notebooks list
     ///
     /// Raises:
     ///     NblmError: If the request fails
-    ///
-    /// Note:
-    ///     As of 2025-10-19, the NotebookLM API does not implement pagination.
-    ///     The page_size parameter is accepted but ignored, and next_page_token
-    ///     is never returned in responses.
-    #[pyo3(signature = (page_size = None, page_token = None))]
+    #[pyo3(signature = (page_size = None))]
     fn list_recently_viewed(
         &self,
         py: Python,
         page_size: Option<u32>,
-        page_token: Option<String>,
     ) -> PyResult<ListRecentlyViewedResponse> {
         let inner = self.inner.clone();
         py.allow_threads(move || {
-            let future = async move {
-                let page_token_owned = page_token;
-                let page_token_ref = page_token_owned.as_deref();
-                inner.list_recently_viewed(page_size, page_token_ref).await
-            };
+            let future = async move { inner.list_recently_viewed(page_size).await };
             let result = block_on_with_runtime(future)?;
             Python::with_gil(|py| ListRecentlyViewedResponse::from_core(py, result))
         })

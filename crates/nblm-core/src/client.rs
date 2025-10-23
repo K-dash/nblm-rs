@@ -270,32 +270,20 @@ impl NblmClient {
 
     /// List recently viewed notebooks.
     ///
-    /// # Pagination (Not Implemented by API)
+    /// # Pagination
     ///
-    /// While this method accepts `page_size` and `page_token` parameters,
-    /// the NotebookLM API does not currently implement pagination:
-    /// - `page_size` parameter is accepted but ignored by the API
-    /// - `next_page_token` is never returned in the response
-    /// - All available notebooks are returned regardless of page_size
-    ///
-    /// These parameters are included for future compatibility if the API
-    /// implements pagination in the future.
+    /// The `page_size` parameter can be used to limit the number of results.
+    /// Valid range is 1-500. Default is 500 notebooks.
     pub async fn list_recently_viewed(
         &self,
         page_size: Option<u32>,
-        page_token: Option<&str>,
     ) -> Result<ListRecentlyViewedResponse> {
         let path = format!("{}:listRecentlyViewed", self.notebooks_collection());
         let mut url = self.build_url(&path)?;
-        {
-            let mut pairs = url.query_pairs_mut();
-            if let Some(size) = page_size {
-                let clamped = size.clamp(PAGE_SIZE_MIN, PAGE_SIZE_MAX);
-                pairs.append_pair("pageSize", &clamped.to_string());
-            }
-            if let Some(token) = page_token {
-                pairs.append_pair("pageToken", token);
-            }
+        if let Some(size) = page_size {
+            let clamped = size.clamp(PAGE_SIZE_MIN, PAGE_SIZE_MAX);
+            url.query_pairs_mut()
+                .append_pair("pageSize", &clamped.to_string());
         }
         self.request_json::<(), _>(Method::GET, url, None::<&()>)
             .await

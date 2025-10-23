@@ -25,16 +25,11 @@ pub fn emit_notebook(notebook: &Notebook, json_mode: bool) {
 pub fn emit_recent(response: &ListRecentlyViewedResponse, json_mode: bool) -> Result<()> {
     if json_mode {
         emit_json(json!(response), true);
+    } else if response.notebooks.is_empty() {
+        println!("No recently viewed notebooks.");
     } else {
-        if response.notebooks.is_empty() {
-            println!("No recently viewed notebooks.");
-        } else {
-            for notebook in &response.notebooks {
-                println!("{}", serde_json::to_string_pretty(notebook)?);
-            }
-        }
-        if let Some(token) = &response.next_page_token {
-            println!("next_page_token: {token}");
+        for notebook in &response.notebooks {
+            println!("{}", serde_json::to_string_pretty(notebook)?);
         }
     }
     Ok(())

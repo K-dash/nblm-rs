@@ -40,26 +40,18 @@ class NblmClient:
             NblmError: If the notebook creation fails
         """
 
-    def list_recently_viewed(
-        self, page_size: int | None = None, page_token: str | None = None
-    ) -> ListRecentlyViewedResponse:
+    def list_recently_viewed(self, page_size: int | None = None) -> ListRecentlyViewedResponse:
         """
         List recently viewed notebooks
 
         Args:
-            page_size: Maximum number of notebooks to return (optional)
-            page_token: Pagination token from previous request (optional)
+            page_size: Maximum number of notebooks to return (1-500, default: 500)
 
         Returns:
             ListRecentlyViewedResponse: Response containing notebooks list
 
         Raises:
             NblmError: If the request fails
-
-        Note:
-            As of 2025-10-19, the NotebookLM API does not implement pagination.
-            The page_size parameter is accepted but ignored, and next_page_token
-            is never returned in responses.
         """
 
     def delete_notebooks(self, notebook_names: list[str]) -> BatchDeleteNotebooksResponse:

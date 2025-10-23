@@ -100,20 +100,15 @@ print(f"Notebook ID: {notebook.notebook_id}")
 ### Listing Recent Notebooks
 
 ```python
-# List recently viewed notebooks
+# List recently viewed notebooks (default: 500)
 response = client.list_recently_viewed()
 for notebook_data in response.notebooks:
     print(f"Title: {notebook_data['title']}")
     print(f"ID: {notebook_data.get('notebookId', 'N/A')}")
 
-# With pagination parameters (note: API doesn't implement pagination yet)
+# Limit results with page_size (1-500)
 response = client.list_recently_viewed(page_size=10)
 ```
-
-> [!NOTE]
-> As of 2025-10-19, the NotebookLM API does not implement pagination.
-> The `page_size` parameter is accepted but ignored, and `next_page_token`
-> is never returned in responses.
 
 ### Deleting Notebooks
 
@@ -189,10 +184,6 @@ except NblmError as e:
 
 The batch delete API only accepts one notebook at a time. The library handles this automatically by calling the API sequentially for each notebook.
 
-### Pagination
-
-The `list_recently_viewed` method accepts `page_size` and `page_token` parameters, but the NotebookLM API does not currently implement pagination. These parameters are included for future compatibility.
-
 ## Type Hints
 
 The library includes full type hints for better IDE support:
@@ -220,5 +211,5 @@ MIT
 
 ## Related Resources
 
-- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs)
+- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview)
 - [Main Repository](https://github.com/K-dash/nblm-rs)

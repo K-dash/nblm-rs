@@ -14,7 +14,6 @@ class ListRecentlyViewedResponse:
     """Response from listing recently viewed notebooks"""
 
     notebooks: list[dict[str, Any]]
-    next_page_token: str | None
 
 class BatchDeleteNotebooksResponse:
     """Response from batch deleting notebooks"""

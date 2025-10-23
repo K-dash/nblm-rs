@@ -19,13 +19,9 @@ pub struct CreateArgs {
 
 #[derive(Args)]
 pub struct RecentArgs {
-    /// Page size for pagination (1-500). Note: NotebookLM API currently ignores this parameter and returns all notebooks.
+    /// Page size for pagination (1-500, default: 500)
     #[arg(long)]
     pub page_size: Option<u32>,
-
-    /// Page token for pagination. Note: NotebookLM API does not currently implement pagination tokens.
-    #[arg(long)]
-    pub page_token: Option<String>,
 }
 
 #[derive(Args)]
@@ -43,9 +39,7 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
             emit_notebook(&notebook, json_mode);
         }
         Command::Recent(args) => {
-            let response = client
-                .list_recently_viewed(args.page_size, args.page_token.as_deref())
-                .await?;
+            let response = client.list_recently_viewed(args.page_size).await?;
             emit_recent(&response, json_mode)?;
         }
         Command::Delete(args) => {

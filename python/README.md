@@ -211,5 +211,5 @@ MIT
 
 ## Related Resources
 
-- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs)
+- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview)
 - [Main Repository](https://github.com/K-dash/nblm-rs)

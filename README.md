@@ -309,7 +309,7 @@ This project uses the NotebookLM Enterprise API. See the [official documentation
 
 ## Related Resources
 
-- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs)
+- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview)
 - [NotebookLM API - Notebooks](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks)
 - [NotebookLM API - Sources](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources)
 - [NotebookLM API - Audio Overview](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-audio-overview)

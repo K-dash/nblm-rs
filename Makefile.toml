@@ -114,4 +114,4 @@ args = ["@@split(UV_RUN_ARGS,;)", "maturin", "develop"]
 
 [tasks.py-all]
 description = "Run all Python checks (fmt, lint, type, test)"
-dependencies = ["py-fmt", "py-lint", "py-type"]
+dependencies = ["py-fmt", "py-lint-fix", "py-type"]

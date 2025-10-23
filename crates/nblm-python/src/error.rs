@@ -1,5 +1,6 @@
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
 create_exception!(nblm, NblmError, PyException);
@@ -8,6 +9,10 @@ pub type PyResult<T> = Result<T, PyErr>;
 
 pub(crate) fn map_nblm_error(err: nblm_core::Error) -> PyErr {
     NblmError::new_err(err.to_string())
+}
+
+pub(crate) fn map_runtime_error(err: impl std::fmt::Display) -> PyErr {
+    PyRuntimeError::new_err(format!("Failed to execute async operation: {err}"))
 }
 
 pub(crate) trait IntoPyResult<T> {

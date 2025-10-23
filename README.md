@@ -18,8 +18,11 @@ Why use this CLI instead of direct API calls or web UI?
 - **Better error handling**: Clear, actionable error messages with helpful guidance
 - **Automatic retries**: Built-in retry logic with exponential backoff for transient failures
 - **JSON output**: Machine-readable format for automation and scripting workflows
-- **Cross-platform**: Single binary works on Linux, macOS, and Windows
+- **Cross-platform**: Single binary works on Linux and macOS
 - **Developer-friendly**: Command-line interface integrates seamlessly with shell scripts and CI/CD pipelines
+
+> [!NOTE]
+> Windows is not supported.
 
 ## Features (Verified as of 2025-10-19)
 

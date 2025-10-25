@@ -10,7 +10,7 @@ use super::extra_to_pydict;
 /// Note: As of the current API version, this request must be empty.
 /// All fields are reserved for future use.
 #[pyclass(module = "nblm")]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct AudioOverviewRequest {
     // Currently, the API only accepts an empty request body
     // Fields are commented out for future compatibility
@@ -80,7 +80,7 @@ impl AudioOverviewResponse {
     ) -> PyResult<Self> {
         let generation_options = match response.generation_options {
             Some(value) => crate::models::json_value_to_py(py, &value)?,
-            None => py.None().into(),
+            None => py.None(),
         };
 
         Ok(Self {

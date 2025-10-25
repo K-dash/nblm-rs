@@ -15,6 +15,9 @@
 
 </div>
 
+> [!IMPORTANT]
+> This project targets the **NotebookLM Enterprise API** only. Google hasn’t published an API for the consumer edition or general Google Workspace tenants as of 2025-10-25.
+
 ## Known API Issues
 
 > [!NOTE]

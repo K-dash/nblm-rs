@@ -63,7 +63,7 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
                 .await?;
 
             if json_mode {
-                // CLIのjsonモードでは元の形式で表示するため、audioOverviewでラップ
+                // In CLI json mode, wrap with audioOverview to match original format
                 emit_json(json!({"audioOverview": response}), json_mode);
             } else {
                 println!("Audio overview created successfully:");

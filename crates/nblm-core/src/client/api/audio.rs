@@ -18,7 +18,7 @@ impl NblmClient {
         );
         let url = self.url_builder.build_url(&path)?;
 
-        // APIレスポンスはaudioOverviewフィールドでラップされている
+        // API response is wrapped in audioOverview field
         let api_response: crate::models::responses::audio::AudioOverviewApiResponse = self
             .http
             .request_json(Method::POST, url, Some(&request))

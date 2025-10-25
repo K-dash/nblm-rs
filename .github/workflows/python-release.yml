@@ -63,7 +63,7 @@ jobs:
         uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --manifest-path crates/nblm-python/Cargo.toml
+          args: --release --out dist --manifest-path ../crates/nblm-python/Cargo.toml
           sccache: "true"
           manylinux: auto
           working-directory: python
@@ -88,7 +88,7 @@ jobs:
         uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
         with:
           command: sdist
-          args: --out dist --manifest-path crates/nblm-python/Cargo.toml
+          args: --out dist --manifest-path ../crates/nblm-python/Cargo.toml
           working-directory: python
 
       - name: Upload sdist

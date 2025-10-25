@@ -71,6 +71,7 @@ def main() -> None:
 
     # Test 3: Add sources to the notebook
     print("Test 3: Adding sources to the notebook...")
+    source_ids = []
     try:
         response = client.add_sources(
             notebook_id=notebook.notebook_id,
@@ -88,14 +89,51 @@ def main() -> None:
         print(f"✓ Added sources (error_count: {response.error_count})")
         for source in response.sources:
             print(f"  - {source.name}")
+            # Extract source ID from the source name (format: .../sources/SOURCE_ID)
+            if source.name and "/sources/" in source.name:
+                source_id = source.name.split("/sources/")[-1]
+                source_ids.append(source_id)
         print()
     except NblmError as e:
         print(f"✗ Failed to add sources: {e}\n")
 
-    # Test 4: Upload a local file as a source (optional)
+    # Test 4: Get source by ID
+    print("Test 4: Getting source details...")
+    if source_ids:
+        # Get the first source that was added
+        test_source_id = source_ids[0]
+        try:
+            source = client.get_source(
+                notebook_id=notebook.notebook_id,
+                source_id=test_source_id
+            )
+            print(f"✓ Retrieved source: {source.name}")
+            print(f"  Title: {source.title}")
+            if source.source_id and source.source_id.id:
+                print(f"  Source ID: {source.source_id.id}")
+            if source.metadata:
+                if source.metadata.source_added_timestamp:
+                    print(f"  Added: {source.metadata.source_added_timestamp}")
+                if source.metadata.word_count:
+                    print(f"  Word Count: {source.metadata.word_count}")
+                if source.metadata.youtube_metadata:
+                    youtube_meta = source.metadata.youtube_metadata
+                    if youtube_meta.channel_name:
+                        print(f"  YouTube Channel: {youtube_meta.channel_name}")
+                    if youtube_meta.video_id:
+                        print(f"  YouTube Video ID: {youtube_meta.video_id}")
+            if source.settings and source.settings.status:
+                print(f"  Status: {source.settings.status}")
+            print()
+        except NblmError as e:
+            print(f"✗ Failed to get source: {e}\n")
+    else:
+        print("  No sources available to get details\n")
+
+    # Test 5: Upload a local file as a source (optional)
     upload_path = os.getenv("NBLM_UPLOAD_FILE")
     if upload_path:
-        print("Test 4: Uploading file to the notebook...")
+        print("Test 5: Uploading file to the notebook...")
         path_obj = Path(upload_path)
         if not path_obj.exists() or not path_obj.is_file():
             print(f"✗ Upload path is not a file: {path_obj}")
@@ -130,23 +168,23 @@ def main() -> None:
                 traceback.print_exc()
     else:
         print(
-            "Test 4 skipped: set NBLM_UPLOAD_FILE to exercise upload_source_file manually.\n"
+            "Test 5 skipped: set NBLM_UPLOAD_FILE to exercise upload_source_file manually.\n"
         )
 
-    # # Test 4: Delete the created notebook
-    # print("Test 4: Deleting the test notebook...")
-    # try:
-    #     response = client.delete_notebooks([notebook.name])
-    #     print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
-    #     for name in response.deleted_notebooks:
-    #         print(f"  - {name}")
-    #     if response.failed_notebooks:
-    #         print(f"  Failed: {response.failed_notebooks}")
-    #     print()
-    # except NblmError as e:
-    #     print(f"✗ Failed to delete notebook: {e}\n")
+    # Test 6: Delete the created notebook
+    print("Test 6: Deleting the test notebook...")
+    try:
+        response = client.delete_notebooks([notebook.name])
+        print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
+        for name in response.deleted_notebooks:
+            print(f"  - {name}")
+        if response.failed_notebooks:
+            print(f"  Failed: {response.failed_notebooks}")
+        print()
+    except NblmError as e:
+        print(f"✗ Failed to delete notebook: {e}\n")
 
-    # print("All tests completed!")
+    print("All tests completed!")
 
 
 if __name__ == "__main__":

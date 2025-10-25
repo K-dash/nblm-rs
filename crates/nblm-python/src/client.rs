@@ -8,8 +8,8 @@ use crate::auth::PyTokenProvider;
 use crate::error::{map_nblm_error, map_runtime_error, IntoPyResult, PyResult};
 use crate::models::{
     BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
-    ListRecentlyViewedResponse, Notebook, TextSource, UploadSourceFileResponse, VideoSource,
-    WebSource,
+    ListRecentlyViewedResponse, Notebook, NotebookSource, TextSource, UploadSourceFileResponse,
+    VideoSource, WebSource,
 };
 use nblm_core::models::{TextContent, UserContent, VideoContent, WebContent};
 
@@ -305,6 +305,31 @@ impl NblmClient {
             let future = async move { inner.delete_sources(&notebook_id, source_names).await };
             let result = block_on_with_runtime(future)?;
             Python::with_gil(|py| BatchDeleteSourcesResponse::from_core(py, result))
+        })
+    }
+
+    /// Get a single source by its ID.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
+    ///     source_id: Source identifier to retrieve
+    ///
+    /// Returns:
+    ///     NotebookSource: The requested source information
+    ///
+    /// Raises:
+    ///     NblmError: If the request fails
+    fn get_source(
+        &self,
+        py: Python,
+        notebook_id: String,
+        source_id: String,
+    ) -> PyResult<NotebookSource> {
+        let inner = self.inner.clone();
+        py.allow_threads(move || {
+            let future = async move { inner.get_source(&notebook_id, &source_id).await };
+            let result = block_on_with_runtime(future)?;
+            Python::with_gil(|py| NotebookSource::from_core(py, result))
         })
     }
 }

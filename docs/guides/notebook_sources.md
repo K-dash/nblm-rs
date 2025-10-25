@@ -76,7 +76,7 @@ client = NblmClient(token_provider=provider, project_number="123456789012")
 result = client.upload_source_file(
     notebook_id="abc123",
     path=Path("./docs/brief.pdf"),
-    content_type="application/pdf",  # optional
+    content_type="application/pdf",
     display_name="Product Brief",    # optional
 )
 
@@ -84,6 +84,8 @@ print(result.source_id.id if result.source_id else "<missing>")
 ```
 
 Empty files are rejected client-side. If the API fails to ingest the file, an `nblm.NblmError` is raised with the server-provided message.
+
+Supported Content-Type: https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources?hl=en#supported-content-types
 
 ## Deleting Sources
 

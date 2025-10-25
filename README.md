@@ -45,7 +45,9 @@ Why use this CLI instead of direct API calls or web UI?
 | Add text content | `sources add --text` | Working | |
 | Add video (YouTube) | `sources add --video-url` | Working | Uses `youtubeUrl` field |
 | Add Google Drive | `sources add --drive-*` | Not Working | API returns HTTP 500 |
+| Upload file | `sources upload` | Working | |
 | Delete source(s) | `sources delete` | Working | |
+| Get source by ID | `sources get` | Working | |
 
 ### Audio Overview
 
@@ -187,10 +189,21 @@ nblm sources add \
   --text "Sample text" \
   --text-name "Notes"
 
+# Upload file as source
+nblm sources upload \
+  --notebook-id NOTEBOOK_ID \
+  --file /path/to/document.pdf \
+  --content-type "application/pdf"  # Optional, auto-detected if not specified
+
 # Delete sources
 nblm sources delete \
   --notebook-id NOTEBOOK_ID \
   --source-name "projects/.../notebooks/NB_ID/sources/SOURCE_ID"
+
+# Get source by ID
+nblm sources get \
+  --notebook-id NOTEBOOK_ID \
+  --source-id SOURCE_ID
 ```
 
 > [!WARNING]

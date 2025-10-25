@@ -5,6 +5,11 @@ on:
     types:
       - published
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag version (e.g., v0.1.3)"
+        required: false
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
@@ -22,7 +27,12 @@ jobs:
       - name: Verify tag matches crate version
         id: verify
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG_VERSION="${{ inputs.tag }}"
+            TAG_VERSION="${TAG_VERSION#v}"
+          else
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          fi
           CLI_VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name=="nblm-cli") | .version')
           CORE_VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name=="nblm-core") | .version')
           echo "Tag version: ${TAG_VERSION}"

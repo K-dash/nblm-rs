@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING
 from .nblm import (
     DEFAULT_ENV_TOKEN_KEY,
     DEFAULT_GCLOUD_BINARY,
+    BatchCreateSourcesResponse,
     BatchDeleteNotebooksResponse,
+    BatchDeleteSourcesResponse,
     EnvTokenProvider,
     GcloudTokenProvider,
     ListRecentlyViewedResponse,
@@ -22,6 +24,9 @@ from .nblm import (
     NotebookSourceMetadata,
     NotebookSourceSettings,
     NotebookSourceYoutubeMetadata,
+    TextSource,
+    VideoSource,
+    WebSource,
 )
 
 __version__ = "0.1.0"
@@ -29,7 +34,9 @@ __version__ = "0.1.0"
 __all__ = [
     "DEFAULT_ENV_TOKEN_KEY",
     "DEFAULT_GCLOUD_BINARY",
+    "BatchCreateSourcesResponse",
     "BatchDeleteNotebooksResponse",
+    "BatchDeleteSourcesResponse",
     "EnvTokenProvider",
     "GcloudTokenProvider",
     "ListRecentlyViewedResponse",
@@ -42,4 +49,7 @@ __all__ = [
     "NotebookSourceMetadata",
     "NotebookSourceSettings",
     "NotebookSourceYoutubeMetadata",
+    "TextSource",
+    "VideoSource",
+    "WebSource",
 ]

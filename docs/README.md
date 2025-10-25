@@ -15,6 +15,10 @@ Comprehensive documentation for the NotebookLM Enterprise API client.
   - Environment variable tokens
   - Service account (read-only)
   - Troubleshooting
+- **[Notebook Sources](guides/notebook_sources.md)** - Manage notebook sources via Python bindings
+  - Add web, text, and video sources
+  - Delete existing sources
+  - Understand API error handling
 
 ## API Reference
 

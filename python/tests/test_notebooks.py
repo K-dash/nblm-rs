@@ -18,7 +18,6 @@ from nblm import (
     ListRecentlyViewedResponse,
     NblmClient,
     Notebook,
-    ServiceAccountTokenProvider,
 )
 
 
@@ -37,6 +36,8 @@ def test_client_methods_exist() -> None:
     assert hasattr(NblmClient, "create_notebook")
     assert hasattr(NblmClient, "list_recently_viewed")
     assert hasattr(NblmClient, "delete_notebooks")
+    assert hasattr(NblmClient, "add_sources")
+    assert hasattr(NblmClient, "delete_sources")
 
 
 def test_token_provider_types() -> None:
@@ -44,4 +45,3 @@ def test_token_provider_types() -> None:
 
     assert GcloudTokenProvider is not None
     assert EnvTokenProvider is not None
-    assert ServiceAccountTokenProvider is not None

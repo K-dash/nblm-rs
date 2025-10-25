@@ -3,7 +3,11 @@ use std::sync::Arc;
 
 use crate::auth::PyTokenProvider;
 use crate::error::{map_runtime_error, IntoPyResult, PyResult};
-use crate::models::{BatchDeleteNotebooksResponse, ListRecentlyViewedResponse, Notebook};
+use crate::models::{
+    BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
+    ListRecentlyViewedResponse, Notebook, TextSource, VideoSource, WebSource,
+};
+use nblm_core::models::{TextContent, UserContent, VideoContent, WebContent};
 use std::future::Future;
 
 #[pyclass(module = "nblm")]
@@ -108,6 +112,107 @@ impl NblmClient {
                 // All notebooks were deleted successfully if we reach here
                 BatchDeleteNotebooksResponse::from_core(py, result, names_clone, vec![])
             })
+        })
+    }
+
+    /// Add sources to a notebook.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
+    ///     web_sources: Optional list of WebSource objects
+    ///     text_sources: Optional list of TextSource objects
+    ///     video_sources: Optional list of VideoSource objects
+    ///
+    /// Returns:
+    ///     BatchCreateSourcesResponse: API response containing source ingestion results
+    ///
+    /// Raises:
+    ///     NblmError: If the request fails or validation fails
+    #[pyo3(signature = (notebook_id, web_sources=None, text_sources=None, video_sources=None))]
+    fn add_sources(
+        &self,
+        py: Python,
+        notebook_id: String,
+        web_sources: Option<Vec<WebSource>>,
+        text_sources: Option<Vec<TextSource>>,
+        video_sources: Option<Vec<VideoSource>>,
+    ) -> PyResult<BatchCreateSourcesResponse> {
+        let inner = self.inner.clone();
+        py.allow_threads(move || {
+            let future = async move {
+                let mut contents = Vec::<UserContent>::new();
+
+                if let Some(sources) = web_sources {
+                    for source in sources {
+                        contents.push(UserContent::Web {
+                            web_content: WebContent {
+                                url: source.url,
+                                source_name: source.name,
+                            },
+                        });
+                    }
+                }
+
+                if let Some(sources) = text_sources {
+                    for source in sources {
+                        if source.content.trim().is_empty() {
+                            return Err(nblm_core::Error::validation(
+                                "text content cannot be empty",
+                            ));
+                        }
+                        contents.push(UserContent::Text {
+                            text_content: TextContent {
+                                content: source.content,
+                                source_name: source.name,
+                            },
+                        });
+                    }
+                }
+
+                if let Some(sources) = video_sources {
+                    for source in sources {
+                        contents.push(UserContent::Video {
+                            video_content: VideoContent { url: source.url },
+                        });
+                    }
+                }
+
+                if contents.is_empty() {
+                    return Err(nblm_core::Error::validation(
+                        "at least one source must be provided",
+                    ));
+                }
+
+                inner.add_sources(&notebook_id, contents).await
+            };
+
+            let result = block_on_with_runtime(future)?;
+            Python::with_gil(|py| BatchCreateSourcesResponse::from_core(py, result))
+        })
+    }
+
+    /// Delete sources from a notebook.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
+    ///     source_names: List of full source resource names to delete
+    ///
+    /// Returns:
+    ///     BatchDeleteSourcesResponse: API response (typically empty)
+    ///
+    /// Raises:
+    ///     NblmError: If the request fails
+    fn delete_sources(
+        &self,
+        py: Python,
+        notebook_id: String,
+        source_names: Vec<String>,
+    ) -> PyResult<BatchDeleteSourcesResponse> {
+        let inner = self.inner.clone();
+        py.allow_threads(move || {
+            let future = async move { inner.delete_sources(&notebook_id, source_names).await };
+            let result = block_on_with_runtime(future)?;
+            Python::with_gil(|py| BatchDeleteSourcesResponse::from_core(py, result))
         })
     }
 }

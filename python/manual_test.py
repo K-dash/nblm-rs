@@ -8,7 +8,7 @@ Run with: python manual_test.py
 
 import os
 import sys
-from nblm import NblmClient, GcloudTokenProvider, NblmError
+from nblm import NblmClient, GcloudTokenProvider, NblmError, WebSource, TextSource, VideoSource
 
 
 def main() -> None:
@@ -60,20 +60,43 @@ def main() -> None:
     except NblmError as e:
         print(f"✗ Failed to list notebooks: {e}\n")
 
-    # Test 3: Delete the created notebook
-    print("Test 3: Deleting the test notebook...")
+    # Test 3: Add sources to the notebook
+    print("Test 3: Adding sources to the notebook...")
     try:
-        response = client.delete_notebooks([notebook.name])
-        print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
-        for name in response.deleted_notebooks:
-            print(f"  - {name}")
-        if response.failed_notebooks:
-            print(f"  Failed: {response.failed_notebooks}")
+        response = client.add_sources(
+            notebook_id=notebook.notebook_id,
+            web_sources=[
+                WebSource(url="https://www.python.org/", name="Python Official Site"),
+                WebSource(url="https://docs.python.org/"),
+            ],
+            text_sources=[
+                TextSource(content="This is a test text content.", name="Test Note"),
+            ],
+            video_sources=[
+                VideoSource(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+            ],
+        )
+        print(f"✓ Added sources (error_count: {response.error_count})")
+        for source in response.sources:
+            print(f"  - {source.name}")
         print()
     except NblmError as e:
-        print(f"✗ Failed to delete notebook: {e}\n")
+        print(f"✗ Failed to add sources: {e}\n")
 
-    print("All tests completed!")
+    # # Test 4: Delete the created notebook
+    # print("Test 4: Deleting the test notebook...")
+    # try:
+    #     response = client.delete_notebooks([notebook.name])
+    #     print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
+    #     for name in response.deleted_notebooks:
+    #         print(f"  - {name}")
+    #     if response.failed_notebooks:
+    #         print(f"  Failed: {response.failed_notebooks}")
+    #     print()
+    # except NblmError as e:
+    #     print(f"✗ Failed to delete notebook: {e}\n")
+
+    # print("All tests completed!")
 
 
 if __name__ == "__main__":

@@ -64,7 +64,10 @@ jobs:
           sccache: "true"
           manylinux: auto
           working-directory: python
-          docker-options: "-v ${{ github.workspace }}/crates:/crates"
+          # Forward CFLAGS so ring's ARM assembly sees __ARM_ARCH when cross-compiling
+          docker-options: >-
+            -v ${{ github.workspace }}/crates:/crates
+            ${{ matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64' && '-e CFLAGS_aarch64_unknown_linux_gnu=-D__ARM_ARCH=8 -e CFLAGS_aarch64-unknown-linux-gnu=-D__ARM_ARCH=8' || '' }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -88,7 +91,11 @@ jobs:
           command: sdist
           args: --out dist
           working-directory: python
-          docker-options: "-v ${{ github.workspace }}/crates:/crates"
+          # sdist always runs on Linux, so always pass the ARM CFLAGS override
+          docker-options: >-
+            -v ${{ github.workspace }}/crates:/crates
+            -e CFLAGS_aarch64_unknown_linux_gnu=-D__ARM_ARCH=8
+            -e CFLAGS_aarch64-unknown-linux-gnu=-D__ARM_ARCH=8
 
       - name: Upload sdist
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

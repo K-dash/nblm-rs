@@ -6,7 +6,7 @@ use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoConte
 use nblm_core::NblmClient;
 
 use crate::util::{
-    io::{emit_sources, emit_uploaded_source},
+    io::{emit_source, emit_sources, emit_uploaded_source},
     validate::{pair_with_names, validate_url},
 };
 
@@ -15,6 +15,7 @@ pub enum Command {
     Add(AddArgs),
     Delete(DeleteArgs),
     Upload(UploadArgs),
+    Get(GetArgs),
 }
 
 #[derive(Args)]
@@ -69,6 +70,15 @@ pub struct UploadArgs {
     /// This flag is kept for forward compatibility but currently non-functional.
     #[arg(long = "display-name", value_name = "NAME")]
     pub display_name: Option<String>,
+}
+
+#[derive(Args)]
+pub struct GetArgs {
+    #[arg(long, value_name = "ID", help = "Notebook ID containing the source")]
+    pub notebook_id: String,
+
+    #[arg(long, value_name = "ID", help = "Source ID to retrieve")]
+    pub source_id: String,
 }
 
 pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<()> {
@@ -237,6 +247,17 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
                 &response,
                 json_mode,
             )?;
+        }
+        Command::Get(args) => {
+            let source = client
+                .get_source(&args.notebook_id, &args.source_id)
+                .await?;
+
+            if json_mode {
+                crate::util::io::emit_json(serde_json::json!(&source), json_mode);
+            } else {
+                emit_source(&source);
+            }
         }
     }
     Ok(())

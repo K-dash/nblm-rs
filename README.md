@@ -24,7 +24,7 @@ Why use this CLI instead of direct API calls or web UI?
 > [!NOTE]
 > Windows is not supported.
 
-## Features (Verified as of 2025-10-19)
+## Features (Verified as of 2025-10-25)
 
 > [!NOTE]
 > The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
@@ -45,7 +45,9 @@ Why use this CLI instead of direct API calls or web UI?
 | Add text content | `sources add --text` | Working | |
 | Add video (YouTube) | `sources add --video-url` | Working | Uses `youtubeUrl` field |
 | Add Google Drive | `sources add --drive-*` | Not Working | API returns HTTP 500 |
+| Upload file | `sources upload` | Working | |
 | Delete source(s) | `sources delete` | Working | |
+| Get source by ID | `sources get` | Working | |
 
 ### Audio Overview
 
@@ -187,14 +189,25 @@ nblm sources add \
   --text "Sample text" \
   --text-name "Notes"
 
+# Upload file as source
+nblm sources upload \
+  --notebook-id NOTEBOOK_ID \
+  --file /path/to/document.pdf \
+  --content-type "application/pdf"  # Optional, auto-detected if not specified
+
 # Delete sources
 nblm sources delete \
   --notebook-id NOTEBOOK_ID \
   --source-name "projects/.../notebooks/NB_ID/sources/SOURCE_ID"
+
+# Get source by ID
+nblm sources get \
+  --notebook-id NOTEBOOK_ID \
+  --source-id SOURCE_ID
 ```
 
 > [!WARNING]
-> Google Drive source addition currently returns HTTP 500 Internal Server Error. This is an API-side issue as of 2025-10-19.
+> Google Drive source addition currently returns HTTP 500 Internal Server Error. This is an API-side issue as of 2025-10-25.
 
 ### Audio Overview
 
@@ -207,7 +220,7 @@ nblm audio delete --notebook-id NOTEBOOK_ID
 ```
 
 > [!NOTE]
-> Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts empty request body as of 2025-10-19. Language and other settings must be configured through the NotebookLM UI.
+> Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts empty request body as of 2025-10-25. Language and other settings must be configured through the NotebookLM UI.
 
 ### Sharing
 

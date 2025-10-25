@@ -9,6 +9,7 @@ from ._models import (
     BatchDeleteSourcesResponse,
     ListRecentlyViewedResponse,
     Notebook,
+    NotebookSource,
     TextSource,
     UploadSourceFileResponse,
     VideoSource,
@@ -150,4 +151,23 @@ class NblmClient:
 
         Raises:
             NblmError: If the API request fails
+        """
+
+    def get_source(
+        self,
+        notebook_id: str,
+        source_id: str,
+    ) -> NotebookSource:
+        """
+        Get a single source by its ID.
+
+        Args:
+            notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
+            source_id: Source identifier to retrieve
+
+        Returns:
+            NotebookSource: The requested source information
+
+        Raises:
+            NblmError: If the request fails
         """

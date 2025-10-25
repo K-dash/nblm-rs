@@ -1,7 +1,7 @@
 use anyhow::Result;
 use nblm_core::models::{
-    BatchCreateSourcesResponse, ListRecentlyViewedResponse, Notebook, ShareResponse,
-    UploadSourceFileResponse,
+    BatchCreateSourcesResponse, ListRecentlyViewedResponse, Notebook, NotebookSource,
+    ShareResponse, UploadSourceFileResponse,
 };
 use serde_json::json;
 
@@ -78,6 +78,41 @@ pub fn emit_uploaded_source(
 pub fn emit_share(response: &ShareResponse, json_mode: bool) -> Result<()> {
     emit_json(json!(response), json_mode);
     Ok(())
+}
+
+pub fn emit_source(source: &NotebookSource) {
+    println!("Source Details:");
+    println!("  Name: {}", source.name);
+    if let Some(title) = &source.title {
+        println!("  Title: {}", title);
+    }
+    if let Some(source_id) = &source.source_id {
+        if let Some(id) = &source_id.id {
+            println!("  Source ID: {}", id);
+        }
+    }
+    if let Some(metadata) = &source.metadata {
+        println!("  Metadata:");
+        if let Some(timestamp) = &metadata.source_added_timestamp {
+            println!("    Added: {}", timestamp);
+        }
+        if let Some(word_count) = &metadata.word_count {
+            println!("    Word Count: {}", word_count);
+        }
+        if let Some(youtube_metadata) = &metadata.youtube_metadata {
+            if let Some(channel_name) = &youtube_metadata.channel_name {
+                println!("    YouTube Channel: {}", channel_name);
+            }
+            if let Some(video_id) = &youtube_metadata.video_id {
+                println!("    YouTube Video ID: {}", video_id);
+            }
+        }
+    }
+    if let Some(settings) = &source.settings {
+        if let Some(status) = &settings.status {
+            println!("  Status: {}", status);
+        }
+    }
 }
 
 pub fn emit_json(value: serde_json::Value, json_mode: bool) {

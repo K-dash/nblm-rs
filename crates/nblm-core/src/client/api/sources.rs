@@ -110,4 +110,37 @@ impl NblmClient {
             .request_binary(Method::POST, url, headers, bytes)
             .await
     }
+
+    /// Get a single source by its ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `notebook_id` - The ID of the notebook containing the source
+    /// * `source_id` - The ID of the source to retrieve
+    ///
+    /// # Returns
+    ///
+    /// The requested source information
+    pub async fn get_source(
+        &self,
+        notebook_id: &str,
+        source_id: &str,
+    ) -> Result<crate::models::NotebookSource> {
+        if notebook_id.trim().is_empty() {
+            return Err(Error::validation("notebook_id cannot be empty"));
+        }
+        if source_id.trim().is_empty() {
+            return Err(Error::validation("source_id cannot be empty"));
+        }
+
+        let path = format!(
+            "{}/sources/{}",
+            self.url_builder.notebook_path(notebook_id),
+            source_id
+        );
+        let url = self.url_builder.build_url(&path)?;
+        self.http
+            .request_json::<(), _>(Method::GET, url, None::<&()>)
+            .await
+    }
 }

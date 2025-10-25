@@ -357,7 +357,7 @@ impl NblmClient {
         request: Option<AudioOverviewRequest>,
     ) -> PyResult<AudioOverviewResponse> {
         let inner = self.inner.clone();
-        let req = request.unwrap_or_else(AudioOverviewRequest::new);
+        let req = request.unwrap_or_default();
         py.allow_threads(move || {
             let future = async move {
                 inner

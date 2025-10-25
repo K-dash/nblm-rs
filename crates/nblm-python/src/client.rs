@@ -7,9 +7,9 @@ use std::sync::Arc;
 use crate::auth::PyTokenProvider;
 use crate::error::{map_nblm_error, map_runtime_error, IntoPyResult, PyResult};
 use crate::models::{
-    BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
-    ListRecentlyViewedResponse, Notebook, NotebookSource, TextSource, UploadSourceFileResponse,
-    VideoSource, WebSource,
+    AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesResponse,
+    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, ListRecentlyViewedResponse, Notebook,
+    NotebookSource, TextSource, UploadSourceFileResponse, VideoSource, WebSource,
 };
 use nblm_core::models::{TextContent, UserContent, VideoContent, WebContent};
 
@@ -330,6 +330,60 @@ impl NblmClient {
             let future = async move { inner.get_source(&notebook_id, &source_id).await };
             let result = block_on_with_runtime(future)?;
             Python::with_gil(|py| NotebookSource::from_core(py, result))
+        })
+    }
+
+    /// Create an audio overview for a notebook.
+    ///
+    /// Creates an audio overview (podcast-style discussion) from the notebook's sources.
+    ///
+    /// Note: The current API only accepts an empty request. Configuration options
+    /// like source selection and language are not yet supported via the API.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
+    ///     request: Audio overview request (currently must be empty)
+    ///
+    /// Returns:
+    ///     AudioOverviewResponse: Response containing the audio overview name and state
+    ///
+    /// Raises:
+    ///     NblmError: If the request fails
+    #[pyo3(signature = (notebook_id, request=None))]
+    fn create_audio_overview(
+        &self,
+        py: Python,
+        notebook_id: String,
+        request: Option<AudioOverviewRequest>,
+    ) -> PyResult<AudioOverviewResponse> {
+        let inner = self.inner.clone();
+        let req = request.unwrap_or_else(AudioOverviewRequest::new);
+        py.allow_threads(move || {
+            let future = async move {
+                inner
+                    .create_audio_overview(&notebook_id, req.to_core())
+                    .await
+            };
+            let result = block_on_with_runtime(future)?;
+            Python::with_gil(|py| AudioOverviewResponse::from_core(py, result))
+        })
+    }
+
+    /// Delete the audio overview for a notebook.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
+    ///
+    /// Returns:
+    ///     None
+    ///
+    /// Raises:
+    ///     NblmError: If the request fails
+    fn delete_audio_overview(&self, py: Python, notebook_id: String) -> PyResult<()> {
+        let inner = self.inner.clone();
+        py.allow_threads(move || {
+            let future = async move { inner.delete_audio_overview(&notebook_id).await };
+            block_on_with_runtime(future)
         })
     }
 }

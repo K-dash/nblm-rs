@@ -129,3 +129,22 @@ class BatchDeleteNotebooksResponse:
 
     deleted_notebooks: list[str]
     failed_notebooks: list[str]
+
+class AudioOverviewRequest:
+    """Request for creating an audio overview.
+
+    Note: As of the current API version, this request must be empty.
+    All fields are reserved for future use.
+    """
+
+    def __init__(self) -> None:
+        """Create an empty AudioOverviewRequest."""
+
+class AudioOverviewResponse:
+    """Response from creating or getting an audio overview."""
+
+    audio_overview_id: str | None
+    name: str | None
+    status: str | None
+    generation_options: Any
+    extra: dict[str, Any]

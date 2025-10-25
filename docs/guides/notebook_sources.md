@@ -87,6 +87,45 @@ Empty files are rejected client-side. If the API fails to ingest the file, an `n
 
 Supported Content-Type: https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources?hl=en#supported-content-types
 
+## Getting Source Details
+
+Use `NblmClient.get_source()` to retrieve details about a specific source by its ID.
+
+```python
+source = client.get_source(
+    notebook_id="abc123",
+    source_id="source-1"  # Just the source ID, not the full resource name
+)
+
+print(f"Source: {source.name}")
+print(f"Title: {source.title}")
+
+if source.metadata:
+    print(f"Added: {source.metadata.source_added_timestamp}")
+    print(f"Word count: {source.metadata.word_count}")
+
+    # For YouTube sources
+    if source.metadata.youtube_metadata:
+        print(f"Channel: {source.metadata.youtube_metadata.channel_name}")
+        print(f"Video ID: {source.metadata.youtube_metadata.video_id}")
+
+if source.settings:
+    print(f"Status: {source.settings.status}")
+```
+
+### CLI example
+
+```bash
+nblm sources get \
+  --notebook-id abc123 \
+  --source-id source-1
+
+# With JSON output
+nblm --json sources get \
+  --notebook-id abc123 \
+  --source-id source-1
+```
+
 ## Deleting Sources
 
 Use `NblmClient.delete_sources()` to remove previously added sources by their full resource names.
@@ -109,5 +148,5 @@ print(response.extra)  # Typically empty, includes API metadata if present
 
 ## Related Commands
 
-- CLI equivalent: `nblm sources add ...` and `nblm sources delete ...`
+- CLI equivalent: `nblm sources add ...`, `nblm sources get ...`, and `nblm sources delete ...`
 - See `docs/guides/authentication.md` for token setup.

@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from nblm import (
+    AudioOverviewRequest,
     GcloudTokenProvider,
     NblmClient,
     NblmError,
@@ -130,7 +131,44 @@ def main() -> None:
     else:
         print("  No sources available to get details\n")
 
-    # Test 5: Upload a local file as a source (optional)
+    # Test 5: Create audio overview
+    print("Test 5: Creating audio overview...")
+    try:
+        # Create audio overview with empty request (current API requirement)
+        audio_response = client.create_audio_overview(
+            notebook_id=notebook.notebook_id,
+            request=AudioOverviewRequest()
+        )
+        print(f"✓ Audio overview created:")
+        
+        # Debug information
+        print(f"  [DEBUG] audio_overview_id: {audio_response.audio_overview_id}")
+        print(f"  [DEBUG] name: {audio_response.name}")
+        print(f"  [DEBUG] status: {audio_response.status}")
+        print(f"  [DEBUG] generation_options: {audio_response.generation_options}")
+        print(f"  [DEBUG] extra keys: {list(audio_response.extra.keys()) if hasattr(audio_response.extra, 'keys') else 'N/A'}")
+        print(f"  [DEBUG] full repr: {repr(audio_response)}")
+        
+        # Original display
+        if audio_response.audio_overview_id:
+            print(f"  Audio Overview ID: {audio_response.audio_overview_id}")
+        if audio_response.name:
+            print(f"  Name: {audio_response.name}")
+        if audio_response.status:
+            print(f"  Status: {audio_response.status}")
+        print()
+        
+        # Test deleting the audio overview
+        print("Test 5b: Deleting audio overview...")
+        try:
+            client.delete_audio_overview(notebook_id=notebook.notebook_id)
+            print("✓ Audio overview deleted successfully\n")
+        except NblmError as e:
+            print(f"✗ Failed to delete audio overview: {e}\n")
+    except NblmError as e:
+        print(f"✗ Failed to create audio overview: {e}\n")
+
+    # Test 6: Upload a local file as a source (optional)
     upload_path = os.getenv("NBLM_UPLOAD_FILE")
     if upload_path:
         print("Test 5: Uploading file to the notebook...")
@@ -168,21 +206,21 @@ def main() -> None:
                 traceback.print_exc()
     else:
         print(
-            "Test 5 skipped: set NBLM_UPLOAD_FILE to exercise upload_source_file manually.\n"
+            "Test 6 skipped: set NBLM_UPLOAD_FILE to exercise upload_source_file manually.\n"
         )
 
-    # Test 6: Delete the created notebook
-    print("Test 6: Deleting the test notebook...")
-    try:
-        response = client.delete_notebooks([notebook.name])
-        print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
-        for name in response.deleted_notebooks:
-            print(f"  - {name}")
-        if response.failed_notebooks:
-            print(f"  Failed: {response.failed_notebooks}")
-        print()
-    except NblmError as e:
-        print(f"✗ Failed to delete notebook: {e}\n")
+    # # Test 7: Delete the created notebook
+    # print("Test 7: Deleting the test notebook...")
+    # try:
+    #     response = client.delete_notebooks([notebook.name])
+    #     print(f"✓ Deleted {len(response.deleted_notebooks)} notebook(s)")
+    #     for name in response.deleted_notebooks:
+    #         print(f"  - {name}")
+    #     if response.failed_notebooks:
+    #         print(f"  Failed: {response.failed_notebooks}")
+    #     print()
+    # except NblmError as e:
+    #     print(f"✗ Failed to delete notebook: {e}\n")
 
     print("All tests completed!")
 

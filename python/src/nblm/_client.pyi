@@ -4,6 +4,8 @@ import os
 
 from ._auth import TokenProvider
 from ._models import (
+    AudioOverviewRequest,
+    AudioOverviewResponse,
     BatchCreateSourcesResponse,
     BatchDeleteNotebooksResponse,
     BatchDeleteSourcesResponse,
@@ -167,6 +169,44 @@ class NblmClient:
 
         Returns:
             NotebookSource: The requested source information
+
+        Raises:
+            NblmError: If the request fails
+        """
+
+    def create_audio_overview(
+        self,
+        notebook_id: str,
+        request: AudioOverviewRequest | None = None,
+    ) -> AudioOverviewResponse:
+        """
+        Create an audio overview for a notebook.
+
+        Creates an audio overview (podcast-style discussion) from the notebook's sources.
+
+        Note: The current API only accepts an empty request. Configuration options
+        like source selection and language are not yet supported via the API.
+
+        Args:
+            notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
+            request: Audio overview request (currently must be empty)
+
+        Returns:
+            AudioOverviewResponse: Response containing the audio overview name and status
+
+        Raises:
+            NblmError: If the request fails
+        """
+
+    def delete_audio_overview(self, notebook_id: str) -> None:
+        """
+        Delete the audio overview for a notebook.
+
+        Args:
+            notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
+
+        Returns:
+            None
 
         Raises:
             NblmError: If the request fails

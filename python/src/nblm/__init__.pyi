@@ -9,6 +9,8 @@ from ._auth import (
 )
 from ._client import NblmClient
 from ._models import (
+    AudioOverviewRequest,
+    AudioOverviewResponse,
     BatchCreateSourcesResponse,
     BatchDeleteNotebooksResponse,
     BatchDeleteSourcesResponse,
@@ -31,6 +33,8 @@ __version__: str
 __all__ = [
     "DEFAULT_ENV_TOKEN_KEY",
     "DEFAULT_GCLOUD_BINARY",
+    "AudioOverviewRequest",
+    "AudioOverviewResponse",
     "BatchCreateSourcesResponse",
     "BatchDeleteNotebooksResponse",
     "BatchDeleteSourcesResponse",

@@ -93,6 +93,9 @@ mod tests {
             name: None,
             title: "Test".to_string(),
             notebook_id: Some("nb123".to_string()),
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         assert_eq!(extract_notebook_id(&notebook), "nb123");
@@ -104,6 +107,9 @@ mod tests {
             name: Some("projects/123/locations/global/notebooks/nb456".to_string()),
             title: "Test".to_string(),
             notebook_id: None,
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         assert_eq!(extract_notebook_id(&notebook), "nb456");
@@ -115,6 +121,9 @@ mod tests {
             name: Some("projects/123/locations/global/notebooks/from-name".to_string()),
             title: "Test".to_string(),
             notebook_id: Some("from-field".to_string()),
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         assert_eq!(extract_notebook_id(&notebook), "from-field");
@@ -126,6 +135,9 @@ mod tests {
             name: None,
             title: "Test".to_string(),
             notebook_id: None,
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         assert_eq!(extract_notebook_id(&notebook), "");
@@ -137,6 +149,9 @@ mod tests {
             name: Some("projects/123/locations/global/notebooks/".to_string()),
             title: "Test".to_string(),
             notebook_id: None,
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         assert_eq!(extract_notebook_id(&notebook), "");
@@ -148,6 +163,9 @@ mod tests {
             name: Some("projects/123/locations/global/notebooks//weird".to_string()),
             title: "Test".to_string(),
             notebook_id: None,
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
             extra: Default::default(),
         };
         // rsplit('/').next() will return "weird"

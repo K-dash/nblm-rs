@@ -69,11 +69,11 @@ jobs:
         uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --manifest-path ../crates/nblm-python/Cargo.toml
+          args: --release --out dist
           sccache: "true"
           manylinux: auto
           working-directory: python
-          # Mount crates directory and pass ARM CFLAGS when cross-compiling in Docker
+          # Rely on pyproject.toml (project-name override) and mount crates directory, forwarding ARM CFLAGS when cross-compiling in Docker
           docker-options: >-
             -v ${{ github.workspace }}/crates:/crates
             ${{ matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64' && '-e CFLAGS_aarch64_unknown_linux_gnu=-D__ARM_ARCH=8 -e CFLAGS_aarch64-unknown-linux-gnu=-D__ARM_ARCH=8' || '' }}

@@ -172,5 +172,5 @@ args = [
     "-euo",
     "pipefail",
     "-c",
-    "uv venv && uv sync && touch .venv/timestamp.txt",
+    "uv venv --clear && uv sync --frozen && touch .venv/timestamp.txt",
 ]

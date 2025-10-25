@@ -100,10 +100,14 @@ impl NblmClient {
         notebook_names: Vec<String>,
     ) -> PyResult<BatchDeleteNotebooksResponse> {
         let inner = self.inner.clone();
+        let names_clone = notebook_names.clone();
         py.allow_threads(move || {
             let future = async move { inner.delete_notebooks(notebook_names).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| BatchDeleteNotebooksResponse::from_core(py, result))
+            Python::with_gil(|py| {
+                // All notebooks were deleted successfully if we reach here
+                BatchDeleteNotebooksResponse::from_core(py, result, names_clone, vec![])
+            })
         })
     }
 }
@@ -117,7 +121,7 @@ where
         return handle.block_on(future).into_py_result();
     }
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .map_err(map_runtime_error)?;

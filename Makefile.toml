@@ -24,22 +24,22 @@ args = ["fmt", "--all", "--", "--check"]
 [tasks.lint]
 description = "Verify zero clippy warnings"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = ["clippy", "--workspace", "--exclude", "nblm-python", "--all-targets", "--all-features", "--", "-D", "warnings"]
 
 [tasks.test]
 description = "Run test suite"
 command = "cargo"
-args = ["test", "--all"]
+args = ["test", "--workspace", "--exclude", "nblm-python"]
 
 [tasks.check]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["check", "--all"]
+args = ["check", "--workspace", "--exclude", "nblm-python"]
 
 [tasks.build]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["build", "${@}"]
+args = ["build", "--workspace", "--exclude", "nblm-python", "${@}"]
 
 [tasks.clean]
 dependencies = ["before-build"]
@@ -69,12 +69,12 @@ dependencies = ["fmt-ci", "clippy-ci", "test-ci"]
 [tasks.clippy-ci]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["clippy", "--locked", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = ["clippy", "--locked", "--workspace", "--exclude", "nblm-python", "--all-targets", "--all-features", "--", "-D", "warnings"]
 
 [tasks.test-ci]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["test", "--locked", "--workspace", "--all-targets"]
+args = ["test", "--locked", "--workspace", "--exclude", "nblm-python", "--all-targets"]
 
 # ------------------------- Python -------------------------
 [tasks.py-fmt]

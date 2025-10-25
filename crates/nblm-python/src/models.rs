@@ -111,8 +111,9 @@ impl ListRecentlyViewedResponse {
         response: nblm_core::models::ListRecentlyViewedResponse,
     ) -> PyResult<Self> {
         let notebooks_list = PyList::empty(py);
-        for notebook_value in response.notebooks {
-            notebooks_list.append(json_value_to_py(py, &notebook_value)?)?;
+        for notebook in response.notebooks {
+            let py_notebook = Notebook::from_core(py, notebook)?;
+            notebooks_list.append(py_notebook)?;
         }
         Ok(Self {
             notebooks: notebooks_list.unbind(),
@@ -123,26 +124,45 @@ impl ListRecentlyViewedResponse {
 #[pyclass(module = "nblm")]
 pub struct BatchDeleteNotebooksResponse {
     #[pyo3(get)]
-    pub extra: Py<PyDict>,
+    pub deleted_notebooks: Py<PyList>,
+    #[pyo3(get)]
+    pub failed_notebooks: Py<PyList>,
 }
 
 #[pymethods]
 impl BatchDeleteNotebooksResponse {
-    pub fn __repr__(&self) -> String {
-        "BatchDeleteNotebooksResponse()".to_string()
+    pub fn __repr__(&self, py: Python) -> String {
+        let deleted_count = self.deleted_notebooks.bind(py).len();
+        let failed_count = self.failed_notebooks.bind(py).len();
+        format!(
+            "BatchDeleteNotebooksResponse(deleted={}, failed={})",
+            deleted_count, failed_count
+        )
     }
 
-    pub fn __str__(&self) -> String {
-        self.__repr__()
+    pub fn __str__(&self, py: Python) -> String {
+        self.__repr__(py)
     }
 }
 
 impl BatchDeleteNotebooksResponse {
     pub fn from_core(
         py: Python,
-        response: nblm_core::models::BatchDeleteNotebooksResponse,
+        _response: nblm_core::models::BatchDeleteNotebooksResponse,
+        deleted: Vec<String>,
+        failed: Vec<String>,
     ) -> PyResult<Self> {
-        let extra = extra_to_pydict(py, &response.extra)?;
-        Ok(Self { extra })
+        let deleted_list = PyList::empty(py);
+        for name in deleted {
+            deleted_list.append(name)?;
+        }
+        let failed_list = PyList::empty(py);
+        for name in failed {
+            failed_list.append(name)?;
+        }
+        Ok(Self {
+            deleted_notebooks: deleted_list.unbind(),
+            failed_notebooks: failed_list.unbind(),
+        })
     }
 }

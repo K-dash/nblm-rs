@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
@@ -36,17 +36,6 @@ pub struct GlobalArgs {
     #[arg(long)]
     pub token: Option<String>,
 
-    #[arg(long, value_name = "PATH")]
-    pub sa_key: Option<PathBuf>,
-    #[arg(
-        long,
-        value_name = "JSON",
-        help = "Service Account key JSON string (consider --sa-key-stdin or GOOGLE_APPLICATION_CREDENTIALS_JSON to avoid shell history)"
-    )]
-    pub sa_key_json: Option<String>,
-    #[arg(long, help = "Read Service Account key JSON from stdin")]
-    pub sa_key_stdin: bool,
-
     #[arg(long, global = true)]
     pub json: bool,
 
@@ -55,11 +44,6 @@ pub struct GlobalArgs {
 
     #[arg(long, env = "NBLM_ACCESS_TOKEN", hide_env_values = true)]
     pub env_token: Option<String>,
-
-    #[arg(long, value_name = "DURATION", value_parser = parse_duration)]
-    pub sa_token_leeway: Option<Duration>,
-    #[arg(long, value_name = "DURATION", value_parser = parse_duration)]
-    pub sa_http_timeout: Option<Duration>,
 
     /// (hidden) Override Discovery Engine API base URL. For tests only.
     /// Also configurable via env NBLM_BASE_URL.
@@ -84,7 +68,6 @@ pub enum Command {
 pub enum AuthMethod {
     Gcloud,
     Env,
-    Sa,
 }
 
 fn parse_duration(input: &str) -> std::result::Result<Duration, String> {

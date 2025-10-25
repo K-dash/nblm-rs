@@ -319,3 +319,27 @@ impl MockApi {
             .await;
     }
 }
+
+
+/// Stub for POST /api/v1/audio
+    /// This stub responds with a 201 Created status and an AudioOverviewResponse body.
+    /// It expects the request body to contain the audio's name.
+    pub async fn stub_audio_create(&self, audio_name: &str) -> MockGuard {
+        let expected_request_body = json!({
+            "name": audio_name,
+        });
+        let response_body = json!({
+            "id": "test-id",
+            "name": audio_name,
+            "status": "Created"
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/v1/audio"))
+            .and(header("authorization", "Bearer DUMMY_TOKEN"))
+            .and(header_exists("user-agent"))
+            .and(body_json(expected_request_body))
+            .respond_with(ResponseTemplate::new(201).set_body_json(response_body))
+            .mount_as_scoped(&self.server)
+            .await
+    }

@@ -1,7 +1,16 @@
 """NblmClient for NotebookLM API operations"""
 
 from ._auth import TokenProvider
-from ._models import BatchDeleteNotebooksResponse, ListRecentlyViewedResponse, Notebook
+from ._models import (
+    BatchCreateSourcesResponse,
+    BatchDeleteNotebooksResponse,
+    BatchDeleteSourcesResponse,
+    ListRecentlyViewedResponse,
+    Notebook,
+    TextSource,
+    VideoSource,
+    WebSource,
+)
 
 class NblmClient:
     """NotebookLM Enterprise API client"""
@@ -71,4 +80,46 @@ class NblmClient:
             Despite the underlying API being named "batchDelete", it only accepts
             one notebook at a time (as of 2025-10-19). This method works around
             this limitation by calling the API sequentially for each notebook.
+        """
+
+    def add_sources(
+        self,
+        notebook_id: str,
+        web_sources: list[WebSource] | None = ...,
+        text_sources: list[TextSource] | None = ...,
+        video_sources: list[VideoSource] | None = ...,
+    ) -> BatchCreateSourcesResponse:
+        """
+        Add sources to a notebook.
+
+        Args:
+            notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
+            web_sources: Optional list of WebSource objects
+            text_sources: Optional list of TextSource objects
+            video_sources: Optional list of VideoSource objects
+
+        Returns:
+            BatchCreateSourcesResponse: Results for each processed source
+
+        Raises:
+            NblmError: If validation fails or the API request fails
+        """
+
+    def delete_sources(
+        self,
+        notebook_id: str,
+        source_names: list[str],
+    ) -> BatchDeleteSourcesResponse:
+        """
+        Delete sources from a notebook.
+
+        Args:
+            notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
+            source_names: Fully qualified source resource names
+
+        Returns:
+            BatchDeleteSourcesResponse: API response payload (typically empty)
+
+        Raises:
+            NblmError: If the API request fails
         """

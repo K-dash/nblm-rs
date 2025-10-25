@@ -90,17 +90,16 @@ async fn sources_add_json_output() {
     let json_output: serde_json::Value =
         serde_json::from_slice(&output).expect("valid JSON output");
 
-    insta::assert_json_snapshot!(json_output, @r###"
+    insta::assert_json_snapshot!(json_output, @r#"
     {
       "error_count": null,
       "notebook_id": "test-notebook",
       "sources": [
         {
           "displayName": "Test Source",
-          "name": "projects/123456/locations/global/notebooks/test-notebook/sources/src1",
-          "url": null
+          "name": "projects/123456/locations/global/notebooks/test-notebook/sources/src1"
         }
       ]
     }
-    "###);
+    "#);
 }

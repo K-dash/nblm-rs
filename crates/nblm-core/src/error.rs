@@ -17,6 +17,8 @@ pub enum Error {
     },
     #[error("url parse error: {0}")]
     Url(#[from] url::ParseError),
+    #[error("validation error: {0}")]
+    Validation(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -30,6 +32,10 @@ impl Error {
             message,
             body,
         }
+    }
+
+    pub fn validation(message: impl Into<String>) -> Self {
+        Self::Validation(message.into())
     }
 }
 

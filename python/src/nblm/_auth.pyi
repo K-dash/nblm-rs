@@ -2,10 +2,6 @@
 
 DEFAULT_GCLOUD_BINARY: str
 DEFAULT_ENV_TOKEN_KEY: str
-DEFAULT_SERVICE_ACCOUNT_SCOPES: list[str]
-
-def default_service_account_scopes() -> list[str]:
-    """Return the default OAuth scopes used for service account authentication."""
 
 class NblmError(Exception):
     """Base exception for nblm errors"""
@@ -32,45 +28,4 @@ class EnvTokenProvider:
             key: Environment variable name (default: DEFAULT_ENV_TOKEN_KEY)
         """
 
-class ServiceAccountTokenProvider:
-    """Token provider that uses service account key for authentication"""
-
-    @staticmethod
-    def from_file(
-        path: str,
-        scopes: list[str] = DEFAULT_SERVICE_ACCOUNT_SCOPES,
-    ) -> ServiceAccountTokenProvider:
-        """
-        Create a new ServiceAccountTokenProvider from a JSON key file
-
-        Args:
-            path: Path to service account JSON key file
-            scopes: OAuth scopes (default: DEFAULT_SERVICE_ACCOUNT_SCOPES)
-
-        Returns:
-            ServiceAccountTokenProvider instance
-
-        Raises:
-            NblmError: If the key file cannot be read or parsed
-        """
-
-    @staticmethod
-    def from_json(
-        json_data: str,
-        scopes: list[str] = DEFAULT_SERVICE_ACCOUNT_SCOPES,
-    ) -> ServiceAccountTokenProvider:
-        """
-        Create a new ServiceAccountTokenProvider from JSON string
-
-        Args:
-            json_data: Service account key as JSON string
-            scopes: OAuth scopes (default: DEFAULT_SERVICE_ACCOUNT_SCOPES)
-
-        Returns:
-            ServiceAccountTokenProvider instance
-
-        Raises:
-            NblmError: If the JSON cannot be parsed
-        """
-
-TokenProvider = GcloudTokenProvider | EnvTokenProvider | ServiceAccountTokenProvider
+TokenProvider = GcloudTokenProvider | EnvTokenProvider

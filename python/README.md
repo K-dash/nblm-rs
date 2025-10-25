@@ -6,7 +6,7 @@ Python bindings for the NotebookLM Enterprise API client written in Rust.
 > This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.
 
 > [!NOTE]
-> **Under Active Development**: This library is currently in development. APIs may change, and additional features are being added. Currently supports notebook operations (create, list, delete). Source management and audio generation features are planned.
+> **Under Active Development**: This library is currently in development. APIs may change, and additional features are being added. Currently supports notebook operations (create, list, delete) and source management (add/delete). Audio generation features are planned.
 
 ## Installation
 
@@ -41,27 +41,8 @@ client = NblmClient(
 )
 ```
 
-### 2. Service Account
 
-```python
-from nblm import ServiceAccountTokenProvider, NblmClient
-
-# From file
-provider = ServiceAccountTokenProvider.from_file("/path/to/key.json")
-
-# Or from JSON string
-provider = ServiceAccountTokenProvider.from_json(json_string)
-
-client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
-)
-```
-
-> [!IMPORTANT]
-> Service account requires `roles/editor` permission.
-
-### 3. Environment Variable Token
+### 2. Environment Variable Token
 
 ```python
 import os
@@ -129,6 +110,41 @@ client.delete_notebooks(notebook_names)
 > Despite the underlying API being named "batchDelete", it only accepts
 > one notebook at a time (as of 2025-10-19). The `delete_notebooks` method
 > works around this limitation by calling the API sequentially for each notebook.
+
+### Managing Sources
+
+```python
+from nblm import GcloudTokenProvider, NblmClient, WebSource, TextSource, VideoSource
+
+provider = GcloudTokenProvider()
+client = NblmClient(token_provider=provider, project_number="123456789012")
+
+# Add different source types to a notebook
+response = client.add_sources(
+    notebook_id="abc123",
+    web_sources=[
+        WebSource(url="https://example.com", name="Example Website"),
+        WebSource(url="https://python.org"),  # name is optional
+    ],
+    text_sources=[
+        TextSource(content="Inline memo", name="Notes"),
+    ],
+    video_sources=[
+        VideoSource(url="https://youtube.com/watch?v=123"),
+    ],
+)
+
+for result in response.sources:
+    print(result.name)  # Full source resource name
+
+# Delete sources using full resource names
+client.delete_sources(
+    notebook_id="abc123",
+    source_names=[
+        "projects/123456789012/locations/global/notebooks/abc123/sources/source-1",
+    ],
+)
+```
 
 ## Configuration
 

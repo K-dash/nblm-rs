@@ -1,6 +1,60 @@
-"""Data models for nblm"""
-
 from typing import Any
+
+class WebSource:
+    """Source type for adding web URLs to a notebook."""
+
+    url: str
+    name: str | None
+
+    def __init__(self, url: str, name: str | None = None) -> None:
+        """
+        Create a WebSource.
+
+        Args:
+            url: Web URL to add
+            name: Optional display name for the source
+        """
+
+class TextSource:
+    """Source type for adding text content to a notebook."""
+
+    content: str
+    name: str | None
+
+    def __init__(self, content: str, name: str | None = None) -> None:
+        """
+        Create a TextSource.
+
+        Args:
+            content: Text content to add
+            name: Optional display name for the source
+        """
+
+class VideoSource:
+    """Source type for adding YouTube videos to a notebook."""
+
+    url: str
+
+    def __init__(self, url: str) -> None:
+        """
+        Create a VideoSource.
+
+        Args:
+            url: YouTube video URL to add
+        """
+
+class BatchCreateSourcesResponse:
+    """Response from adding sources to a notebook."""
+
+    sources: list[NotebookSource]
+    error_count: int | None
+
+class BatchDeleteSourcesResponse:
+    """Response from deleting sources from a notebook."""
+
+    extra: dict[str, Any]
+
+"""Data models for nblm"""
 
 class NotebookSourceYoutubeMetadata:
     """Metadata for YouTube sources that were ingested into a notebook."""

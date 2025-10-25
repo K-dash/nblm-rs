@@ -15,28 +15,28 @@ def test_classes_available() -> None:
     from nblm import (
         DEFAULT_ENV_TOKEN_KEY,
         DEFAULT_GCLOUD_BINARY,
-        DEFAULT_SERVICE_ACCOUNT_SCOPES,
+        BatchCreateSourcesResponse,
         BatchDeleteNotebooksResponse,
+        BatchDeleteSourcesResponse,
         EnvTokenProvider,
         GcloudTokenProvider,
         ListRecentlyViewedResponse,
         NblmClient,
         NblmError,
         Notebook,
-        ServiceAccountTokenProvider,
     )
 
     assert NblmClient is not None
     assert GcloudTokenProvider is not None
-    assert ServiceAccountTokenProvider is not None
     assert EnvTokenProvider is not None
     assert NblmError is not None
     assert Notebook is not None
     assert ListRecentlyViewedResponse is not None
+    assert BatchCreateSourcesResponse is not None
+    assert BatchDeleteSourcesResponse is not None
     assert BatchDeleteNotebooksResponse is not None
     assert DEFAULT_GCLOUD_BINARY == "gcloud"
     assert DEFAULT_ENV_TOKEN_KEY == "NBLM_ACCESS_TOKEN"
-    assert DEFAULT_SERVICE_ACCOUNT_SCOPES == ["https://www.googleapis.com/auth/cloud-platform"]
 
 
 def test_gcloud_token_provider_creation() -> None:
@@ -73,12 +73,3 @@ def test_client_creation() -> None:
         endpoint_location="global",
     )
     assert client is not None
-
-
-def test_default_scope_helper_returns_copy() -> None:
-    """Ensure default scope helper returns a fresh list"""
-    from nblm import DEFAULT_SERVICE_ACCOUNT_SCOPES, default_service_account_scopes
-
-    scopes = default_service_account_scopes()
-    assert scopes == DEFAULT_SERVICE_ACCOUNT_SCOPES
-    assert scopes is not DEFAULT_SERVICE_ACCOUNT_SCOPES

@@ -166,11 +166,11 @@ dependencies = ["py-fmt", "py-lint-fix", "py-type", "py-build"]
 [tasks.py-setup]
 private = true
 condition = { files_modified = { input = ["python/pyproject.toml", "python/uv.lock"], output = ["python/.venv/timestamp.txt"] } }
-script_runner = "@bash"
-script = '''
-set -euo pipefail
-cd python
-uv venv
-uv sync
-touch .venv/timestamp.txt
-'''
+cwd = "python"
+command = "bash"
+args = [
+    "-euo",
+    "pipefail",
+    "-c",
+    "uv venv && uv sync && touch .venv/timestamp.txt",
+]

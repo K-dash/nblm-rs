@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyList};
 
 use crate::error::PyResult;
 
-use super::{extra_to_pydict, Notebook, NotebookSource};
+use super::{extra_to_pydict, Notebook, NotebookSource, NotebookSourceId};
 
 #[pyclass(module = "nblm")]
 pub struct ListRecentlyViewedResponse {
@@ -149,6 +149,46 @@ impl BatchDeleteSourcesResponse {
         response: nblm_core::models::BatchDeleteSourcesResponse,
     ) -> PyResult<Self> {
         Ok(Self {
+            extra: extra_to_pydict(py, &response.extra)?,
+        })
+    }
+}
+
+#[pyclass(module = "nblm")]
+pub struct UploadSourceFileResponse {
+    #[pyo3(get)]
+    pub source_id: Option<Py<NotebookSourceId>>,
+    #[pyo3(get)]
+    pub extra: Py<PyDict>,
+}
+
+#[pymethods]
+impl UploadSourceFileResponse {
+    pub fn __repr__(&self, py: Python) -> String {
+        let has_id = self.source_id.is_some();
+        let extra_keys = self.extra.bind(py).len();
+        format!(
+            "UploadSourceFileResponse(source_id={}, extra_keys={})",
+            has_id, extra_keys
+        )
+    }
+
+    pub fn __str__(&self, py: Python) -> String {
+        self.__repr__(py)
+    }
+}
+
+impl UploadSourceFileResponse {
+    pub fn from_core(
+        py: Python,
+        response: nblm_core::models::UploadSourceFileResponse,
+    ) -> PyResult<Self> {
+        let source_id = match response.source_id {
+            Some(id) => Some(Py::new(py, NotebookSourceId::from_core(py, id)?)?),
+            None => None,
+        };
+        Ok(Self {
+            source_id,
             extra: extra_to_pydict(py, &response.extra)?,
         })
     }

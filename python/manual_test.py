@@ -8,7 +8,16 @@ Run with: python manual_test.py
 
 import os
 import sys
-from nblm import NblmClient, GcloudTokenProvider, NblmError, WebSource, TextSource, VideoSource
+from pathlib import Path
+
+from nblm import (
+    GcloudTokenProvider,
+    NblmClient,
+    NblmError,
+    TextSource,
+    VideoSource,
+    WebSource,
+)
 
 
 def main() -> None:
@@ -82,6 +91,47 @@ def main() -> None:
         print()
     except NblmError as e:
         print(f"✗ Failed to add sources: {e}\n")
+
+    # Test 4: Upload a local file as a source (optional)
+    upload_path = os.getenv("NBLM_UPLOAD_FILE")
+    if upload_path:
+        print("Test 4: Uploading file to the notebook...")
+        path_obj = Path(upload_path)
+        if not path_obj.exists() or not path_obj.is_file():
+            print(f"✗ Upload path is not a file: {path_obj}")
+        else:
+            content_type = os.getenv("NBLM_UPLOAD_CONTENT_TYPE")
+            display_name = os.getenv("NBLM_UPLOAD_DISPLAY_NAME")
+            try:
+                response = client.upload_source_file(
+                    notebook_id=notebook.notebook_id,
+                    path=path_obj,
+                    content_type=content_type,
+                    display_name=display_name,
+                )
+
+                source_id_obj = response.source_id
+                if source_id_obj and source_id_obj.id:
+                    print(f"✓ Uploaded source ID: {source_id_obj.id}")
+                else:
+                    print("✓ Upload accepted (source ID unavailable)")
+
+                extra = getattr(response, "extra", {})
+                if isinstance(extra, dict):
+                    print(f"  Extra metadata keys: {len(extra)}\n")
+                else:
+                    print("  Extra metadata: <unavailable>\n")
+            except NblmError as e:
+                print(f"✗ Failed to upload file: {e}\n")
+                print(f"Error type: {type(e).__name__}")
+                print(f"Error message: {e}")
+                print(f"Error details: {e.args}")
+                import traceback
+                traceback.print_exc()
+    else:
+        print(
+            "Test 4 skipped: set NBLM_UPLOAD_FILE to exercise upload_source_file manually.\n"
+        )
 
     # # Test 4: Delete the created notebook
     # print("Test 4: Deleting the test notebook...")

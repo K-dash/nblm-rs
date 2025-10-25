@@ -26,6 +26,7 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "jso
 nblm-core = { version = "0.1.0", path = "../nblm-core" }
 humantime = "2.3.0"
 url = "2.5.7"
+mime_guess = "2.0.5"
 
 [dev-dependencies]
 assert_cmd = "2.0.17"

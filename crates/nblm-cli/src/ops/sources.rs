@@ -1,10 +1,12 @@
-use anyhow::{bail, Result};
+use std::{fs, path::PathBuf};
+
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{Args, Subcommand};
 use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
 use nblm_core::NblmClient;
 
 use crate::util::{
-    io::emit_sources,
+    io::{emit_sources, emit_uploaded_source},
     validate::{pair_with_names, validate_url},
 };
 
@@ -12,6 +14,7 @@ use crate::util::{
 pub enum Command {
     Add(AddArgs),
     Delete(DeleteArgs),
+    Upload(UploadArgs),
 }
 
 #[derive(Args)]
@@ -49,6 +52,23 @@ pub struct DeleteArgs {
 
     #[arg(long = "source-name", value_name = "NAME", required = true)]
     pub source_names: Vec<String>,
+}
+
+#[derive(Args)]
+pub struct UploadArgs {
+    #[arg(long, value_name = "ID")]
+    pub notebook_id: String,
+
+    #[arg(long, value_name = "PATH")]
+    pub file: PathBuf,
+
+    #[arg(long = "content-type", value_name = "MEDIA_TYPE")]
+    pub content_type: Option<String>,
+
+    /// NOTE: As of 2025-10-25 the NotebookLM API rejects custom display names (HTTP 400).
+    /// This flag is kept for forward compatibility but currently non-functional.
+    #[arg(long = "display-name", value_name = "NAME")]
+    pub display_name: Option<String>,
 }
 
 pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<()> {
@@ -159,6 +179,64 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
                     json_mode,
                 );
             }
+        }
+        Command::Upload(args) => {
+            if !args.file.exists() {
+                bail!("file not found: {}", args.file.display());
+            }
+            if !args.file.is_file() {
+                bail!("path is not a file: {}", args.file.display());
+            }
+
+            let data = fs::read(&args.file)
+                .with_context(|| format!("failed to read {}", args.file.display()))?;
+            if data.is_empty() {
+                bail!("cannot upload empty files");
+            }
+
+            let content_type = args
+                .content_type
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| {
+                    mime_guess::from_path(&args.file)
+                        .first_or_octet_stream()
+                        .essence_str()
+                        .to_string()
+                });
+
+            let inferred_name = args
+                .display_name
+                .as_ref()
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    args.file
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .map(|s| s.to_string())
+                })
+                .ok_or_else(|| anyhow!("could not determine file name; use --display-name"))?;
+
+            if args.display_name.is_some() {
+                eprintln!(
+                    "WARNING: NotebookLM API rejects custom display names as of 2025-10-25 (HTTP 400)."
+                );
+                eprintln!("The uploaded source will use the original file name instead.");
+            }
+
+            let response = client
+                .upload_source_file(&args.notebook_id, &inferred_name, &content_type, data)
+                .await?;
+
+            emit_uploaded_source(
+                &args.notebook_id,
+                &inferred_name,
+                &content_type,
+                &response,
+                json_mode,
+            )?;
         }
     }
     Ok(())

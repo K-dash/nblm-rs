@@ -1,0 +1,120 @@
+use reqwest::Url;
+
+use crate::error::{Error, Result};
+
+/// URL construction utilities for NBLM API endpoints
+pub(crate) struct UrlBuilder {
+    pub(super) base: String,
+    pub(super) parent: String,
+}
+
+impl UrlBuilder {
+    pub fn new(base: String, parent: String) -> Self {
+        Self { base, parent }
+    }
+
+    pub fn notebooks_collection(&self) -> String {
+        format!("{}/notebooks", self.parent)
+    }
+
+    pub fn notebook_path(&self, notebook_id: &str) -> String {
+        format!("{}/notebooks/{}", self.parent, notebook_id)
+    }
+
+    pub fn build_url(&self, path: &str) -> Result<Url> {
+        let path = path.trim_start_matches('/');
+        Url::parse(&format!("{}/{}", self.base, path)).map_err(Error::from)
+    }
+
+    pub fn build_upload_url(&self, path: &str) -> Result<Url> {
+        let base = self.base.trim_end_matches('/');
+        let trimmed_path = path.trim_start_matches('/');
+        let upload_base = if let Some((prefix, _)) = base.rsplit_once("/v1alpha") {
+            format!("{}/upload/v1alpha/{}", prefix, trimmed_path)
+        } else {
+            format!("{}/upload/{}", base, trimmed_path)
+        };
+        Url::parse(&upload_base).map_err(Error::from)
+    }
+}
+
+/// Normalize endpoint location to the expected format
+pub(crate) fn normalize_endpoint_location(input: String) -> Result<String> {
+    let trimmed = input.trim().trim_end_matches('-').to_lowercase();
+    let normalized = match trimmed.as_str() {
+        "us" => "us-",
+        "eu" => "eu-",
+        "global" => "global-",
+        other => {
+            return Err(Error::Endpoint(format!(
+                "unsupported endpoint location: {other}"
+            )))
+        }
+    };
+    Ok(normalized.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_endpoint_location_variants() {
+        assert_eq!(
+            normalize_endpoint_location("us".into()).unwrap(),
+            "us-".to_string()
+        );
+        assert_eq!(
+            normalize_endpoint_location("eu-".into()).unwrap(),
+            "eu-".to_string()
+        );
+        assert_eq!(
+            normalize_endpoint_location(" global ".into()).unwrap(),
+            "global-".to_string()
+        );
+    }
+
+    #[test]
+    fn normalize_endpoint_location_invalid() {
+        let err = normalize_endpoint_location("asia".into()).unwrap_err();
+        assert!(format!("{err}").contains("unsupported endpoint location"));
+    }
+
+    #[test]
+    fn build_url_combines_base_and_path_correctly() {
+        let builder = UrlBuilder::new(
+            "http://example.com/v1alpha".to_string(),
+            "projects/123/locations/global".to_string(),
+        );
+
+        // Test with leading slash
+        let url = builder.build_url("/projects/123/notebooks").unwrap();
+        assert_eq!(
+            url.as_str(),
+            "http://example.com/v1alpha/projects/123/notebooks"
+        );
+
+        // Test without leading slash
+        let url = builder.build_url("projects/123/notebooks").unwrap();
+        assert_eq!(
+            url.as_str(),
+            "http://example.com/v1alpha/projects/123/notebooks"
+        );
+    }
+
+    #[test]
+    fn build_upload_url_handles_v1alpha_correctly() {
+        let builder = UrlBuilder::new(
+            "https://us-discoveryengine.googleapis.com/v1alpha".to_string(),
+            "projects/123/locations/global".to_string(),
+        );
+
+        let url = builder
+            .build_upload_url("/projects/123/notebooks/abc/sources:uploadFile")
+            .unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://us-discoveryengine.googleapis.com/upload/v1alpha/projects/123/notebooks/abc/sources:uploadFile"
+        );
+    }
+}

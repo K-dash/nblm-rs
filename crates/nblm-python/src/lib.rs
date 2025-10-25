@@ -15,7 +15,7 @@ pub use models::{
     BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
     ListRecentlyViewedResponse, Notebook, NotebookMetadata, NotebookSource, NotebookSourceId,
     NotebookSourceMetadata, NotebookSourceSettings, NotebookSourceYoutubeMetadata, TextSource,
-    VideoSource, WebSource,
+    UploadSourceFileResponse, VideoSource, WebSource,
 };
 
 /// NotebookLM Enterprise API client for Python
@@ -34,6 +34,7 @@ fn nblm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<WebSource>()?;
     m.add_class::<TextSource>()?;
     m.add_class::<VideoSource>()?;
+    m.add_class::<UploadSourceFileResponse>()?;
     m.add_class::<BatchCreateSourcesResponse>()?;
     m.add_class::<BatchDeleteSourcesResponse>()?;
     m.add_class::<ListRecentlyViewedResponse>()?;

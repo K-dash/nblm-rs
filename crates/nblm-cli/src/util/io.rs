@@ -1,6 +1,7 @@
 use anyhow::Result;
 use nblm_core::models::{
     BatchCreateSourcesResponse, ListRecentlyViewedResponse, Notebook, ShareResponse,
+    UploadSourceFileResponse,
 };
 use serde_json::json;
 
@@ -46,6 +47,31 @@ pub fn emit_sources(
         "error_count": response.error_count,
     });
     emit_json(payload, json_mode);
+    Ok(())
+}
+
+pub fn emit_uploaded_source(
+    notebook_id: &str,
+    file_name: &str,
+    content_type: &str,
+    response: &UploadSourceFileResponse,
+    json_mode: bool,
+) -> Result<()> {
+    let payload = json!({
+        "notebook_id": notebook_id,
+        "file_name": file_name,
+        "content_type": content_type,
+        "source_id": response.source_id,
+        "extra": response.extra,
+    });
+    emit_json(payload, json_mode);
+    if !json_mode {
+        if let Some(source_id) = response.source_id.as_ref().and_then(|id| id.id.as_deref()) {
+            println!("Created source: {source_id}");
+        } else {
+            println!("Upload request accepted (source ID unavailable)");
+        }
+    }
     Ok(())
 }
 

@@ -26,6 +26,7 @@ url = "2.5.7"
 backon = "1.6.0"
 tracing = "0.1.41"
 httpdate = "1.0.3"
+bytes = "1.7.1"
 
 [features]
 default = []

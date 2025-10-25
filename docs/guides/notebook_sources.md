@@ -45,6 +45,46 @@ At least one source type must be provided.
 
 `BatchCreateSourcesResponse.error_count` reflects the number of ingestion failures reported by the API.
 
+## Uploading Files
+
+You can upload local files to a notebook via the CLI or Python bindings. The API currently returns the created `sourceId` and any additional metadata provided by NotebookLM.
+
+### CLI example
+
+```bash
+nblm sources upload \
+  --notebook-id abc123 \
+  --file ./docs/brief.pdf \
+  --content-type application/pdf
+```
+
+The command prints the notebook ID, file metadata, and the returned source ID. When `--content-type` is omitted, the CLI guesses it from the file extension and falls back to `application/octet-stream`.
+
+> [!NOTE]
+> As of 2025-10-25 the NotebookLM API rejects custom display names for uploads (returns HTTP 400). The CLI keeps `--display-name` for forward compatibility but currently ignores it.
+
+### Python example
+
+```python
+from pathlib import Path
+
+from nblm import GcloudTokenProvider, NblmClient
+
+provider = GcloudTokenProvider()
+client = NblmClient(token_provider=provider, project_number="123456789012")
+
+result = client.upload_source_file(
+    notebook_id="abc123",
+    path=Path("./docs/brief.pdf"),
+    content_type="application/pdf",  # optional
+    display_name="Product Brief",    # optional
+)
+
+print(result.source_id.id if result.source_id else "<missing>")
+```
+
+Empty files are rejected client-side. If the API fails to ingest the file, an `nblm.NblmError` is raised with the server-provided message.
+
 ## Deleting Sources
 
 Use `NblmClient.delete_sources()` to remove previously added sources by their full resource names.

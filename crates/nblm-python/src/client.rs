@@ -1,14 +1,17 @@
 use pyo3::prelude::*;
+use std::fs;
+use std::future::Future;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::auth::PyTokenProvider;
-use crate::error::{map_runtime_error, IntoPyResult, PyResult};
+use crate::error::{map_nblm_error, map_runtime_error, IntoPyResult, PyResult};
 use crate::models::{
     BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
-    ListRecentlyViewedResponse, Notebook, TextSource, VideoSource, WebSource,
+    ListRecentlyViewedResponse, Notebook, TextSource, UploadSourceFileResponse, VideoSource,
+    WebSource,
 };
 use nblm_core::models::{TextContent, UserContent, VideoContent, WebContent};
-use std::future::Future;
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -188,6 +191,95 @@ impl NblmClient {
 
             let result = block_on_with_runtime(future)?;
             Python::with_gil(|py| BatchCreateSourcesResponse::from_core(py, result))
+        })
+    }
+
+    /// Upload a local file as a notebook source.
+    ///
+    /// Args:
+    ///     notebook_id: Notebook identifier (resource ID, not full name)
+    ///     path: Path to the file to upload
+    ///     content_type: Optional HTTP Content-Type to send with the upload
+    ///     display_name: Optional display name to use instead of the file name
+    ///
+    /// Returns:
+    ///     UploadSourceFileResponse: Response containing the created source ID
+    ///
+    /// Raises:
+    ///     NblmError: If validation or the API call fails
+    #[pyo3(signature = (notebook_id, path, *, content_type=None, display_name=None))]
+    fn upload_source_file(
+        &self,
+        py: Python,
+        notebook_id: String,
+        path: PathBuf,
+        content_type: Option<String>,
+        display_name: Option<String>,
+    ) -> PyResult<UploadSourceFileResponse> {
+        if !path.exists() {
+            return Err(map_nblm_error(nblm_core::Error::validation(format!(
+                "file not found: {}",
+                path.display()
+            ))));
+        }
+        if !path.is_file() {
+            return Err(map_nblm_error(nblm_core::Error::validation(format!(
+                "path is not a file: {}",
+                path.display()
+            ))));
+        }
+
+        let data = fs::read(&path).map_err(PyErr::from)?;
+        if data.is_empty() {
+            return Err(map_nblm_error(nblm_core::Error::validation(
+                "cannot upload empty files",
+            )));
+        }
+
+        let file_name = if let Some(name) = display_name {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        } else {
+            None
+        }
+        .or_else(|| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .map(|s| s.to_string())
+        });
+
+        let file_name = match file_name {
+            Some(name) => name,
+            None => {
+                return Err(map_nblm_error(nblm_core::Error::validation(
+                    "could not determine file name; provide display_name",
+                )));
+            }
+        };
+
+        let content_type = content_type
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| {
+                mime_guess::from_path(&path)
+                    .first_or_octet_stream()
+                    .essence_str()
+                    .to_string()
+            });
+
+        let inner = self.inner.clone();
+        py.allow_threads(move || {
+            let future = async move {
+                inner
+                    .upload_source_file(&notebook_id, &file_name, &content_type, data)
+                    .await
+            };
+            let result = block_on_with_runtime(future)?;
+            Python::with_gil(|py| UploadSourceFileResponse::from_core(py, result))
         })
     }
 

@@ -21,6 +21,7 @@ from ._models import (
     NotebookSourceSettings,
     NotebookSourceYoutubeMetadata,
     TextSource,
+    UploadSourceFileResponse,
     VideoSource,
     WebSource,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "NotebookSourceSettings",
     "NotebookSourceYoutubeMetadata",
     "TextSource",
+    "UploadSourceFileResponse",
     "VideoSource",
     "WebSource",
 ]

@@ -117,6 +117,38 @@ impl MockApi {
             .await;
     }
 
+    pub async fn stub_sources_upload_file(
+        &self,
+        project: &str,
+        location: &str,
+        notebook_id: &str,
+        source_id: &str,
+    ) {
+        let path_str = format!(
+            "/upload/v1alpha/projects/{}/locations/{}/notebooks/{}/sources:uploadFile",
+            project, location, notebook_id
+        );
+        let response = json!({
+            "sourceId": {
+                "id": format!(
+                    "projects/{}/locations/{}/notebooks/{}/sources/{}",
+                    project, location, notebook_id, source_id
+                )
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path(path_str))
+            .and(query_param("uploadType", "media"))
+            .and(header("authorization", "Bearer DUMMY_TOKEN"))
+            .and(header("x-goog-upload-protocol", "raw"))
+            .and(header_exists("content-type"))
+            .and(header_exists("x-goog-upload-file-name"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(response))
+            .mount(&self.server)
+            .await;
+    }
+
     /// Stub for POST /v1alpha/projects/{project}/locations/{location}/notebooks/{notebook_id}:share
     pub async fn stub_notebook_share(&self, project: &str, location: &str, notebook_id: &str) {
         let path_str = format!(

@@ -54,6 +54,12 @@ class BatchDeleteSourcesResponse:
 
     extra: dict[str, Any]
 
+class UploadSourceFileResponse:
+    """Response from uploading a file source to a notebook."""
+
+    source_id: NotebookSourceId | None
+    extra: dict[str, Any]
+
 """Data models for nblm"""
 
 class NotebookSourceYoutubeMetadata:

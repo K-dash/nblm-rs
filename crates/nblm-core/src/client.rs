@@ -1,6 +1,10 @@
 use std::{sync::Arc, time::Duration};
 
-use reqwest::{Client, Method, StatusCode, Url};
+use bytes::Bytes;
+use reqwest::{
+    header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE},
+    Client, Method, StatusCode, Url,
+};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -10,7 +14,8 @@ use crate::models::{
     AccountRole, AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesRequest,
     BatchCreateSourcesResponse, BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse,
     BatchDeleteSourcesRequest, BatchDeleteSourcesResponse, CreateNotebookRequest,
-    ListRecentlyViewedResponse, Notebook, ShareRequest, ShareResponse, UserContent,
+    ListRecentlyViewedResponse, Notebook, ShareRequest, ShareResponse, UploadSourceFileResponse,
+    UserContent,
 };
 use crate::retry::{RetryConfig, Retryer};
 
@@ -98,6 +103,17 @@ impl NblmClient {
         Url::parse(&format!("{}/{}", self.base, path)).map_err(Error::from)
     }
 
+    fn build_upload_url(&self, path: &str) -> Result<Url> {
+        let base = self.base.trim_end_matches('/');
+        let trimmed_path = path.trim_start_matches('/');
+        let upload_base = if let Some((prefix, _)) = base.rsplit_once("/v1alpha") {
+            format!("{}/upload/v1alpha/{}", prefix, trimmed_path)
+        } else {
+            format!("{}/upload/{}", base, trimmed_path)
+        };
+        Url::parse(&upload_base).map_err(Error::from)
+    }
+
     async fn request_json<B, R>(&self, method: Method, url: Url, body: Option<&B>) -> Result<R>
     where
         B: Serialize + ?Sized,
@@ -157,6 +173,100 @@ impl NblmClient {
                     if let Some(body) = body_ref {
                         builder = builder.json(body);
                     }
+                    let request = builder.build().map_err(Error::Request)?;
+                    let response = client.execute(request).await.map_err(Error::Request)?;
+                    Ok(response)
+                }
+            };
+            response = self.retryer.run_with_retry(run_refresh).await?;
+            if !response.status().is_success() {
+                let status = response.status();
+                let body = response.text().await.unwrap_or_default();
+                return Err(Error::http(status, body));
+            }
+            return Ok(response.json::<R>().await?);
+        }
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(Error::http(status, body));
+        }
+
+        Ok(response.json::<R>().await?)
+    }
+
+    async fn request_binary<R>(
+        &self,
+        method: Method,
+        url: Url,
+        headers: HeaderMap,
+        body: Bytes,
+    ) -> Result<R>
+    where
+        R: DeserializeOwned,
+    {
+        let client = self.http.clone();
+        let method_clone = method.clone();
+        let url_clone = url.clone();
+        let timeout = self.timeout;
+        let provider = Arc::clone(&self.token_provider);
+        let user_project = self.user_project.clone();
+        let headers = Arc::new(headers);
+        let body = body;
+
+        let run = || {
+            let client = client.clone();
+            let method = method_clone.clone();
+            let url = url_clone.clone();
+            let provider = Arc::clone(&provider);
+            let user_project = user_project.clone();
+            let headers = Arc::clone(&headers);
+            let body = body.clone();
+            async move {
+                let token = provider.access_token().await?;
+                let mut builder = client
+                    .request(method, url)
+                    .bearer_auth(token)
+                    .timeout(timeout);
+                if let Some(project) = &user_project {
+                    builder = builder.header("x-goog-user-project", project);
+                }
+                for (key, value) in headers.iter() {
+                    builder = builder.header(key.clone(), value.clone());
+                }
+                builder = builder.body(body.clone());
+                let request = builder.build().map_err(Error::Request)?;
+                let response = client.execute(request).await.map_err(Error::Request)?;
+                Ok(response)
+            }
+        };
+
+        let mut response = self.retryer.run_with_retry(run).await?;
+
+        if response.status() == StatusCode::UNAUTHORIZED {
+            let _ = response.bytes().await;
+            let run_refresh = || {
+                let client = client.clone();
+                let method = method_clone.clone();
+                let url = url_clone.clone();
+                let provider = Arc::clone(&provider);
+                let user_project = user_project.clone();
+                let headers = Arc::clone(&headers);
+                let body = body.clone();
+                async move {
+                    let token = provider.refresh_token().await?;
+                    let mut builder = client
+                        .request(method, url)
+                        .bearer_auth(token)
+                        .timeout(timeout);
+                    if let Some(project) = &user_project {
+                        builder = builder.header("x-goog-user-project", project);
+                    }
+                    for (key, value) in headers.iter() {
+                        builder = builder.header(key.clone(), value.clone());
+                    }
+                    builder = builder.body(body.clone());
                     let request = builder.build().map_err(Error::Request)?;
                     let response = client.execute(request).await.map_err(Error::Request)?;
                     Ok(response)
@@ -287,6 +397,46 @@ impl NblmClient {
         }
         self.request_json::<(), _>(Method::GET, url, None::<&()>)
             .await
+    }
+
+    pub async fn upload_source_file(
+        &self,
+        notebook_id: &str,
+        file_name: &str,
+        content_type: &str,
+        data: Vec<u8>,
+    ) -> Result<UploadSourceFileResponse> {
+        if notebook_id.trim().is_empty() {
+            return Err(Error::validation("notebook_id cannot be empty"));
+        }
+        if file_name.trim().is_empty() {
+            return Err(Error::validation("file name cannot be empty"));
+        }
+        if content_type.trim().is_empty() {
+            return Err(Error::validation("content type cannot be empty"));
+        }
+
+        let path = format!("{}/sources:uploadFile", self.notebook_path(notebook_id));
+        let mut url = self.build_upload_url(&path)?;
+        url.query_pairs_mut().append_pair("uploadType", "media");
+
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            HeaderName::from_static("x-goog-upload-protocol"),
+            HeaderValue::from_static("raw"),
+        );
+        let file_name_header = HeaderValue::from_str(file_name)
+            .map_err(|_| Error::validation("file name contains invalid characters"))?;
+        headers.insert(
+            HeaderName::from_static("x-goog-upload-file-name"),
+            file_name_header,
+        );
+        let content_type_header = HeaderValue::from_str(content_type)
+            .map_err(|_| Error::validation("content type contains invalid characters"))?;
+        headers.insert(CONTENT_TYPE, content_type_header);
+
+        let bytes = Bytes::from(data);
+        self.request_binary(Method::POST, url, headers, bytes).await
     }
 
     pub async fn add_sources(

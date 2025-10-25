@@ -1,5 +1,7 @@
 """NblmClient for NotebookLM API operations"""
 
+import os
+
 from ._auth import TokenProvider
 from ._models import (
     BatchCreateSourcesResponse,
@@ -8,6 +10,7 @@ from ._models import (
     ListRecentlyViewedResponse,
     Notebook,
     TextSource,
+    UploadSourceFileResponse,
     VideoSource,
     WebSource,
 )
@@ -100,6 +103,31 @@ class NblmClient:
 
         Returns:
             BatchCreateSourcesResponse: Results for each processed source
+
+        Raises:
+            NblmError: If validation fails or the API request fails
+        """
+
+    def upload_source_file(
+        self,
+        notebook_id: str,
+        path: str | os.PathLike[str],
+        *,
+        content_type: str | None = ...,
+        display_name: str | None = ...,
+    ) -> UploadSourceFileResponse:
+        """
+        Upload a local file as a notebook source.
+
+        Args:
+            notebook_id: Notebook identifier (resource ID, e.g. "abc123")
+            path: Path to the file to upload
+            content_type: Optional HTTP Content-Type header value
+            display_name: Optional display name to attach to the source
+                (NotebookLM currently rejects custom names; kept for future use)
+
+        Returns:
+            UploadSourceFileResponse: Response containing the created source ID
 
         Raises:
             NblmError: If validation fails or the API request fails

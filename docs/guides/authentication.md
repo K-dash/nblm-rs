@@ -192,8 +192,3 @@ NotebookLM API supports these multi-region locations:
 | CI/CD pipelines | Environment Variable |
 | Production automation | Environment Variable |
 | Server applications | Environment Variable |
-
-## Related Documentation
-
-- [API Limitations](../api/limitations.md)
-- [NotebookLM API Docs](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs)

@@ -27,3 +27,22 @@ pub struct AudioOverviewRequest {
 // pub struct SourceId {
 //     pub id: String,
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_overview_request_serializes_to_empty_object() {
+        let request = AudioOverviewRequest::default();
+        let json = serde_json::to_string(&request).unwrap();
+        assert_eq!(json, "{}");
+    }
+
+    #[test]
+    fn audio_overview_request_deserializes_from_empty_object() {
+        let json = r#"{}"#;
+        let request: AudioOverviewRequest = serde_json::from_str(json).unwrap();
+        let _ = request; // Verify it deserializes successfully
+    }
+}

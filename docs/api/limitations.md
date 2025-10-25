@@ -158,6 +158,3 @@ Create audio overview with empty request, then configure settings through Notebo
 | Google Drive sources fail | High | Use web UI | Documented |
 | Audio config fields rejected | Low | Use web UI for config | Documented |
 
-## Related Documentation
-
-- [NotebookLM API Official Docs](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs)

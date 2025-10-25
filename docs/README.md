@@ -19,6 +19,10 @@ Comprehensive documentation for the NotebookLM Enterprise API client.
   - Add web, text, and video sources
   - Delete existing sources
   - Understand API error handling
+- **[Audio Overview](guides/audio_overview.md)** - Create and manage audio overviews
+  - Create podcast-style discussions from notebooks
+  - Understand current API limitations
+  - Complete workflow examples
 
 ## API Reference
 

@@ -6,11 +6,13 @@ use std::collections::HashMap;
 
 use crate::error::PyResult;
 
+mod audio;
 mod notebook;
 mod notebook_source;
 mod responses;
 mod source;
 
+pub use audio::*;
 pub use notebook::*;
 pub use notebook_source::*;
 pub use responses::*;

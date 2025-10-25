@@ -61,7 +61,22 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
             let response = client
                 .create_audio_overview(&args.notebook_id, request)
                 .await?;
-            emit_json(json!(response), json_mode);
+
+            if json_mode {
+                // In CLI json mode, wrap with audioOverview to match original format
+                emit_json(json!({"audioOverview": response}), json_mode);
+            } else {
+                println!("Audio overview created successfully:");
+                if let Some(id) = &response.audio_overview_id {
+                    println!("  Audio Overview ID: {}", id);
+                }
+                if let Some(name) = &response.name {
+                    println!("  Name: {}", name);
+                }
+                if let Some(status) = &response.status {
+                    println!("  Status: {}", status);
+                }
+            }
         }
         Command::Delete(args) => {
             client.delete_audio_overview(&args.notebook_id).await?;

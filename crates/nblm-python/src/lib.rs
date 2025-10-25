@@ -12,10 +12,11 @@ pub use auth::{
 pub use client::NblmClient;
 pub use error::NblmError;
 pub use models::{
-    BatchCreateSourcesResponse, BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse,
-    ListRecentlyViewedResponse, Notebook, NotebookMetadata, NotebookSource, NotebookSourceId,
-    NotebookSourceMetadata, NotebookSourceSettings, NotebookSourceYoutubeMetadata, TextSource,
-    UploadSourceFileResponse, VideoSource, WebSource,
+    AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesResponse,
+    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, ListRecentlyViewedResponse, Notebook,
+    NotebookMetadata, NotebookSource, NotebookSourceId, NotebookSourceMetadata,
+    NotebookSourceSettings, NotebookSourceYoutubeMetadata, TextSource, UploadSourceFileResponse,
+    VideoSource, WebSource,
 };
 
 /// NotebookLM Enterprise API client for Python
@@ -39,6 +40,8 @@ fn nblm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<BatchDeleteSourcesResponse>()?;
     m.add_class::<ListRecentlyViewedResponse>()?;
     m.add_class::<BatchDeleteNotebooksResponse>()?;
+    m.add_class::<AudioOverviewRequest>()?;
+    m.add_class::<AudioOverviewResponse>()?;
     m.add("NblmError", m.py().get_type::<NblmError>())?;
     m.add("DEFAULT_GCLOUD_BINARY", DEFAULT_GCLOUD_BINARY)?;
     m.add("DEFAULT_ENV_TOKEN_KEY", DEFAULT_ENV_TOKEN_KEY)?;

@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from .nblm import (
     DEFAULT_ENV_TOKEN_KEY,
     DEFAULT_GCLOUD_BINARY,
+    AudioOverviewRequest,
+    AudioOverviewResponse,
     BatchCreateSourcesResponse,
     BatchDeleteNotebooksResponse,
     BatchDeleteSourcesResponse,
@@ -35,6 +37,8 @@ __version__ = "0.1.0"
 __all__ = [
     "DEFAULT_ENV_TOKEN_KEY",
     "DEFAULT_GCLOUD_BINARY",
+    "AudioOverviewRequest",
+    "AudioOverviewResponse",
     "BatchCreateSourcesResponse",
     "BatchDeleteNotebooksResponse",
     "BatchDeleteSourcesResponse",

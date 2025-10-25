@@ -17,9 +17,14 @@ impl NblmClient {
             self.url_builder.notebook_path(notebook_id)
         );
         let url = self.url_builder.build_url(&path)?;
-        self.http
+
+        // API response is wrapped in audioOverview field
+        let api_response: crate::models::responses::audio::AudioOverviewApiResponse = self
+            .http
             .request_json(Method::POST, url, Some(&request))
-            .await
+            .await?;
+
+        Ok(api_response.audio_overview)
     }
 
     pub async fn delete_audio_overview(&self, notebook_id: &str) -> Result<()> {

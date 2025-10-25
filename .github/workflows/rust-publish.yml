@@ -1,4 +1,4 @@
-name: publish-crates
+name: Publish Rust Crates
 
 on:
   release:

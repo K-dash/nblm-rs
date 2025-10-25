@@ -24,7 +24,7 @@ Why use this CLI instead of direct API calls or web UI?
 > [!NOTE]
 > Windows is not supported.
 
-## Features (Verified as of 2025-10-19)
+## Features (Verified as of 2025-10-25)
 
 > [!NOTE]
 > The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
@@ -207,7 +207,7 @@ nblm sources get \
 ```
 
 > [!WARNING]
-> Google Drive source addition currently returns HTTP 500 Internal Server Error. This is an API-side issue as of 2025-10-19.
+> Google Drive source addition currently returns HTTP 500 Internal Server Error. This is an API-side issue as of 2025-10-25.
 
 ### Audio Overview
 
@@ -220,7 +220,7 @@ nblm audio delete --notebook-id NOTEBOOK_ID
 ```
 
 > [!NOTE]
-> Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts empty request body as of 2025-10-19. Language and other settings must be configured through the NotebookLM UI.
+> Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts empty request body as of 2025-10-25. Language and other settings must be configured through the NotebookLM UI.
 
 ### Sharing
 

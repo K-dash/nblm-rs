@@ -64,6 +64,7 @@ jobs:
           sccache: "true"
           manylinux: auto
           working-directory: python
+          docker-options: "-v ${{ github.workspace }}/crates:/crates"
 
       - name: Upload wheels
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -87,6 +88,7 @@ jobs:
           command: sdist
           args: --out dist
           working-directory: python
+          docker-options: "-v ${{ github.workspace }}/crates:/crates"
 
       - name: Upload sdist
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

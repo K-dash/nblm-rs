@@ -119,39 +119,58 @@ echo "  ./scripts/bump-version.sh 0.1.1"
 # ------------------------- Python -------------------------
 [tasks.py-fmt]
 description = "Format Python code with ruff"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "ruff", "format", "src", "tests"]
 
 [tasks.py-fmt-check]
 description = "Check Python code formatting"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "ruff", "format", "--check", "src", "tests"]
 
 [tasks.py-lint]
 description = "Lint Python code with ruff"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "ruff", "check", "src", "tests"]
 
 [tasks.py-lint-fix]
 description = "Lint and fix Python code with ruff"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "ruff", "check", "--fix", "src", "tests"]
 
 [tasks.py-type]
 description = "Run mypy type checking"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "mypy", "src", "tests"]
 
 [tasks.py-test]
 description = "Run Python tests with pytest"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "pytest", "tests", "-v"]
 
 [tasks.py-build]
 description = "Build Python package with maturin"
+dependencies = ["py-setup"]
 command = "uv"
 args = ["@@split(UV_RUN_ARGS,;)", "maturin", "develop"]
 
 [tasks.py-all]
 description = "Run all Python checks (fmt, lint, type, test)"
-dependencies = ["py-fmt", "py-lint-fix", "py-type"]
+dependencies = ["py-fmt", "py-lint-fix", "py-type", "py-build"]
+
+[tasks.py-setup]
+private = true
+condition = { files_modified = { input = ["python/pyproject.toml", "python/uv.lock"], output = ["python/.venv/timestamp.txt"] } }
+cwd = "python"
+command = "bash"
+args = [
+    "-euo",
+    "pipefail",
+    "-c",
+    "uv venv --clear && uv sync --frozen && touch .venv/timestamp.txt",
+]

@@ -15,7 +15,7 @@
 
   <img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/5ecea7aa-a771-4455-9851-c35f20430faa" />
 
-  </div>
+</div>
 
 
 > [!WARNING]

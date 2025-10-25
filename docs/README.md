@@ -27,7 +27,6 @@ Comprehensive documentation for the NotebookLM Enterprise API client.
 ## API Reference
 
 - **[API Limitations](api/limitations.md)** - Known NotebookLM API limitations and workarounds
-  - Service account create operations
   - Batch delete restrictions
   - Google Drive sources
   - Pagination issues

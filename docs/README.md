@@ -1,39 +1,50 @@
 # nblm-rs Documentation
 
-Comprehensive documentation for the NotebookLM Enterprise API client.
+Complete documentation for the NotebookLM Enterprise API client (CLI & Python SDK).
 
-## Quick Links
+## Getting Started
 
-- [Main README](../README.md) - Project overview and quick start
+**New to nblm-rs?** Start here:
+
+- [Installation](getting-started/installation.md) - Install CLI or Python SDK
+- [Authentication](getting-started/authentication.md) - Set up authentication with gcloud
+- [Configuration](getting-started/configuration.md) - Project numbers, locations, environment variables
+
+## CLI Reference
+
+Complete command-line interface documentation:
+
+- [CLI Overview](cli/README.md) - Command structure and common options
+- [Notebooks Commands](cli/notebooks.md) - Create, list, and delete notebooks
+- [Sources Commands](cli/sources.md) - Add, upload, and manage sources
+- [Audio Commands](cli/audio.md) - Create and delete audio overviews
+- [Share Commands](cli/share.md) - Share notebooks with users
+- [Advanced Usage](cli/advanced.md) - JSON output, error handling, scripting
+
+## Python SDK Reference
+
+Python bindings documentation:
+
+- [Python SDK Overview](python/README.md) - Installation and basic usage
+- [Quickstart](python/quickstart.md) - Get started in 5 minutes
+- [API Reference](python/api-reference.md) - All classes and methods
+- [Notebooks API](python/notebooks.md) - Notebook operations in detail
+- [Sources API](python/sources.md) - Source operations in detail
+- [Audio API](python/audio.md) - Audio overview operations
+- [Error Handling](python/error-handling.md) - Exception handling patterns
+
+## API Information
+
+- [API Limitations](api/limitations.md) - Known limitations and workarounds
+- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview) - Official API docs
+
+## Contributing
+
+- [Contributing Guide](../CONTRIBUTING.md) - Development setup and guidelines
 - [CHANGELOG](../CHANGELOG.md) - Version history
-- [CONTRIBUTING](../CONTRIBUTING.md) - Development guide
 
-## User Guides
+---
 
-- **[Authentication Guide](guides/authentication.md)** - Complete guide to all authentication methods
-  - gcloud CLI authentication
-  - Environment variable tokens
-  - Service account (read-only)
-  - Troubleshooting
-- **[Notebook Sources](guides/notebook_sources.md)** - Manage notebook sources via Python bindings
-  - Add web, text, and video sources
-  - Delete existing sources
-  - Understand API error handling
-- **[Audio Overview](guides/audio_overview.md)** - Create and manage audio overviews
-  - Create podcast-style discussions from notebooks
-  - Understand current API limitations
-  - Complete workflow examples
-
-## API Reference
-
-- **[API Limitations](api/limitations.md)** - Known NotebookLM API limitations and workarounds
-  - Batch delete restrictions
-  - Google Drive sources
-  - Pagination issues
-
-## Investigation Reports
-
-Investigation reports document detailed technical findings from testing and debugging.
-
+**Note**: The `investigation/` directory contains internal research notes and experiments with the NotebookLM API.
 
 > This is an unofficial tool and is not affiliated with or endorsed by Google.

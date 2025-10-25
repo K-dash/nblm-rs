@@ -4,15 +4,13 @@ build-backend = "maturin"
 
 [project]
 name = "nblm"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python bindings for NotebookLM Enterprise API client"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.14"
 license = { text = "MIT" }
 keywords = ["notebooklm", "api", "google-cloud", "gemini"]
-authors = [
-    { name = "K-dash" }
-]
+authors = [{ name = "K-dash" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -26,12 +24,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "mypy>=1.0.0",
-    "ruff>=0.1.0",
-    "maturin>=1.0,<2.0",
-]
+dev = ["pytest>=7.0.0", "mypy>=1.0.0", "ruff>=0.1.0", "maturin>=1.0,<2.0"]
 
 [project.urls]
 Homepage = "https://github.com/K-dash/nblm-rs"
@@ -74,22 +67,22 @@ line-length = 100
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "UP",   # pyupgrade
-    "ANN",  # flake8-annotations
-    "TCH",  # flake8-type-checking
-    "ARG",  # flake8-unused-arguments
-    "PIE",  # flake8-pie
-    "BLE",  # flake8-blind-except
-    "RUF",  # Ruff-specific rules
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "TCH", # flake8-type-checking
+    "ARG", # flake8-unused-arguments
+    "PIE", # flake8-pie
+    "BLE", # flake8-blind-except
+    "RUF", # Ruff-specific rules
 ]
 ignore = [
-    "E501",  # line too long (handled by formatter)
+    "E501", # line too long (handled by formatter)
 ]
 
 [tool.ruff.lint.per-file-ignores]

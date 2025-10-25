@@ -166,7 +166,7 @@ dependencies = ["py-fmt", "py-lint-fix", "py-type", "py-build"]
 [tasks.py-setup]
 private = true
 condition = { files_modified = { input = ["python/pyproject.toml", "python/uv.lock"], output = ["python/.venv/timestamp.txt"] } }
-script_runner = "@shell"
+script_runner = "@bash"
 script = '''
 set -euo pipefail
 cd python

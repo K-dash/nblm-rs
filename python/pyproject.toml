@@ -33,6 +33,7 @@ Repository = "https://github.com/K-dash/nblm-rs"
 
 [tool.maturin]
 module-name = "nblm"
+project-name = "nblm"
 manifest-path = "../crates/nblm-python/Cargo.toml"
 python-source = "src"
 features = ["pyo3/extension-module"]

@@ -5,6 +5,11 @@ on:
     types:
       - published
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag version (e.g., v0.1.2)"
+        required: false
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,7 +28,12 @@ jobs:
 
       - name: Verify tag matches package version
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG_VERSION="${{ inputs.tag }}"
+            TAG_VERSION="${TAG_VERSION#v}"
+          else
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          fi
           PACKAGE_VERSION=$(python -c "import tomllib; print(tomllib.load(open('python/pyproject.toml', 'rb'))['project']['version'])")
           echo "Tag version: ${TAG_VERSION}"
           echo "Package version: ${PACKAGE_VERSION}"

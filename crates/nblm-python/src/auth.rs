@@ -5,15 +5,6 @@ use crate::error::{IntoPyResult, PyResult};
 
 pub const DEFAULT_GCLOUD_BINARY: &str = "gcloud";
 pub const DEFAULT_ENV_TOKEN_KEY: &str = "NBLM_ACCESS_TOKEN";
-pub const DEFAULT_SERVICE_ACCOUNT_SCOPE: &str = "https://www.googleapis.com/auth/cloud-platform";
-pub const DEFAULT_SERVICE_ACCOUNT_SCOPES: &[&str] = &[DEFAULT_SERVICE_ACCOUNT_SCOPE];
-
-pub fn default_service_account_scopes() -> Vec<String> {
-    DEFAULT_SERVICE_ACCOUNT_SCOPES
-        .iter()
-        .map(|scope| scope.to_string())
-        .collect()
-}
 
 pub trait TokenProvider: Send + Sync {
     fn get_inner(&self) -> Arc<dyn nblm_core::TokenProvider>;
@@ -65,45 +56,9 @@ impl TokenProvider for EnvTokenProvider {
     }
 }
 
-#[pyclass(module = "nblm")]
-#[derive(Clone)]
-pub struct ServiceAccountTokenProvider {
-    inner: Arc<nblm_core::ServiceAccountTokenProvider>,
-}
-
-#[pymethods]
-impl ServiceAccountTokenProvider {
-    #[staticmethod]
-    #[pyo3(signature = (path, scopes = default_service_account_scopes()))]
-    pub fn from_file(path: String, scopes: Vec<String>) -> PyResult<Self> {
-        let provider =
-            nblm_core::ServiceAccountTokenProvider::from_file(path, scopes).into_py_result()?;
-        Ok(Self {
-            inner: Arc::new(provider),
-        })
-    }
-
-    #[staticmethod]
-    #[pyo3(signature = (json_data, scopes = default_service_account_scopes()))]
-    pub fn from_json(json_data: String, scopes: Vec<String>) -> PyResult<Self> {
-        let provider = nblm_core::ServiceAccountTokenProvider::from_json(&json_data, scopes)
-            .into_py_result()?;
-        Ok(Self {
-            inner: Arc::new(provider),
-        })
-    }
-}
-
-impl TokenProvider for ServiceAccountTokenProvider {
-    fn get_inner(&self) -> Arc<dyn nblm_core::TokenProvider> {
-        self.inner.clone()
-    }
-}
-
 pub(crate) enum PyTokenProvider {
     Gcloud(GcloudTokenProvider),
     Env(EnvTokenProvider),
-    ServiceAccount(ServiceAccountTokenProvider),
 }
 
 impl PyTokenProvider {
@@ -111,7 +66,6 @@ impl PyTokenProvider {
         match self {
             PyTokenProvider::Gcloud(p) => p.get_inner(),
             PyTokenProvider::Env(p) => p.get_inner(),
-            PyTokenProvider::ServiceAccount(p) => p.get_inner(),
         }
     }
 }
@@ -123,9 +77,6 @@ impl<'py> FromPyObject<'py> for PyTokenProvider {
         }
         if let Ok(p) = ob.extract::<EnvTokenProvider>() {
             return Ok(PyTokenProvider::Env(p));
-        }
-        if let Ok(p) = ob.extract::<ServiceAccountTokenProvider>() {
-            return Ok(PyTokenProvider::ServiceAccount(p));
         }
         Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
             "Expected a TokenProvider instance",

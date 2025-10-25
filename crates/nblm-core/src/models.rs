@@ -185,7 +185,7 @@ pub struct ShareResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ListRecentlyViewedResponse {
     #[serde(default)]
-    pub notebooks: Vec<serde_json::Value>,
+    pub notebooks: Vec<Notebook>,
 }
 
 /// Audio Overview creation request.

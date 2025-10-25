@@ -66,7 +66,7 @@ Why use this CLI instead of direct API calls or web UI?
 
 - Rust 1.90.0 or later
 - Google Cloud project with NotebookLM API enabled
-- Authentication credentials (gcloud, service account, or access token)
+- Authentication credentials (gcloud or access token)
 
 ### Build from source
 
@@ -80,49 +80,22 @@ The binary will be available at `target/release/nblm`.
 
 ## Authentication
 
-### Method 1: gcloud CLI
+> **Full Guide**: See [Authentication Guide](docs/guides/authentication.md) for detailed instructions on all authentication methods.
+
+### Quick Start
+
+**Method 1: gcloud CLI (Recommended)**
 
 ```bash
 gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-
-nblm --auth gcloud \
-  --project-number PROJECT_NUMBER \
-  --location global \
-  --endpoint-location us \
-  notebooks recent
+nblm --auth gcloud --project-number PROJECT_NUMBER notebooks recent
 ```
 
-### Method 2: Service Account
-
-```bash
-# Create service account key
-gcloud iam service-accounts keys create ~/sa-key.json \
-  --iam-account=your-sa@project.iam.gserviceaccount.com
-
-# Use with environment variable
-export GOOGLE_APPLICATION_CREDENTIALS="$HOME/sa-key.json"
-nblm --auth sa \
-  --project-number PROJECT_NUMBER \
-  notebooks recent
-
-# Or specify key file directly
-nblm --auth sa \
-  --sa-key ~/sa-key.json \
-  --project-number PROJECT_NUMBER \
-  notebooks recent
-```
-
-> [!IMPORTANT]
-> Service account requires `roles/editor` permission.
-
-### Method 3: Environment Variable Token
+**Method 2: Environment Variable Token**
 
 ```bash
 export NBLM_ACCESS_TOKEN=$(gcloud auth print-access-token)
-nblm --auth env \
-  --project-number PROJECT_NUMBER \
-  notebooks recent
+nblm --auth env --project-number PROJECT_NUMBER notebooks recent
 ```
 
 ## Configuration
@@ -271,26 +244,10 @@ nblm --json notebooks recent | jq '.notebooks[].title'
 
 ## Known API Issues
 
-> [!WARNING]
-> The following issues have been discovered through testing and are documented in the code:
+> [!NOTE]
+> The NotebookLM API is currently in **alpha** and has several known limitations. These issues have been verified through testing and workarounds are implemented where possible.
 
-### Google Drive Sources (HTTP 500)
-
-As of 2025-10-19, adding Google Drive sources returns HTTP 500 Internal Server Error. This occurs even with proper authentication (`gcloud auth login --enable-gdrive-access`) and correct IAM permissions. The CLI includes warnings when attempting to use this feature.
-
-### Audio Overview Configuration Fields
-
-The API documentation mentions `languageCode`, `sourceIds`, and `episodeFocus` fields, but the actual API rejects all of these fields with "Unknown name" errors. Only empty request body `{}` is accepted. These fields are commented out in the code for future use when the API implements them.
-
-### Notebook Batch Deletion
-
-Despite the API endpoint being named `batchDelete` and accepting an array of notebook names, it only works with a single notebook at a time. The CLI works around this by calling the API sequentially for each notebook.
-
-### Pagination Not Implemented
-
-The `notebooks recent` command accepts `--page-size` and `--page-token` parameters, but the NotebookLM API never returns `nextPageToken` in responses, indicating pagination is not currently implemented.
-
-All of these have been corrected in the implementation.
+> **Complete List**: See [API Limitations](docs/api/limitations.md) for detailed information on all known issues, test results, and workarounds.
 
 ## Development
 
@@ -306,6 +263,13 @@ MIT
 ## Acknowledgments
 
 This project uses the NotebookLM Enterprise API. See the [official documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs) for more information.
+
+## Documentation
+
+- **[Full Documentation](docs/)** - Complete guides and references
+  - [Authentication Guide](docs/guides/authentication.md)
+  - [API Limitations](docs/api/limitations.md)
+  - [Investigation Reports](docs/investigation/)
 
 ## Related Resources
 

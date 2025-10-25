@@ -1,13 +1,22 @@
-[![Crates.io](https://img.shields.io/crates/v/nblm-cli.svg)](https://crates.io/crates/nblm-cli)
-[![PyPI](https://img.shields.io/pypi/v/nblm.svg)](https://pypi.org/project/nblm/)
-[![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
+<div align="center">
 
-# nblm-rs
+  # _nblm-rs_
 
-Unofficial NotebookLM Enterprise API client written in Rust, available as:
+  **Unofficial NotebookLM Enterprise API client**
 
-- 🦀 **Rust CLI**: Command-line tool for shell scripting and automation
-- 🐍 **Python SDK**: Python bindings for integration in Python applications
+  🦀 **Rust CLI**: Command-line tool for shell scripting and automation <br/>
+  🐍 **Python SDK**: Python bindings for integration in Python applications
+
+  
+
+  [![Crates.io](https://img.shields.io/crates/v/nblm-cli.svg)](https://crates.io/crates/nblm-cli)
+  [![PyPI](https://img.shields.io/pypi/v/nblm.svg)](https://pypi.org/project/nblm/)
+  [![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
+
+  <img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/5ecea7aa-a771-4455-9851-c35f20430faa" />
+
+</div>
+
 
 > [!WARNING]
 > This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.

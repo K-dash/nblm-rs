@@ -260,16 +260,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing guidelines
 
 MIT
 
-## Acknowledgments
-
-This project uses the NotebookLM Enterprise API. See the [official documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs) for more information.
-
 ## Documentation
 
 - **[Full Documentation](docs/)** - Complete guides and references
-  - [Authentication Guide](docs/guides/authentication.md)
-  - [API Limitations](docs/api/limitations.md)
-  - [Investigation Reports](docs/investigation/)
 
 ## Related Resources
 

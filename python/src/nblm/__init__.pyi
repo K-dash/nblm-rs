@@ -15,6 +15,12 @@ from ._models import (
     BatchDeleteNotebooksResponse,
     ListRecentlyViewedResponse,
     Notebook,
+    NotebookMetadata,
+    NotebookSource,
+    NotebookSourceId,
+    NotebookSourceMetadata,
+    NotebookSourceSettings,
+    NotebookSourceYoutubeMetadata,
 )
 
 __version__: str
@@ -30,6 +36,12 @@ __all__ = [
     "NblmClient",
     "NblmError",
     "Notebook",
+    "NotebookMetadata",
+    "NotebookSource",
+    "NotebookSourceId",
+    "NotebookSourceMetadata",
+    "NotebookSourceSettings",
+    "NotebookSourceYoutubeMetadata",
     "ServiceAccountTokenProvider",
     "default_service_account_scopes",
 ]

@@ -11,7 +11,11 @@ pub use auth::{
 };
 pub use client::NblmClient;
 pub use error::NblmError;
-pub use models::{BatchDeleteNotebooksResponse, ListRecentlyViewedResponse, Notebook};
+pub use models::{
+    BatchDeleteNotebooksResponse, ListRecentlyViewedResponse, Notebook, NotebookMetadata,
+    NotebookSource, NotebookSourceId, NotebookSourceMetadata, NotebookSourceSettings,
+    NotebookSourceYoutubeMetadata,
+};
 
 /// NotebookLM Enterprise API client for Python
 #[pymodule]
@@ -20,6 +24,12 @@ fn nblm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<GcloudTokenProvider>()?;
     m.add_class::<EnvTokenProvider>()?;
     m.add_class::<Notebook>()?;
+    m.add_class::<NotebookMetadata>()?;
+    m.add_class::<NotebookSource>()?;
+    m.add_class::<NotebookSourceMetadata>()?;
+    m.add_class::<NotebookSourceSettings>()?;
+    m.add_class::<NotebookSourceYoutubeMetadata>()?;
+    m.add_class::<NotebookSourceId>()?;
     m.add_class::<ListRecentlyViewedResponse>()?;
     m.add_class::<BatchDeleteNotebooksResponse>()?;
     m.add("NblmError", m.py().get_type::<NblmError>())?;

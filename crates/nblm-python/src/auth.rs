@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use std::sync::Arc;
 
-use crate::error::{IntoPyResult, PyResult};
+use crate::error::PyResult;
 
 pub const DEFAULT_GCLOUD_BINARY: &str = "gcloud";
 pub const DEFAULT_ENV_TOKEN_KEY: &str = "NBLM_ACCESS_TOKEN";

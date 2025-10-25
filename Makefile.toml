@@ -24,7 +24,17 @@ args = ["fmt", "--all", "--", "--check"]
 [tasks.lint]
 description = "Verify zero clippy warnings"
 command = "cargo"
-args = ["clippy", "--workspace", "--exclude", "nblm-python", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = [
+    "clippy",
+    "--workspace",
+    "--exclude",
+    "nblm-python",
+    "--all-targets",
+    "--all-features",
+    "--",
+    "-D",
+    "warnings",
+]
 
 [tasks.test]
 description = "Run test suite"
@@ -69,12 +79,42 @@ dependencies = ["fmt-ci", "clippy-ci", "test-ci"]
 [tasks.clippy-ci]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["clippy", "--locked", "--workspace", "--exclude", "nblm-python", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = [
+    "clippy",
+    "--locked",
+    "--workspace",
+    "--exclude",
+    "nblm-python",
+    "--all-targets",
+    "--all-features",
+    "--",
+    "-D",
+    "warnings",
+]
 
 [tasks.test-ci]
 dependencies = ["before-build"]
 command = "cargo"
-args = ["test", "--locked", "--workspace", "--exclude", "nblm-python", "--all-targets"]
+args = [
+    "test",
+    "--locked",
+    "--workspace",
+    "--exclude",
+    "nblm-python",
+    "--all-targets",
+]
+
+# ------------------------- Version Management -------------------------
+[tasks.bump]
+description = "Bump version across all packages (Usage: ./scripts/bump-version.sh <version>)"
+script_runner = "@shell"
+script = '''
+echo "To bump version, run:"
+echo "  ./scripts/bump-version.sh <version>"
+echo ""
+echo "Example:"
+echo "  ./scripts/bump-version.sh 0.1.1"
+'''
 
 # ------------------------- Python -------------------------
 [tasks.py-fmt]

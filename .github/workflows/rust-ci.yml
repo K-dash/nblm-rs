@@ -73,8 +73,8 @@ jobs:
 
       - name: Run CI task (cross)
         if: matrix.use-cross == true
-        run: cross make ci -- --locked
+        run: CARGO=cross cargo make ci
 
       - name: Run CI task
         if: matrix.use-cross != true
-        run: cargo make ci -- --locked
+        run: cargo make ci

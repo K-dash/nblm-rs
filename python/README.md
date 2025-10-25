@@ -1,12 +1,8 @@
-# nblm - Python Bindings for NotebookLM Enterprise API
+# nblm - Python SDK for NotebookLM Enterprise API
 
-Python bindings for the NotebookLM Enterprise API client written in Rust.
+Python bindings for the NotebookLM Enterprise API, powered by Rust via PyO3.
 
-> [!WARNING]
-> This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.
-
-> [!NOTE]
-> **Under Active Development**: This library is currently in development. APIs may change, and additional features are being added. Currently supports notebook operations (create, list, delete) and source management (add/delete). Audio generation features are planned.
+> **Warning**: This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.
 
 ## Installation
 
@@ -20,173 +16,127 @@ Or with uv:
 uv add nblm
 ```
 
-## Authentication
+**Requirements**: Python 3.14 or later
 
-The library supports three authentication methods:
-
-### 1. gcloud CLI
+## Quick Start
 
 ```python
-from nblm import GcloudTokenProvider, NblmClient
+from nblm import NblmClient, GCloudTokenProvider
 
-provider = GcloudTokenProvider()  # Uses default 'gcloud' binary
-# or specify custom path
-# provider = GcloudTokenProvider(binary="/usr/local/bin/gcloud")
+# Initialize client
+client = NblmClient(
+    token_provider=GCloudTokenProvider(),
+    project_number="123456789012"
+)
+
+# Create a notebook
+notebook = client.create_notebook("My Notebook")
+print(f"Created: {notebook.title}")
+
+# Add sources
+from nblm import WebSource
+
+client.add_sources(
+    notebook_id=notebook.notebook_id,
+    web_sources=[WebSource(url="https://example.com", name="Example")]
+)
+
+# Create audio overview
+audio = client.create_audio_overview(notebook.notebook_id)
+print(f"Audio status: {audio.status}")
+```
+
+## Features
+
+- **Notebooks**: Create, list, and delete notebooks
+- **Sources**: Add web, text, video sources; upload files; manage sources
+- **Audio Overviews**: Create podcast-style discussions from notebook content
+- **Type Safety**: Full type hints for IDE autocomplete and static analysis
+- **Fast**: Powered by Rust for high performance
+
+## Authentication
+
+### gcloud CLI (Recommended)
+
+```python
+from nblm import NblmClient, GCloudTokenProvider
 
 client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
-    location="global",
-    endpoint_location="global",
+    token_provider=GCloudTokenProvider(),
+    project_number="123456789012"
 )
 ```
 
-
-### 2. Environment Variable Token
+### Environment Variable
 
 ```python
 import os
-from nblm import EnvTokenProvider, NblmClient
+from nblm import NblmClient, EnvTokenProvider
 
 os.environ["NBLM_ACCESS_TOKEN"] = "your-access-token"
-provider = EnvTokenProvider()  # Uses NBLM_ACCESS_TOKEN by default
-# or specify custom key
-# provider = EnvTokenProvider(key="MY_CUSTOM_TOKEN")
 
 client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
+    token_provider=EnvTokenProvider(),
+    project_number="123456789012"
 )
 ```
 
-## Notebook Operations
+## Documentation
 
-### Creating Notebooks
+**Complete Python SDK documentation:**
+
+- [Getting Started Guide](https://github.com/K-dash/nblm-rs/blob/main/docs/getting-started/installation.md)
+- [Quickstart Tutorial](https://github.com/K-dash/nblm-rs/blob/main/docs/python/quickstart.md)
+- [API Reference](https://github.com/K-dash/nblm-rs/blob/main/docs/python/api-reference.md)
+- [Notebooks API](https://github.com/K-dash/nblm-rs/blob/main/docs/python/notebooks.md)
+- [Sources API](https://github.com/K-dash/nblm-rs/blob/main/docs/python/sources.md)
+- [Audio API](https://github.com/K-dash/nblm-rs/blob/main/docs/python/audio.md)
+- [Error Handling](https://github.com/K-dash/nblm-rs/blob/main/docs/python/error-handling.md)
+
+## Examples
+
+### Create Notebook and Add Sources
 
 ```python
-from nblm import GcloudTokenProvider, NblmClient
+from nblm import NblmClient, GCloudTokenProvider, WebSource, TextSource
 
-provider = GcloudTokenProvider()
 client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
+    token_provider=GCloudTokenProvider(),
+    project_number="123456789012"
 )
 
-# Create a new notebook
-notebook = client.create_notebook("My Research Notebook")
-print(f"Created notebook: {notebook.title}")
-print(f"Notebook ID: {notebook.notebook_id}")
-```
+# Create notebook
+notebook = client.create_notebook("Research: Python Best Practices")
 
-### Listing Recent Notebooks
-
-```python
-# List recently viewed notebooks (default: 500)
-response = client.list_recently_viewed()
-for notebook_data in response.notebooks:
-    print(f"Title: {notebook_data['title']}")
-    print(f"ID: {notebook_data.get('notebookId', 'N/A')}")
-
-# Limit results with page_size (1-500)
-response = client.list_recently_viewed(page_size=10)
-```
-
-### Deleting Notebooks
-
-```python
-# Delete a single notebook
-notebook_name = "projects/123456789012/locations/global/notebooks/abc123"
-client.delete_notebooks([notebook_name])
-
-# Delete multiple notebooks
-notebook_names = [
-    "projects/123456789012/locations/global/notebooks/abc123",
-    "projects/123456789012/locations/global/notebooks/def456",
-]
-client.delete_notebooks(notebook_names)
-```
-
-> [!NOTE]
-> Despite the underlying API being named "batchDelete", it only accepts
-> one notebook at a time (as of 2025-10-19). The `delete_notebooks` method
-> works around this limitation by calling the API sequentially for each notebook.
-
-### Managing Sources
-
-```python
-from nblm import GcloudTokenProvider, NblmClient, WebSource, TextSource, VideoSource
-
-provider = GcloudTokenProvider()
-client = NblmClient(token_provider=provider, project_number="123456789012")
-
-# Add different source types to a notebook
-response = client.add_sources(
-    notebook_id="abc123",
+# Add sources
+client.add_sources(
+    notebook_id=notebook.notebook_id,
     web_sources=[
-        WebSource(url="https://example.com", name="Example Website"),
-        WebSource(url="https://python.org"),  # name is optional
+        WebSource(url="https://peps.python.org/pep-0008/", name="PEP 8"),
+        WebSource(url="https://docs.python-guide.org/")
     ],
     text_sources=[
-        TextSource(content="Inline memo", name="Notes"),
-    ],
-    video_sources=[
-        VideoSource(url="https://youtube.com/watch?v=123"),
-    ],
-)
-
-for result in response.sources:
-    print(result.name)  # Full source resource name
-
-# Delete sources using full resource names
-client.delete_sources(
-    notebook_id="abc123",
-    source_names=[
-        "projects/123456789012/locations/global/notebooks/abc123/sources/source-1",
-    ],
+        TextSource(content="Focus on code quality", name="Notes")
+    ]
 )
 ```
 
-## Configuration
-
-### Project Number
-
-Get your Google Cloud project number:
-
-```bash
-gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)"
-```
-
-### Locations
-
-The NotebookLM API supports the following multi-region locations:
-
-- `global` - **Recommended** by Google for best performance
-- `us` - United States (for compliance requirements)
-- `eu` - European Union (for compliance requirements)
+### Upload Files
 
 ```python
-# Using global location (recommended)
-client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
-    location="global",
-    endpoint_location="global",
+# Upload a PDF
+response = client.upload_source_file(
+    notebook_id=notebook.notebook_id,
+    path="/path/to/document.pdf",
+    display_name="Research Paper"
 )
+print(f"Uploaded: {response.source_id}")
 ```
 
-> [!NOTE]
-> `location` and `endpoint_location` must be set to the same value.
-
-## Error Handling
+### Error Handling
 
 ```python
-from nblm import NblmClient, NblmError, GcloudTokenProvider
-
-provider = GcloudTokenProvider()
-client = NblmClient(
-    token_provider=provider,
-    project_number="123456789012",
-)
+from nblm import NblmError
 
 try:
     notebook = client.create_notebook("My Notebook")
@@ -194,38 +144,47 @@ except NblmError as e:
     print(f"Error: {e}")
 ```
 
-## API Limitations
-
-### Delete Operations
-
-The batch delete API only accepts one notebook at a time. The library handles this automatically by calling the API sequentially for each notebook.
-
 ## Type Hints
 
-The library includes full type hints for better IDE support:
+The library includes full type hints:
 
 ```python
 from nblm import (
     NblmClient,
     Notebook,
-    ListRecentlyViewedResponse,
-    BatchDeleteNotebooksResponse,
+    NotebookSource,
+    AudioOverviewResponse,
+    WebSource,
+    TextSource,
+    VideoSource,
 )
 
-client: NblmClient = ...
+# All operations are fully typed
+client: NblmClient
 notebook: Notebook = client.create_notebook("Title")
-response: ListRecentlyViewedResponse = client.list_recently_viewed()
+audio: AudioOverviewResponse = client.create_audio_overview("abc123")
 ```
 
-## Development
+## Supported Operations
 
-See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for development setup.
+| Category           | Operations                                        | Status        |
+| ------------------ | ------------------------------------------------- | ------------- |
+| **Notebooks**      | Create, list, delete                              | Available     |
+| **Sources**        | Add (web, text, video), upload files, get, delete | Available     |
+| **Audio Overview** | Create, delete                                    | Available     |
+| **Sharing**        | Share with users                                  | Not available |
+
+## Links
+
+- [GitHub Repository](https://github.com/K-dash/nblm-rs)
+- [Full Documentation](https://github.com/K-dash/nblm-rs/tree/main/docs)
+- [CLI Tool](https://crates.io/crates/nblm-cli)
+- [Issue Tracker](https://github.com/K-dash/nblm-rs/issues)
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/K-dash/nblm-rs/blob/main/CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
 MIT
-
-## Related Resources
-
-- [NotebookLM API Documentation](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview)
-- [Main Repository](https://github.com/K-dash/nblm-rs)

@@ -19,7 +19,12 @@
 
 
 > [!WARNING]
-> This is an unofficial tool and is not affiliated with or endorsed by Google. Use at your own risk.
+> This is an unofficial tool and is not affiliated with or endorsed by Google.
+
+## Known API Issues
+
+> [!NOTE]
+> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](docs/api/limitations.md) for details.
 
 ## Motivation
 
@@ -152,10 +157,6 @@ client.add_sources(
 - [Python SDK Reference](docs/python/README.md) - API reference and usage patterns
 - [API Limitations](docs/api/limitations.md) - Known issues and workarounds
 
-## Known API Issues
-
-> [!NOTE]
-> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](docs/api/limitations.md) for details.
 
 ## Related Resources
 

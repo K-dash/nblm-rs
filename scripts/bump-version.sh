@@ -23,6 +23,7 @@ sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" crates/nblm-pytho
 # Python package
 echo "Updating Python package..."
 sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" python/pyproject.toml
+(cd python && uv sync)
 
 # Clean up backup files
 find . -name "*.bak" -delete

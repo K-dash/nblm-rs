@@ -19,6 +19,7 @@ Options that can be used with any command:
 | `--location <LOCATION>`          | API location: `global`, `us`, or `eu`       | No       | `global` |
 | `--endpoint-location <LOCATION>` | Endpoint location (must match `--location`) | No       | `global` |
 | `--json`                         | Output in JSON format                       | No       | false    |
+| `--debug-http`                   | Print raw HTTP responses to stderr          | No       | false    |
 | `-h, --help`                     | Print help information                      | No       | -        |
 | `-V, --version`                  | Print version information                   | No       | -        |
 
@@ -65,6 +66,10 @@ export NBLM_ENDPOINT_LOCATION="global"
 # Now you can omit these flags
 nblm notebooks recent
 ```
+
+### Raw HTTP Logging
+
+Use the new `--debug-http` flag (or set `NBLM_DEBUG_HTTP=1`) to print the raw JSON payload returned by the API. Logged bodies may contain sensitive data, so enable this only on trusted machines.
 
 ## Output Formats
 

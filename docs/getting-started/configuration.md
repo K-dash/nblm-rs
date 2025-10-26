@@ -39,6 +39,17 @@ The NotebookLM API supports the following multi-region locations:
 
 Set environment variables to avoid repeating options in every command.
 
+### Debug Logging
+
+Set `NBLM_DEBUG_HTTP=1` to emit full HTTP response bodies for every API call. This works for both the CLI and Python SDK and is handy when you need to inspect raw JSON during contract changes.
+
+```bash
+# Enable verbose HTTP logging
+export NBLM_DEBUG_HTTP=1
+```
+
+> ⚠️ The full response payload can contain sensitive information. Only enable this in trusted environments.
+
 ### CLI
 
 ```bash

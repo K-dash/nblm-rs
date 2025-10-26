@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::borrow::Cow;
+use std::sync::{Arc, OnceLock};
 
 use bytes::Bytes;
 use reqwest::{header::HeaderMap, Client, Method, StatusCode, Url};
@@ -69,7 +70,9 @@ impl HttpClient {
         let mut response = self.retryer.run_with_retry(run).await?;
 
         if response.status() == StatusCode::UNAUTHORIZED {
-            let _ = response.bytes().await;
+            let status = response.status();
+            let body = response.bytes().await.map_err(Error::Request)?;
+            log_http_response(&method, &url, status, &body);
             let run_refresh = || {
                 let client = client.clone();
                 let method = method_clone.clone();
@@ -91,21 +94,10 @@ impl HttpClient {
                 }
             };
             response = self.retryer.run_with_retry(run_refresh).await?;
-            if !response.status().is_success() {
-                let status = response.status();
-                let body = response.text().await.unwrap_or_default();
-                return Err(Error::http(status, body));
-            }
-            return Ok(response.json::<R>().await?);
+            return parse_json_response::<R>(&method, &url, response).await;
         }
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(Error::http(status, body));
-        }
-
-        Ok(response.json::<R>().await?)
+        parse_json_response(&method, &url, response).await
     }
 
     pub async fn request_binary<R>(
@@ -153,7 +145,9 @@ impl HttpClient {
         let mut response = self.retryer.run_with_retry(run).await?;
 
         if response.status() == StatusCode::UNAUTHORIZED {
-            let _ = response.bytes().await;
+            let status = response.status();
+            let body = response.bytes().await.map_err(Error::Request)?;
+            log_http_response(&method, &url, status, &body);
             let run_refresh = || {
                 let client = client.clone();
                 let method = method_clone.clone();
@@ -178,20 +172,71 @@ impl HttpClient {
                 }
             };
             response = self.retryer.run_with_retry(run_refresh).await?;
-            if !response.status().is_success() {
-                let status = response.status();
-                let body = response.text().await.unwrap_or_default();
-                return Err(Error::http(status, body));
-            }
-            return Ok(response.json::<R>().await?);
+            return parse_json_response::<R>(&method, &url, response).await;
         }
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(Error::http(status, body));
-        }
-
-        Ok(response.json::<R>().await?)
+        parse_json_response(&method, &url, response).await
     }
+}
+
+const MAX_BODY_PREVIEW: usize = 2048;
+
+fn debug_http_enabled() -> bool {
+    static FLAG: OnceLock<bool> = OnceLock::new();
+    *FLAG.get_or_init(|| match std::env::var("NBLM_DEBUG_HTTP") {
+        Ok(value) => matches!(value.to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+        Err(_) => false,
+    })
+}
+
+fn build_body_preview(body: &[u8]) -> Cow<'_, str> {
+    match std::str::from_utf8(body) {
+        Ok(text) => {
+            if text.len() > MAX_BODY_PREVIEW {
+                let mut preview = text[..MAX_BODY_PREVIEW].to_string();
+                preview.push('…');
+                Cow::Owned(preview)
+            } else {
+                Cow::Borrowed(text)
+            }
+        }
+        Err(_) => Cow::Owned(format!("<non-utf8 body: {} bytes>", body.len())),
+    }
+}
+
+fn log_http_response(method: &Method, url: &Url, status: StatusCode, body: &[u8]) {
+    if !debug_http_enabled() {
+        return;
+    }
+
+    let preview = build_body_preview(body);
+    eprintln!(
+        "[nblm::http] method={} status={} url={} body_len={} body={}",
+        method,
+        status.as_u16(),
+        url,
+        body.len(),
+        preview
+    );
+}
+
+async fn parse_json_response<R>(
+    method: &Method,
+    url: &Url,
+    response: reqwest::Response,
+) -> Result<R>
+where
+    R: DeserializeOwned,
+{
+    let status = response.status();
+    let body = response.bytes().await.map_err(Error::Request)?;
+    log_http_response(method, url, status, &body);
+
+    if !status.is_success() {
+        let text = String::from_utf8_lossy(&body).into_owned();
+        return Err(Error::http(status, text));
+    }
+
+    let parsed = serde_json::from_slice::<R>(&body)?;
+    Ok(parsed)
 }

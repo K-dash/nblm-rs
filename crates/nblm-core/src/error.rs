@@ -15,6 +15,8 @@ pub enum Error {
         message: String,
         body: String,
     },
+    #[error("json deserialize error: {0}")]
+    Json(#[from] serde_json::Error),
     #[error("url parse error: {0}")]
     Url(#[from] url::ParseError),
     #[error("validation error: {0}")]

@@ -99,6 +99,15 @@ client = NblmClient(
 )
 ```
 
+## Debugging HTTP Responses
+
+Set `NBLM_DEBUG_HTTP=1` before importing `nblm` to print the raw JSON bodies returned by the API. The payload can include notebook contents, so only enable this in trusted environments.
+
+```bash
+export NBLM_DEBUG_HTTP=1
+python monitor_api.py --debug-http
+```
+
 ## Type Support
 
 The SDK includes full type hints:

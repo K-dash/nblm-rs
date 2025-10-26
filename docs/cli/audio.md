@@ -45,7 +45,7 @@ Output:
 {
   "audioOverviewId": "audio-abc123",
   "name": "projects/123456789012/locations/global/notebooks/abc123/audioOverviews/audio-abc123",
-  "status": "PROCESSING"
+  "status": "AUDIO_OVERVIEW_STATUS_IN_PROGRESS"
 }
 ```
 
@@ -59,13 +59,13 @@ Output:
 
 ### Processing Status
 
-Audio overviews go through the following states:
+> **Important**: As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
 
-1. **PROCESSING** - Audio is being generated
-2. **COMPLETED** - Audio is ready
-3. **FAILED** - Generation failed
+When creating an audio overview, the initial status is:
 
-To check the status, you would need to use the NotebookLM web UI or fetch the notebook details.
+- **AUDIO_OVERVIEW_STATUS_IN_PROGRESS** - Audio is being generated
+
+The API only returns this initial status. To check if generation has completed or failed, you must use the NotebookLM web UI.
 
 ## delete
 

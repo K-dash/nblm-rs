@@ -39,6 +39,10 @@ pub struct GlobalArgs {
     #[arg(long, global = true)]
     pub json: bool,
 
+    /// Enable verbose HTTP logging (also available via env NBLM_DEBUG_HTTP=1)
+    #[arg(long, global = true)]
+    pub debug_http: bool,
+
     #[arg(long, value_name = "DURATION", value_parser = parse_duration)]
     pub timeout: Option<Duration>,
 

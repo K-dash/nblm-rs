@@ -33,10 +33,10 @@ pub struct AddArgs {
     #[arg(long = "text-name", value_name = "DISPLAY")]
     pub text_names: Vec<String>,
 
-    /// Google Drive document ID. WARNING: Currently returns HTTP 500 error - not usable as of 2025-10-19
+    /// Google Drive document ID.
     #[arg(long = "drive-document-id", value_name = "DOCUMENT_ID")]
     pub drive_document_ids: Vec<String>,
-    /// Google Drive MIME type. WARNING: Currently returns HTTP 500 error - not usable as of 2025-10-19
+    /// Google Drive MIME type.
     #[arg(long = "drive-mime-type", value_name = "MIME_TYPE")]
     pub drive_mime_types: Vec<String>,
     #[arg(long = "drive-name", value_name = "DISPLAY")]
@@ -108,9 +108,6 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
                 });
             }
 
-            // NOTE: As of 2025-10-19, adding Google Drive sources returns HTTP 500 Internal Server Error.
-            // This is a server-side issue with the NotebookLM API and cannot be fixed client-side.
-            // The code below is kept for when the API is fixed.
             let includes_drive = !args.drive_document_ids.is_empty();
             if args.drive_document_ids.len() != args.drive_mime_types.len() {
                 bail!(
@@ -164,12 +161,7 @@ pub async fn run(cmd: Command, client: &NblmClient, json_mode: bool) -> Result<(
             let response = client.add_sources(&args.notebook_id, contents).await?;
             emit_sources(&args.notebook_id, &response, json_mode)?;
             if includes_drive {
-                eprintln!(
-                    "WARNING: Google Drive source addition currently returns HTTP 500 Internal Server Error (as of 2025-10-19)."
-                );
-                eprintln!(
-                    "This is a server-side NotebookLM API issue. For future use, run `gcloud auth login --enable-gdrive-access` first."
-                );
+                eprintln!("NOTE: Google Drive sources require `gcloud auth login --enable-gdrive-access` and that the authenticated account has view access to the document.");
             }
         }
         Command::Delete(args) => {

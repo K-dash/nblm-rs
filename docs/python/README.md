@@ -156,7 +156,7 @@ The Python SDK is powered by Rust, providing:
 ## Limitations
 
 - **Sharing operations**: Not currently supported
-- **Google Drive sources**: Not implemented (API returns HTTP 500)
+- **Google Drive sources**: Supported via `GoogleDriveSource` (requires Drive-enabled credentials)
 - **Audio configuration**: API only accepts empty request (as of 2025-10-25)
 
 ## Next Steps

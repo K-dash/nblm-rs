@@ -60,17 +60,22 @@ client.delete_notebooks([
 
 ##### Sources
 
-**`add_sources(notebook_id: str, web_sources: Optional[List[WebSource]] = None, text_sources: Optional[List[TextSource]] = None, video_sources: Optional[List[VideoSource]] = None) -> BatchCreateSourcesResponse`**
+**`add_sources(notebook_id: str, web_sources: Optional[List[WebSource]] = None, text_sources: Optional[List[TextSource]] = None, drive_sources: Optional[List[GoogleDriveSource]] = None, video_sources: Optional[List[VideoSource]] = None) -> BatchCreateSourcesResponse`**
 
 Add sources to a notebook.
 
 ```python
-from nblm import WebSource, TextSource
+from nblm import WebSource, TextSource, GoogleDriveSource
 
 response = client.add_sources(
     notebook_id="abc123",
     web_sources=[WebSource(url="https://example.com", name="Example")],
-    text_sources=[TextSource(content="Notes", name="My Notes")]
+    text_sources=[TextSource(content="Notes", name="My Notes")],
+    drive_sources=[GoogleDriveSource(
+        document_id="FILE_ID",
+        mime_type="application/vnd.google-apps.presentation",
+        name="Team Update",
+    )],
 )
 ```
 
@@ -232,6 +237,31 @@ source = TextSource(
 | --------- | ------------- | ------------ |
 | `content` | str           | Text content |
 | `name`    | Optional[str] | Display name |
+
+### GoogleDriveSource
+
+Google Drive document source for adding to notebooks.
+
+```python
+from nblm import GoogleDriveSource
+
+source = GoogleDriveSource(
+    document_id="FILE_ID",
+    mime_type="application/vnd.google-apps.presentation",
+    name="Team Update Slides",  # Optional
+)
+```
+
+> **Prerequisite:** Authenticate with Drive access enabled (`gcloud auth login --enable-gdrive-access`) and ensure the document is shared with the authenticated account.
+> **Tip:** `document_id` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`).
+
+#### Attributes
+
+| Attribute     | Type          | Description                          |
+| ------------- | ------------- | ------------------------------------ |
+| `document_id` | str           | Google Drive document ID             |
+| `mime_type`   | str           | MIME type returned by the Drive API  |
+| `name`        | Optional[str] | Display name shown in NotebookLM     |
 
 ### VideoSource
 

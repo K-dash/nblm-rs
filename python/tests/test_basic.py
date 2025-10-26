@@ -20,6 +20,7 @@ def test_classes_available() -> None:
         BatchDeleteSourcesResponse,
         EnvTokenProvider,
         GcloudTokenProvider,
+        GoogleDriveSource,
         ListRecentlyViewedResponse,
         NblmClient,
         NblmError,
@@ -35,6 +36,7 @@ def test_classes_available() -> None:
     assert BatchCreateSourcesResponse is not None
     assert BatchDeleteSourcesResponse is not None
     assert BatchDeleteNotebooksResponse is not None
+    assert GoogleDriveSource is not None
     assert DEFAULT_GCLOUD_BINARY == "gcloud"
     assert DEFAULT_ENV_TOKEN_KEY == "NBLM_ACCESS_TOKEN"
 

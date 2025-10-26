@@ -346,6 +346,31 @@ client.upload_source_file(
 )
 ```
 
+### Adding Google Drive Documents
+
+```python
+from nblm import GoogleDriveSource
+
+notebook_id = "abc123"
+
+# Authenticate with Drive-enabled credentials:
+#   gcloud auth login --enable-gdrive-access
+#   export NBLM_ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+client.add_sources(
+    notebook_id=notebook_id,
+    drive_sources=[
+        GoogleDriveSource(
+            document_id="FILE_ID",
+            mime_type="application/vnd.google-apps.presentation",
+            name="Team Update Slides",
+        )
+    ],
+)
+```
+
+> **Tip:** The authenticated account must have view access to the Drive document. Use the Drive web UI to confirm you can open the file before ingesting it. `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`).
+
 ### Bulk Upload from Directory
 
 ```python
@@ -439,7 +464,6 @@ except NblmError as e:
 
 ## Limitations
 
-- **Google Drive sources**: Not implemented (API returns HTTP 500 as of 2025-10-25)
 - **Source listing**: No API method to list all sources in a notebook
 - **Source updates**: Cannot update existing sources, only add or delete
 

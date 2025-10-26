@@ -9,6 +9,9 @@ coverage:
         target: auto
         threshold: 1%
 
+ignore:
+  - "crates/nblm-python/**/*"
+
 comment:
   layout: "reach, diff, flags, files"
   behavior: default

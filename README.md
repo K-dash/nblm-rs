@@ -101,27 +101,52 @@ This project provides production-ready tools that make the NotebookLM API access
 
 ## Installation
 
-### CLI (Rust)
+### macOS (Homebrew)
 
 ```bash
-# From crates.io
-cargo install nblm-cli
+brew tap k-dash/nblm https://github.com/K-dash/homebrew-nblm
+brew install k-dash/nblm/nblm
+nblm --version
+```
 
-# Or build from source
+### Linux (Prebuilt binaries)
+
+Download the tarball for your architecture from the [Releases](https://github.com/K-dash/nblm-rs/releases) page, then extract and install it. Example for x86_64:
+
+```bash
+VERSION=x.x.x
+ARCH=linux-x86_64   # or linux-aarch64
+curl -LO https://github.com/K-dash/nblm-rs/releases/download/v${VERSION}/nblm-${ARCH}.tar.gz
+tar -xzf nblm-${ARCH}.tar.gz
+chmod +x nblm
+sudo mv nblm /usr/local/bin/
+nblm --version
+```
+
+> Optional: verify the download with `shasum -a 256 nblm-${ARCH}.tar.gz` and compare with the digest listed on the release page.
+
+### Build from source
+
+```bash
 git clone https://github.com/K-dash/nblm-rs.git
 cd nblm-rs
-cargo build --release
+cargo build --release -p nblm-cli
+./target/release/nblm --version
 ```
+
+You can also install the CLI locally with `cargo install --path crates/nblm-cli`.
 
 ### Python SDK
 
 ```bash
 pip install nblm
+# or
+uv add nblm
 ```
 
-**Prerequisites**: Google Cloud project with NotebookLM API enabled
+> Prerequisite: a Google Cloud project with the NotebookLM Enterprise API enabled and either `gcloud auth login` or an OAuth token ready for `NBLM_ACCESS_TOKEN`.
 
-> **Detailed Installation Guide**: See [Installation Documentation](docs/) for platform-specific instructions and troubleshooting.
+For detailed setup and troubleshooting, see the documentation in [docs/](docs/).
 
 ## Quick Start
 

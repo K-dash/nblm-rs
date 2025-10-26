@@ -18,11 +18,6 @@
 > [!IMPORTANT]
 > This project targets the **NotebookLM Enterprise API** only. Google hasn’t published an API for the consumer edition or general Google Workspace tenants as of 2025-10-25.
 
-## Known API Issues
-
-> [!NOTE]
-> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](docs/api/limitations.md) for details.
-
 ## Motivation
 
 In September 2025, Google released the [NotebookLM Enterprise API](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview), enabling programmatic access to NotebookLM features for the first time.
@@ -59,45 +54,6 @@ This project provides production-ready tools that make the NotebookLM API access
 - **Python SDK**: Idiomatic Python bindings for application integration
 - **Type safety**: Compile-time checks prevent common API usage errors
 - **Developer experience**: Intuitive commands and clear documentation
-
-
-## Features (Verified as of 2025-10-25)
-
-> [!NOTE]
-> The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
-
-### Notebooks
-
-| Feature               | CLI | Python | Status  | Notes                                |
-| --------------------- | --- | ------ | ------- | ------------------------------------ |
-| Create notebook       | ◯   | ◯      | Working |                                      |
-| List recent notebooks | ◯   | ◯      | Working | Pagination not implemented by API    |
-| Delete notebook(s)    | ◯   | ◯      | Working | Sequential deletion (API limitation) |
-
-### Sources
-
-| Feature             | CLI | Python | Status      | Notes                   |
-| ------------------- | --- | ------ | ----------- | ----------------------- |
-| Add web URL         | ◯   | ◯      | Working     |                         |
-| Add text content    | ◯   | ◯      | Working     |                         |
-| Add video (YouTube) | ◯   | ◯      | Working     | Uses `youtubeUrl` field |
-| Add Google Drive    | ◯   | ◯      | Working     | Requires Drive-enabled auth |
-| Upload file         | ◯   | ◯      | Working     |                         |
-| Delete source(s)    | ◯   | ◯      | Working     |                         |
-| Get source by ID    | ◯   | ◯      | Working     |                         |
-
-### Audio Overview
-
-| Feature               | CLI | Python | Status  | Notes                       |
-| --------------------- | --- | ------ | ------- | --------------------------- |
-| Create audio overview | ◯   | ◯      | Working | Config fields not supported |
-| Delete audio overview | ◯   | ◯      | Working |                             |
-
-### Sharing
-
-| Feature        | CLI | Python | Status   | Notes                     |
-| -------------- | --- | ------ | -------- | ------------------------- |
-| Share notebook | ◯   | ✗      | Untested | Requires additional users |
 
 ## Installation
 
@@ -192,6 +148,45 @@ response = client.add_sources(
 )
 ```
 
+## Features (Verified as of 2025-10-25)
+
+> [!NOTE]
+> The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
+
+### Notebooks
+
+| Feature               | CLI | Python | Status  | Notes                                |
+| --------------------- | --- | ------ | ------- | ------------------------------------ |
+| Create notebook       | ◯   | ◯      | Working |                                      |
+| List recent notebooks | ◯   | ◯      | Working | Pagination not implemented by API    |
+| Delete notebook(s)    | ◯   | ◯      | Working | Sequential deletion (API limitation) |
+
+### Sources
+
+| Feature             | CLI | Python | Status      | Notes                   |
+| ------------------- | --- | ------ | ----------- | ----------------------- |
+| Add web URL         | ◯   | ◯      | Working     |                         |
+| Add text content    | ◯   | ◯      | Working     |                         |
+| Add video (YouTube) | ◯   | ◯      | Working     | Uses `youtubeUrl` field |
+| Add Google Drive    | ◯   | ◯      | Working     | Requires Drive-enabled auth |
+| Upload file         | ◯   | ◯      | Working     |                         |
+| Delete source(s)    | ◯   | ◯      | Working     |                         |
+| Get source by ID    | ◯   | ◯      | Working     |                         |
+
+### Audio Overview
+
+| Feature               | CLI | Python | Status  | Notes                       |
+| --------------------- | --- | ------ | ------- | --------------------------- |
+| Create audio overview | ◯   | ◯      | Working | Config fields not supported |
+| Delete audio overview | ◯   | ◯      | Working |                             |
+
+### Sharing
+
+| Feature        | CLI | Python | Status   | Notes                     |
+| -------------- | --- | ------ | -------- | ------------------------- |
+| Share notebook | ◯   | ✗      | Untested | Requires additional users |
+
+
 ## Platform Support
 
 | Platform | CLI | Python SDK |
@@ -210,6 +205,10 @@ response = client.add_sources(
 - [Python SDK Reference](docs/python/README.md) - API reference and usage patterns
 - [API Limitations](docs/api/limitations.md) - Known issues and workarounds
 
+## Known API Issues
+
+> [!NOTE]
+> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](docs/api/limitations.md) for details.
 
 ## Related Resources
 

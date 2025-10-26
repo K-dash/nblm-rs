@@ -9,7 +9,7 @@ from nblm import NblmError
 
 # NblmError is the base exception for all SDK errors
 try:
-    notebook = client.create_notebook("Test")
+    notebook = client.create_notebook(title="Test")
 except NblmError as e:
     print(f"Error: {e}")
 ```
@@ -21,15 +21,15 @@ All errors raised by the SDK are instances of `NblmError`.
 ### Try-Except Pattern
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, NblmError
+from nblm import NblmClient, GcloudTokenProvider, NblmError
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 try:
-    notebook = client.create_notebook("My Notebook")
+    notebook = client.create_notebook(title="My Notebook")
     print(f"Success: {notebook.notebook_id}")
 except NblmError as e:
     print(f"Failed: {e}")
@@ -42,7 +42,7 @@ from nblm import WebSource
 
 try:
     # Create notebook
-    notebook = client.create_notebook("Research")
+    notebook = client.create_notebook(title="Research")
 
     # Add sources
     client.add_sources(
@@ -67,10 +67,10 @@ except NblmError as e:
 ```python
 try:
     client = NblmClient(
-        token_provider=GCloudTokenProvider(),
+        token_provider=GcloudTokenProvider(),
         project_number="123456789012"
     )
-    notebook = client.create_notebook("Test")
+    notebook = client.create_notebook(title="Test")
 
 except NblmError as e:
     error_msg = str(e).lower()
@@ -172,7 +172,7 @@ def retry_with_backoff(
 
 # Usage
 notebook = retry_with_backoff(
-    lambda: client.create_notebook("My Notebook"),
+    lambda: client.create_notebook(title="My Notebook"),
     max_retries=3
 )
 ```
@@ -238,7 +238,7 @@ print(f"Failed: {len(failed)}")
 
 ```python
 import logging
-from nblm import NblmClient, GCloudTokenProvider, NblmError
+from nblm import NblmClient, GcloudTokenProvider, NblmError
 
 # Configure logging
 logging.basicConfig(
@@ -248,13 +248,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 try:
     logger.info("Creating notebook...")
-    notebook = client.create_notebook("Test Notebook")
+    notebook = client.create_notebook(title="Test Notebook")
     logger.info(f"Created notebook: {notebook.notebook_id}")
 
 except NblmError as e:
@@ -282,7 +282,7 @@ def log_error(operation: str, error: NblmError, **context):
 
 # Usage
 try:
-    client.create_notebook("Test")
+    client.create_notebook(title="Test")
 except NblmError as e:
     log_error("create_notebook", e, title="Test", project="123456789012")
 ```
@@ -356,17 +356,17 @@ match result:
 ### Automatic Cleanup
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, WebSource
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 notebook = None
 try:
     # Create resources
-    notebook = client.create_notebook("Temporary")
+    notebook = client.create_notebook(title="Temporary")
 
     # Use resources
     client.add_sources(
@@ -446,7 +446,7 @@ client = NblmClient(...)
 from nblm import NblmError
 
 try:
-    client.create_notebook("Test")
+    client.create_notebook(title="Test")
 except NblmError as e:
     print(f"Error type: {type(e)}")
     print(f"Error message: {str(e)}")

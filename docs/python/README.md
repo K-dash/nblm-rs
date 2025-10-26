@@ -37,21 +37,21 @@ uv add nblm
 ## Quick Example
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 # Initialize client
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create notebook
-notebook = client.create_notebook("My Notebook")
+notebook = client.create_notebook(title="My Notebook")
 
 # Add sources
 client.add_sources(
     notebook_id=notebook.notebook_id,
-    web_sources=[{"url": "https://example.com", "name": "Example"}]
+    web_sources=[WebSource(url="https://example.com", name="Example")]
 )
 
 # Create audio overview
@@ -79,13 +79,13 @@ print(f"Audio status: {audio.status}")
 
 ```python
 from nblm import (
-    GCloudTokenProvider,  # Use gcloud CLI
+    GcloudTokenProvider,  # Use gcloud CLI
     EnvTokenProvider,     # Use environment variable
     NblmClient
 )
 
 # Method 1: gcloud CLI (recommended)
-provider = GCloudTokenProvider()
+provider = GcloudTokenProvider()
 
 # Method 2: Environment variable
 import os
@@ -118,7 +118,7 @@ from nblm import (
 
 # All operations are fully typed
 client: NblmClient
-notebook: Notebook = client.create_notebook("Title")
+notebook: Notebook = client.create_notebook(title="Title")
 sources: BatchCreateSourcesResponse = client.add_sources(...)
 audio: AudioOverviewResponse = client.create_audio_overview(...)
 ```
@@ -129,7 +129,7 @@ audio: AudioOverviewResponse = client.create_audio_overview(...)
 from nblm import NblmClient, NblmError
 
 try:
-    notebook = client.create_notebook("My Notebook")
+    notebook = client.create_notebook(title="My Notebook")
 except NblmError as e:
     print(f"Error: {e}")
 ```

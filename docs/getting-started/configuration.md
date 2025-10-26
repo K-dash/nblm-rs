@@ -67,10 +67,10 @@ os.environ["NBLM_ENDPOINT_LOCATION"] = "global"
 Or pass directly to the client:
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012",
     location="global",
     endpoint_location="global"
@@ -90,11 +90,11 @@ You can create a configuration wrapper:
 ```python
 # config.py
 import os
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 def create_client():
     return NblmClient(
-        token_provider=GCloudTokenProvider(),
+        token_provider=GcloudTokenProvider(),
         project_number=os.getenv("NBLM_PROJECT_NUMBER", "123456789012"),
         location=os.getenv("NBLM_LOCATION", "global"),
         endpoint_location=os.getenv("NBLM_ENDPOINT_LOCATION", "global"),
@@ -107,7 +107,7 @@ Then use it in your code:
 from config import create_client
 
 client = create_client()
-notebook = client.create_notebook("My Notebook")
+notebook = client.create_notebook(title="My Notebook")
 ```
 
 ## Verification
@@ -116,16 +116,16 @@ notebook = client.create_notebook("My Notebook")
 
 ```bash
 # Should work without additional flags if environment variables are set
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 ```
 
 ### Python SDK
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 

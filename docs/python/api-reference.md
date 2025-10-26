@@ -9,10 +9,10 @@ Complete reference for all classes and methods in the nblm Python SDK.
 Main client class for interacting with the NotebookLM API.
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012",
     location="global",
     endpoint_location="global"
@@ -37,7 +37,7 @@ client = NblmClient(
 Create a new notebook.
 
 ```python
-notebook = client.create_notebook("My Notebook")
+notebook = client.create_notebook(title="My Notebook")
 ```
 
 **`list_recently_viewed(page_size: Optional[int] = None) -> ListRecentlyViewedResponse`**
@@ -134,18 +134,18 @@ client.delete_audio_overview(notebook_id="abc123")
 
 ## Token Providers
 
-### GCloudTokenProvider
+### GcloudTokenProvider
 
 Use gcloud CLI for authentication.
 
 ```python
-from nblm import GCloudTokenProvider
+from nblm import GcloudTokenProvider
 
 # Default (uses 'gcloud' from PATH)
-provider = GCloudTokenProvider()
+provider = GcloudTokenProvider()
 
 # Custom binary path
-provider = GCloudTokenProvider(binary="/usr/local/bin/gcloud")
+provider = GcloudTokenProvider(binary="/usr/local/bin/gcloud")
 ```
 
 #### Constructor Parameters
@@ -355,7 +355,7 @@ Base exception for all nblm errors.
 from nblm import NblmError
 
 try:
-    notebook = client.create_notebook("Test")
+    notebook = client.create_notebook(title="Test")
 except NblmError as e:
     print(f"Error: {e}")
 ```
@@ -382,7 +382,7 @@ from nblm import (
 
 # Type checking with mypy
 def create_and_populate(client: NblmClient, title: str) -> Notebook:
-    notebook: Notebook = client.create_notebook(title)
+    notebook: Notebook = client.create_notebook(title=title)
     response: BatchCreateSourcesResponse = client.add_sources(
         notebook_id=notebook.notebook_id,
         web_sources=[WebSource(url="https://example.com")]

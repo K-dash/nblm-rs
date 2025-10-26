@@ -32,8 +32,7 @@ gcloud config set project YOUR_PROJECT_ID
 
 ```bash
 # Using gcloud authentication (default)
-nblm --auth gcloud \
-  --project-number PROJECT_NUMBER \
+nblm --project-number PROJECT_NUMBER \
   --location global \
   --endpoint-location global \
   notebooks recent

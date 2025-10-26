@@ -7,10 +7,10 @@ Create and manage audio overviews (podcast-style discussions) for notebooks.
 ### Basic Creation
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, AudioOverviewRequest
+from nblm import NblmClient, GcloudTokenProvider, AudioOverviewRequest
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
@@ -76,18 +76,18 @@ Complete workflow from creating a notebook to generating audio:
 ```python
 from nblm import (
     NblmClient,
-    GCloudTokenProvider,
+    GcloudTokenProvider,
     WebSource,
     AudioOverviewRequest
 )
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # 1. Create notebook
-notebook = client.create_notebook("Tutorial Analysis")
+notebook = client.create_notebook(title="Tutorial Analysis")
 notebook_id = notebook.notebook_id
 
 # 2. Add sources

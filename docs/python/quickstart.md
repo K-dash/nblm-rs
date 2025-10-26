@@ -33,16 +33,16 @@ Example output: `123456789012`
 ### 3. Create your first notebook
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 # Initialize client
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create a notebook
-notebook = client.create_notebook("My First Notebook")
+notebook = client.create_notebook(title="My First Notebook")
 print(f"Created: {notebook.title}")
 print(f"Notebook ID: {notebook.notebook_id}")
 ```
@@ -54,7 +54,7 @@ Here's a complete workflow from creating a notebook to generating an audio overv
 ```python
 from nblm import (
     NblmClient,
-    GCloudTokenProvider,
+    GcloudTokenProvider,
     WebSource,
     TextSource,
     AudioOverviewRequest
@@ -62,12 +62,12 @@ from nblm import (
 
 # 1. Initialize client
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # 2. Create a notebook
-notebook = client.create_notebook("Python Tutorial Notebook")
+notebook = client.create_notebook(title="Python Tutorial Notebook")
 notebook_id = notebook.notebook_id
 print(f"Created notebook: {notebook_id}")
 
@@ -108,10 +108,10 @@ print(f"Total notebooks: {len(notebooks.notebooks)}")
 ### Option 1: gcloud CLI (Recommended)
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 ```
@@ -134,10 +134,10 @@ client = NblmClient(
 ### Option 3: Custom gcloud Binary Path
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(binary="/custom/path/gcloud"),
+    token_provider=GcloudTokenProvider(binary="/custom/path/gcloud"),
     project_number="123456789012"
 )
 ```
@@ -147,15 +147,15 @@ client = NblmClient(
 ### Create and populate a notebook
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, WebSource
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create
-notebook = client.create_notebook("Research Notebook")
+notebook = client.create_notebook(title="Research Notebook")
 
 # Add multiple web sources
 urls = [
@@ -173,15 +173,15 @@ client.add_sources(
 ### Error handling
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, NblmError
+from nblm import NblmClient, GcloudTokenProvider, NblmError
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 try:
-    notebook = client.create_notebook("Test Notebook")
+    notebook = client.create_notebook(title="Test Notebook")
     print(f"Success: {notebook.notebook_id}")
 except NblmError as e:
     print(f"Failed: {e}")
@@ -193,7 +193,7 @@ except NblmError as e:
 
 ```python
 import os
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 # Set once
 os.environ["NBLM_PROJECT_NUMBER"] = "123456789012"
@@ -202,7 +202,7 @@ os.environ["NBLM_ENDPOINT_LOCATION"] = "global"
 
 # Create client (will use environment variables)
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number=os.environ["NBLM_PROJECT_NUMBER"]
 )
 ```
@@ -210,11 +210,11 @@ client = NblmClient(
 ### Custom locations
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 # Use US location (for compliance requirements)
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012",
     location="us",
     endpoint_location="us"

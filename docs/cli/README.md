@@ -41,7 +41,7 @@ Two authentication methods are supported:
 
 ```bash
 gcloud auth login
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 ```
 
 ### Environment Variable
@@ -63,7 +63,7 @@ export NBLM_LOCATION="global"
 export NBLM_ENDPOINT_LOCATION="global"
 
 # Now you can omit these flags
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 ```
 
 ## Output Formats
@@ -71,7 +71,7 @@ nblm --auth gcloud notebooks recent
 ### Human-Readable (Default)
 
 ```bash
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 ```
 
 Output:
@@ -85,7 +85,7 @@ Updated: 2025-10-25T10:30:00Z
 ### JSON Format
 
 ```bash
-nblm --auth gcloud --json notebooks recent
+nblm --json notebooks recent
 ```
 
 Output:
@@ -106,9 +106,8 @@ The `--json` flag can be placed anywhere in the command:
 
 ```bash
 # All equivalent
-nblm --json --auth gcloud notebooks recent
-nblm --auth gcloud --json notebooks recent
-nblm --auth gcloud notebooks recent --json
+nblm --json notebooks recent
+nblm notebooks recent --json
 ```
 
 ## Error Handling
@@ -168,13 +167,13 @@ export NBLM_PROJECT_NUMBER="123456789012"
 gcloud auth login
 
 # Create notebook
-nblm --auth gcloud notebooks create --title "My Notebook"
+nblm notebooks create --title "My Notebook"
 
 # List notebooks
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 
 # Add source
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --web-url "https://example.com"
 ```
@@ -183,13 +182,13 @@ nblm --auth gcloud sources add \
 
 ```bash
 # Get all notebook titles
-nblm --auth gcloud --json notebooks recent | jq '.notebooks[].title'
+nblm --json notebooks recent | jq '.notebooks[].title'
 
 # Get first notebook ID
-nblm --auth gcloud --json notebooks recent | jq -r '.notebooks[0].notebookId'
+nblm --json notebooks recent | jq -r '.notebooks[0].notebookId'
 
 # Count notebooks
-nblm --auth gcloud --json notebooks recent | jq '.notebooks | length'
+nblm --json notebooks recent | jq '.notebooks | length'
 ```
 
 ## Next Steps

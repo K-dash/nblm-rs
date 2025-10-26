@@ -7,20 +7,20 @@ Detailed guide for notebook operations in the Python SDK.
 ### Basic Creation
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
-notebook = client.create_notebook("My Research Notebook")
+notebook = client.create_notebook(title="My Research Notebook")
 ```
 
 ### Accessing Notebook Information
 
 ```python
-notebook = client.create_notebook("Test Notebook")
+notebook = client.create_notebook(title="Test Notebook")
 
 print(f"Title: {notebook.title}")
 print(f"Notebook ID: {notebook.notebook_id}")
@@ -35,7 +35,7 @@ print(f"Updated: {notebook.update_time}")
 from nblm import NblmError
 
 try:
-    notebook = client.create_notebook("My Notebook")
+    notebook = client.create_notebook(title="My Notebook")
 except NblmError as e:
     print(f"Failed to create notebook: {e}")
 ```
@@ -108,7 +108,7 @@ response = client.delete_notebooks(notebook_names)
 
 ```python
 # Create a notebook
-notebook = client.create_notebook("Temporary Notebook")
+notebook = client.create_notebook(title="Temporary Notebook")
 
 # Use the full name for deletion
 client.delete_notebooks([notebook.name])
@@ -126,15 +126,15 @@ client.delete_notebooks([notebook.name])
 ### Create, Use, and Clean Up
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, WebSource
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create notebook
-notebook = client.create_notebook("Temporary Analysis")
+notebook = client.create_notebook(title="Temporary Analysis")
 notebook_id = notebook.notebook_id
 
 try:
@@ -172,7 +172,7 @@ titles = ["Project A", "Project B", "Project C"]
 created_notebooks = []
 
 for title in titles:
-    notebook = client.create_notebook(title)
+    notebook = client.create_notebook(title=title)
     created_notebooks.append(notebook)
     print(f"Created: {notebook.notebook_id}")
 ```
@@ -208,7 +208,7 @@ if old_notebooks:
 from nblm import NblmError
 
 try:
-    notebook = client.create_notebook("Test")
+    notebook = client.create_notebook(title="Test")
 except NblmError as e:
     if "authentication" in str(e).lower():
         print("Authentication failed. Check your credentials.")
@@ -241,7 +241,7 @@ except NblmError as e:
 
 ```python
 # Save for later use
-notebook = client.create_notebook("Important Notebook")
+notebook = client.create_notebook(title="Important Notebook")
 
 # Store the ID
 notebook_id = notebook.notebook_id
@@ -267,7 +267,7 @@ def create_notebook_safely(client: NblmClient, title: str) -> Optional[Notebook]
         return None
 
     try:
-        return client.create_notebook(title)
+        return client.create_notebook(title=title)
     except NblmError as e:
         print(f"Failed to create notebook: {e}")
         return None
@@ -285,7 +285,7 @@ def temporary_notebook(
     title: str
 ) -> Generator[Notebook, None, None]:
     """Create a notebook and automatically delete it when done."""
-    notebook = client.create_notebook(title)
+    notebook = client.create_notebook(title=title)
     try:
         yield notebook
     finally:

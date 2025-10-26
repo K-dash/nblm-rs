@@ -7,10 +7,10 @@ Detailed guide for managing sources in notebooks with the Python SDK.
 ### Add Web Sources
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, WebSource
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
@@ -294,15 +294,15 @@ client.delete_sources(
 ### Create Notebook and Add Sources
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider, WebSource, TextSource
+from nblm import NblmClient, GcloudTokenProvider, WebSource, TextSource
 
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create notebook
-notebook = client.create_notebook("Research: Python Best Practices")
+notebook = client.create_notebook(title="Research: Python Best Practices")
 
 # Add initial sources
 client.add_sources(

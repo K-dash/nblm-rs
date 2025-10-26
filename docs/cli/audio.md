@@ -30,13 +30,13 @@ nblm audio create --notebook-id <ID>
 **Create audio overview:**
 
 ```bash
-nblm --auth gcloud audio create --notebook-id abc123
+nblm audio create --notebook-id abc123
 ```
 
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json audio create --notebook-id abc123
+nblm --json audio create --notebook-id abc123
 ```
 
 Output:
@@ -88,13 +88,13 @@ nblm audio delete --notebook-id <ID>
 **Delete audio overview:**
 
 ```bash
-nblm --auth gcloud audio delete --notebook-id abc123
+nblm audio delete --notebook-id abc123
 ```
 
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json audio delete --notebook-id abc123
+nblm --json audio delete --notebook-id abc123
 ```
 
 Output:
@@ -115,7 +115,7 @@ Output:
 
 ```bash
 # Create audio overview
-nblm --auth gcloud audio create --notebook-id abc123
+nblm audio create --notebook-id abc123
 
 echo "Audio overview created. Check status in NotebookLM web UI."
 echo "Generation typically takes 3-5 minutes."
@@ -130,14 +130,14 @@ NOTEBOOK_ID="abc123"
 
 # Delete existing audio overview
 echo "Deleting existing audio overview..."
-nblm --auth gcloud audio delete --notebook-id "$NOTEBOOK_ID"
+nblm audio delete --notebook-id "$NOTEBOOK_ID"
 
 # Wait a moment
 sleep 2
 
 # Create new audio overview
 echo "Creating new audio overview..."
-nblm --auth gcloud audio create --notebook-id "$NOTEBOOK_ID"
+nblm audio create --notebook-id "$NOTEBOOK_ID"
 
 echo "Done. Check NotebookLM web UI for generation status."
 ```
@@ -150,7 +150,7 @@ NOTEBOOKS=("abc123" "def456" "ghi789")
 
 for notebook_id in "${NOTEBOOKS[@]}"; do
   echo "Creating audio overview for notebook: $notebook_id"
-  nblm --auth gcloud audio create --notebook-id "$notebook_id"
+  nblm audio create --notebook-id "$notebook_id"
 done
 
 echo "All audio overviews created. Check web UI for completion status."

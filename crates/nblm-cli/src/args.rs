@@ -27,7 +27,7 @@ pub struct GlobalArgs {
     #[arg(long, env = "NBLM_LOCATION", default_value = "global")]
     pub location: String,
 
-    #[arg(long, env = "NBLM_ENDPOINT_LOCATION", default_value = "us")]
+    #[arg(long, env = "NBLM_ENDPOINT_LOCATION", default_value = "global")]
     pub endpoint_location: String,
 
     #[arg(long, value_enum, default_value_t = AuthMethod::Gcloud)]

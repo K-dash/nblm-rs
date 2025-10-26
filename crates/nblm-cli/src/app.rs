@@ -18,6 +18,10 @@ impl NblmApp {
     pub fn new(cli: Cli) -> Result<Self> {
         init_logging();
 
+        if cli.global.debug_http {
+            std::env::set_var("NBLM_DEBUG_HTTP", "1");
+        }
+
         let provider = build_token_provider(&cli.global)?;
         let mut client = NblmClient::new(
             provider,

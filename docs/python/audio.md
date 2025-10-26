@@ -174,31 +174,29 @@ with temporary_audio(client, "abc123") as audio:
 
 ## Audio Overview Status
 
+> **Important**: As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
+
 ### Status Values
 
-Audio overviews can have the following statuses:
+When creating an audio overview, the initial status is:
 
-| Status       | Description               |
-| ------------ | ------------------------- |
-| `PROCESSING` | Audio is being generated  |
-| `COMPLETED`  | Audio generation complete |
-| `FAILED`     | Audio generation failed   |
+| Status                                | Description               |
+| ------------------------------------- | ------------------------- |
+| `AUDIO_OVERVIEW_STATUS_IN_PROGRESS`   | Audio is being generated  |
 
 ### Checking Status
 
 ```python
 audio = client.create_audio_overview(notebook_id="abc123")
 
-if audio.status == "PROCESSING":
-    print("Audio is being generated...")
-    print("Check NotebookLM web UI for completion")
-elif audio.status == "COMPLETED":
-    print("Audio is ready!")
-elif audio.status == "FAILED":
-    print("Audio generation failed")
+print(f"Status: {audio.status}")
+# Output: Status: AUDIO_OVERVIEW_STATUS_IN_PROGRESS
+print("Audio generation in progress...")
+print("Check NotebookLM web UI for completion")
+print(f"URL: https://notebooklm.google.com/notebook/{notebook_id}")
 ```
 
-> **Note**: The SDK does not provide a method to poll for status updates. You must check the NotebookLM web UI to see when processing is complete.
+> **Note**: The API only returns `AUDIO_OVERVIEW_STATUS_IN_PROGRESS` upon creation. Status values like `AUDIO_OVERVIEW_STATUS_COMPLETED` or `AUDIO_OVERVIEW_STATUS_FAILED` cannot be obtained via the API and must be checked in the browser.
 
 ## Error Handling
 

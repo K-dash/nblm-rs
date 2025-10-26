@@ -25,19 +25,41 @@
 
 ## Motivation
 
-Why use this CLI instead of direct API calls or web UI?
+In September 2025, Google released the [NotebookLM Enterprise API](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview), enabling programmatic access to NotebookLM features for the first time.
 
-- **Credential caching**: Leverages gcloud authentication cache - no need to specify API keys or tokens repeatedly
-- **Type safety**: Rust's type system catches errors at compile time, preventing runtime failures
-- **Batch operations**: Add multiple sources to a notebook in a single command
-- **Better error handling**: Clear, actionable error messages with helpful guidance
-- **Automatic retries**: Built-in retry logic with exponential backoff for transient failures
-- **JSON output**: Machine-readable format for automation and scripting workflows
-- **Cross-platform**: Single binary works on Linux and macOS
-- **Developer-friendly**: Command-line interface integrates seamlessly with shell scripts and CI/CD pipelines
+While you can interact with the API using simple `curl` commands, this approach has several limitations that this project addresses:
 
-> [!NOTE]
-> Windows is not supported.
+### Challenges with Direct API Calls
+
+- **Authentication complexity**
+  - **Problem**: Managing OAuth tokens, handling token refresh, and ensuring secure credential storage
+  - **Solution**: Seamless `gcloud` CLI integration with automatic token caching and refresh
+
+- **Manual request construction**
+  - **Problem**: Writing JSON payloads by hand, managing resource names, and handling API versioning
+  - **Solution**: Type-safe CLI flags and Python SDK with intelligent defaults and validation
+
+- **Error handling**
+  - **Problem**: Cryptic HTTP error codes without context or recovery suggestions
+  - **Solution**: Clear, actionable error messages with automatic retries for transient failures
+
+- **Batch operations**
+  - **Problem**: Writing loops to process multiple items, managing API call sequences
+  - **Solution**: Built-in batch commands with simplified syntax for multiple operations
+
+- **Output parsing**
+  - **Problem**: Manual JSON parsing and extracting specific fields from responses
+  - **Solution**: Structured output formats and JSON mode for easy integration with `jq` and other tools
+
+### Project Goals
+
+This project provides production-ready tools that make the NotebookLM API accessible and reliable:
+
+- **Rust CLI**: Fast, cross-platform binary for shell scripting and automation
+- **Python SDK**: Idiomatic Python bindings for application integration
+- **Type safety**: Compile-time checks prevent common API usage errors
+- **Developer experience**: Intuitive commands and clear documentation
+
 
 ## Features (Verified as of 2025-10-25)
 
@@ -115,10 +137,10 @@ export NBLM_LOCATION="global"
 export NBLM_ENDPOINT_LOCATION="global"
 
 # 3. Create a notebook
-nblm --auth gcloud notebooks create --title "My Notebook"
+nblm notebooks create --title "My Notebook"
 
 # 4. Add a source
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id YOUR_NOTEBOOK_ID \
   --web-url "https://example.com" \
   --web-name "Example"
@@ -127,23 +149,32 @@ nblm --auth gcloud sources add \
 ### Python
 
 ```python
-from nblm import NblmClient, GCloudTokenProvider
+from nblm import NblmClient, GcloudTokenProvider, WebSource
 
 # Initialize client
 client = NblmClient(
-    token_provider=GCloudTokenProvider(),
+    token_provider=GcloudTokenProvider(),
     project_number="123456789012"
 )
 
 # Create a notebook
-notebook = client.create_notebook("My Notebook")
+notebook = client.create_notebook(title="My Notebook")
 
 # Add sources
-client.add_sources(
+response = client.add_sources(
     notebook_id=notebook.notebook_id,
-    web_sources=[{"url": "https://example.com", "name": "Example"}]
+    web_sources=[WebSource(url="https://example.com", name="Example")]
 )
 ```
+
+## Platform Support
+
+| Platform | CLI | Python SDK |
+|----------|-----|------------|
+| Linux    | [![Linux CLI supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) | [![Linux Python SDK supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) |
+| macOS    | [![macOS CLI supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) | [![macOS Python SDK supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) |
+| Windows  | [![Windows CLI not supported](https://img.shields.io/badge/support-%E2%9D%8C-red)](https://shields.io) | [![Windows Python SDK not supported](https://img.shields.io/badge/support-%E2%9D%8C-red)](https://shields.io) |
+
 
 ## Documentation
 

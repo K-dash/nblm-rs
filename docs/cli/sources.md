@@ -42,7 +42,7 @@ nblm sources add --notebook-id <ID> [SOURCE_OPTIONS...]
 **Add a web URL:**
 
 ```bash
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --web-url "https://example.com" \
   --web-name "Example Website"
@@ -51,7 +51,7 @@ nblm --auth gcloud sources add \
 **Add text content:**
 
 ```bash
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --text "My research notes" \
   --text-name "Notes"
@@ -60,7 +60,7 @@ nblm --auth gcloud sources add \
 **Add YouTube video:**
 
 ```bash
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --video-url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
@@ -68,7 +68,7 @@ nblm --auth gcloud sources add \
 **Add multiple sources at once:**
 
 ```bash
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --web-url "https://docs.python.org" \
   --web-name "Python Docs" \
@@ -81,7 +81,7 @@ nblm --auth gcloud sources add \
 
 ```bash
 # WARNING: This returns HTTP 500 as of 2025-10-25
-nblm --auth gcloud sources add \
+nblm sources add \
   --notebook-id abc123 \
   --drive-id "FILE_ID" \
   --drive-resource-key "RESOURCE_KEY" \
@@ -91,7 +91,7 @@ nblm --auth gcloud sources add \
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json sources add \
+nblm --json sources add \
   --notebook-id abc123 \
   --web-url "https://example.com"
 ```
@@ -142,7 +142,7 @@ nblm sources upload --notebook-id <ID> --file <PATH> [OPTIONS]
 **Upload a PDF:**
 
 ```bash
-nblm --auth gcloud sources upload \
+nblm sources upload \
   --notebook-id abc123 \
   --file document.pdf
 ```
@@ -150,7 +150,7 @@ nblm --auth gcloud sources upload \
 **Upload with custom content type:**
 
 ```bash
-nblm --auth gcloud sources upload \
+nblm sources upload \
   --notebook-id abc123 \
   --file report.txt \
   --content-type "text/plain"
@@ -159,7 +159,7 @@ nblm --auth gcloud sources upload \
 **Upload with display name:**
 
 ```bash
-nblm --auth gcloud sources upload \
+nblm sources upload \
   --notebook-id abc123 \
   --file research.pdf \
   --display-name "Research Paper 2025"
@@ -168,7 +168,7 @@ nblm --auth gcloud sources upload \
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json sources upload \
+nblm --json sources upload \
   --notebook-id abc123 \
   --file document.pdf
 ```
@@ -211,7 +211,7 @@ nblm sources get --notebook-id <ID> --source-id <SOURCE_ID>
 **Get source details:**
 
 ```bash
-nblm --auth gcloud sources get \
+nblm sources get \
   --notebook-id abc123 \
   --source-id source-1
 ```
@@ -219,7 +219,7 @@ nblm --auth gcloud sources get \
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json sources get \
+nblm --json sources get \
   --notebook-id abc123 \
   --source-id source-1
 ```
@@ -268,7 +268,7 @@ nblm sources delete --notebook-id <ID> --source-name <NAME> [--source-name <NAME
 **Delete a single source:**
 
 ```bash
-nblm --auth gcloud sources delete \
+nblm sources delete \
   --notebook-id abc123 \
   --source-name "projects/123456789012/locations/global/notebooks/abc123/sources/source-1"
 ```
@@ -276,7 +276,7 @@ nblm --auth gcloud sources delete \
 **Delete multiple sources:**
 
 ```bash
-nblm --auth gcloud sources delete \
+nblm sources delete \
   --notebook-id abc123 \
   --source-name "projects/.../notebooks/abc123/sources/source-1" \
   --source-name "projects/.../notebooks/abc123/sources/source-2"
@@ -288,7 +288,7 @@ nblm --auth gcloud sources delete \
 # List sources and extract names (requires getting notebook details first)
 SOURCE_NAME="projects/123456789012/locations/global/notebooks/abc123/sources/source-1"
 
-nblm --auth gcloud sources delete \
+nblm sources delete \
   --notebook-id abc123 \
   --source-name "$SOURCE_NAME"
 ```
@@ -305,7 +305,7 @@ nblm --auth gcloud sources delete \
 
 ```bash
 # Add source
-RESULT=$(nblm --auth gcloud --json sources add \
+RESULT=$(nblm --json sources add \
   --notebook-id abc123 \
   --web-url "https://example.com")
 
@@ -316,7 +316,7 @@ SOURCE_NAME=$(echo "$RESULT" | jq -r '.sources[0].name')
 SOURCE_ID=$(echo "$SOURCE_NAME" | awk -F'/' '{print $NF}')
 
 # Get source details
-nblm --auth gcloud sources get \
+nblm sources get \
   --notebook-id abc123 \
   --source-id "$SOURCE_ID"
 ```
@@ -327,7 +327,7 @@ nblm --auth gcloud sources get \
 # Upload all PDFs in a directory
 for file in *.pdf; do
   echo "Uploading $file..."
-  nblm --auth gcloud sources upload \
+  nblm sources upload \
     --notebook-id abc123 \
     --file "$file"
 done
@@ -339,7 +339,7 @@ done
 # urls.txt contains one URL per line
 while IFS= read -r url; do
   echo "Adding $url..."
-  nblm --auth gcloud sources add \
+  nblm sources add \
     --notebook-id abc123 \
     --web-url "$url"
 done < urls.txt

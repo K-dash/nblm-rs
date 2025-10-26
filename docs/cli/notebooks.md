@@ -31,13 +31,13 @@ nblm notebooks create --title <TITLE>
 **Basic usage:**
 
 ```bash
-nblm --auth gcloud notebooks create --title "My Research Notebook"
+nblm notebooks create --title "My Research Notebook"
 ```
 
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json notebooks create --title "Project Documentation"
+nblm --json notebooks create --title "Project Documentation"
 ```
 
 Output:
@@ -79,19 +79,19 @@ nblm notebooks recent [--page-size <SIZE>]
 **List all recent notebooks:**
 
 ```bash
-nblm --auth gcloud notebooks recent
+nblm notebooks recent
 ```
 
 **Limit results:**
 
 ```bash
-nblm --auth gcloud notebooks recent --page-size 10
+nblm notebooks recent --page-size 10
 ```
 
 **JSON output:**
 
 ```bash
-nblm --auth gcloud --json notebooks recent
+nblm --json notebooks recent
 ```
 
 Output:
@@ -121,13 +121,13 @@ Output:
 
 ```bash
 # Get all notebook titles
-nblm --auth gcloud --json notebooks recent | jq '.notebooks[].title'
+nblm --json notebooks recent | jq '.notebooks[].title'
 
 # Get all notebook IDs
-nblm --auth gcloud --json notebooks recent | jq '.notebooks[].notebookId'
+nblm --json notebooks recent | jq '.notebooks[].notebookId'
 
 # Get the most recently updated notebook
-nblm --auth gcloud --json notebooks recent | jq '.notebooks[0]'
+nblm --json notebooks recent | jq '.notebooks[0]'
 ```
 
 ### Notes
@@ -157,14 +157,14 @@ nblm notebooks delete --notebook-name <NAME> [--notebook-name <NAME>...]
 **Delete a single notebook:**
 
 ```bash
-nblm --auth gcloud notebooks delete \
+nblm notebooks delete \
   --notebook-name "projects/123456789012/locations/global/notebooks/abc123"
 ```
 
 **Delete multiple notebooks:**
 
 ```bash
-nblm --auth gcloud notebooks delete \
+nblm notebooks delete \
   --notebook-name "projects/123456789012/locations/global/notebooks/abc123" \
   --notebook-name "projects/123456789012/locations/global/notebooks/def456"
 ```
@@ -173,10 +173,10 @@ nblm --auth gcloud notebooks delete \
 
 ```bash
 # Get the full notebook name
-NOTEBOOK_NAME=$(nblm --auth gcloud --json notebooks recent | jq -r '.notebooks[0].name')
+NOTEBOOK_NAME=$(nblm --json notebooks recent | jq -r '.notebooks[0].name')
 
 # Delete it
-nblm --auth gcloud notebooks delete --notebook-name "$NOTEBOOK_NAME"
+nblm notebooks delete --notebook-name "$NOTEBOOK_NAME"
 ```
 
 ### Notes
@@ -192,35 +192,35 @@ nblm --auth gcloud notebooks delete --notebook-name "$NOTEBOOK_NAME"
 
 ```bash
 # Create notebook and extract ID
-NOTEBOOK_ID=$(nblm --auth gcloud --json notebooks create --title "My Notebook" | jq -r '.notebookId')
+NOTEBOOK_ID=$(nblm --json notebooks create --title "My Notebook" | jq -r '.notebookId')
 
 echo "Created notebook: $NOTEBOOK_ID"
 
 # Use the ID in subsequent commands
-nblm --auth gcloud sources add --notebook-id "$NOTEBOOK_ID" --web-url "https://example.com"
+nblm sources add --notebook-id "$NOTEBOOK_ID" --web-url "https://example.com"
 ```
 
 ### List and filter notebooks
 
 ```bash
 # Find notebooks by title
-nblm --auth gcloud --json notebooks recent | jq '.notebooks[] | select(.title | contains("Research"))'
+nblm --json notebooks recent | jq '.notebooks[] | select(.title | contains("Research"))'
 
 # Count notebooks
-nblm --auth gcloud --json notebooks recent | jq '.notebooks | length'
+nblm --json notebooks recent | jq '.notebooks | length'
 
 # Get notebooks created today
 TODAY=$(date +%Y-%m-%d)
-nblm --auth gcloud --json notebooks recent | jq ".notebooks[] | select(.createTime | startswith(\"$TODAY\"))"
+nblm --json notebooks recent | jq ".notebooks[] | select(.createTime | startswith(\"$TODAY\"))"
 ```
 
 ### Delete all notebooks (dangerous)
 
 ```bash
 # WARNING: This deletes ALL notebooks!
-nblm --auth gcloud --json notebooks recent | \
+nblm --json notebooks recent | \
   jq -r '.notebooks[].name' | \
-  xargs -I {} nblm --auth gcloud notebooks delete --notebook-name {}
+  xargs -I {} nblm notebooks delete --notebook-name {}
 ```
 
 ## Error Handling

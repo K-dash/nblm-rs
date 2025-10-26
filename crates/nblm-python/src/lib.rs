@@ -13,10 +13,10 @@ pub use client::NblmClient;
 pub use error::NblmError;
 pub use models::{
     AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesResponse,
-    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, ListRecentlyViewedResponse, Notebook,
-    NotebookMetadata, NotebookSource, NotebookSourceId, NotebookSourceMetadata,
-    NotebookSourceSettings, NotebookSourceYoutubeMetadata, TextSource, UploadSourceFileResponse,
-    VideoSource, WebSource,
+    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, GoogleDriveSource,
+    ListRecentlyViewedResponse, Notebook, NotebookMetadata, NotebookSource, NotebookSourceId,
+    NotebookSourceMetadata, NotebookSourceSettings, NotebookSourceYoutubeMetadata, TextSource,
+    UploadSourceFileResponse, VideoSource, WebSource,
 };
 
 /// NotebookLM Enterprise API client for Python
@@ -34,6 +34,7 @@ fn nblm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NotebookSourceId>()?;
     m.add_class::<WebSource>()?;
     m.add_class::<TextSource>()?;
+    m.add_class::<GoogleDriveSource>()?;
     m.add_class::<VideoSource>()?;
     m.add_class::<UploadSourceFileResponse>()?;
     m.add_class::<BatchCreateSourcesResponse>()?;

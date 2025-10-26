@@ -81,7 +81,7 @@ This project provides production-ready tools that make the NotebookLM API access
 | Add web URL         | ◯   | ◯      | Working     |                         |
 | Add text content    | ◯   | ◯      | Working     |                         |
 | Add video (YouTube) | ◯   | ◯      | Working     | Uses `youtubeUrl` field |
-| Add Google Drive    | ◯   | ✗      | Not Working | API returns HTTP 500    |
+| Add Google Drive    | ◯   | ◯      | Working     | Requires Drive-enabled auth |
 | Upload file         | ◯   | ◯      | Working     |                         |
 | Delete source(s)    | ◯   | ◯      | Working     |                         |
 | Get source by ID    | ◯   | ◯      | Working     |                         |

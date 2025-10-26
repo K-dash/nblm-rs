@@ -99,13 +99,11 @@ pub struct TextContent {
 
 /// Google Drive content for adding sources.
 ///
-/// # Known Issues
+/// # Requirements
 ///
-/// **WARNING**: As of 2025-10-19, the NotebookLM API returns HTTP 500 Internal Server Error
-/// when attempting to add Google Drive sources. This functionality is currently unavailable.
-/// The error occurs even with proper authentication (`gcloud auth login --enable-gdrive-access`)
-/// and correct IAM permissions. No detailed error information is provided in API responses or
-/// Google Cloud logs, indicating a server-side issue with the NotebookLM API.
+/// - Use credentials initialized with `gcloud auth login --enable-gdrive-access`
+/// - Ensure the authenticated account has at least viewer access to the document
+/// - Provide the MIME type returned by the Drive API (e.g. `application/pdf`)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleDriveContent {

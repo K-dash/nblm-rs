@@ -9,6 +9,7 @@ from ._models import (
     BatchCreateSourcesResponse,
     BatchDeleteNotebooksResponse,
     BatchDeleteSourcesResponse,
+    GoogleDriveSource,
     ListRecentlyViewedResponse,
     Notebook,
     NotebookSource,
@@ -93,6 +94,7 @@ class NblmClient:
         notebook_id: str,
         web_sources: list[WebSource] | None = ...,
         text_sources: list[TextSource] | None = ...,
+        drive_sources: list[GoogleDriveSource] | None = ...,
         video_sources: list[VideoSource] | None = ...,
     ) -> BatchCreateSourcesResponse:
         """
@@ -102,6 +104,7 @@ class NblmClient:
             notebook_id: Notebook identifier (notebook resource ID, e.g. "abc123")
             web_sources: Optional list of WebSource objects
             text_sources: Optional list of TextSource objects
+            drive_sources: Optional list of GoogleDriveSource objects
             video_sources: Optional list of VideoSource objects
 
         Returns:

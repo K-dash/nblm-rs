@@ -31,9 +31,9 @@ nblm sources add --notebook-id <ID> [SOURCE_OPTIONS...]
 | `--text <CONTENT>`           | Text content                 | No       | Yes        |
 | `--text-name <NAME>`         | Display name for text source | No       | Yes        |
 | `--video-url <URL>`          | YouTube video URL            | No       | Yes        |
-| `--drive-id <ID>`            | Google Drive file ID         | No       | Yes        |
-| `--drive-resource-key <KEY>` | Drive resource key           | No       | Yes        |
-| `--drive-mime-type <TYPE>`   | Drive file MIME type         | No       | Yes        |
+| `--drive-document-id <ID>`   | Google Drive document ID     | No       | Yes        |
+| `--drive-mime-type <TYPE>`   | Google Drive MIME type       | No       | Yes        |
+| `--drive-name <NAME>`        | Display name for Drive doc   | No       | Yes        |
 
 **Note**: At least one source option must be provided.
 
@@ -77,16 +77,17 @@ nblm sources add \
   --video-url "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-**Add Google Drive file (currently not working):**
+**Add Google Drive file:**
 
 ```bash
-# WARNING: This returns HTTP 500 as of 2025-10-25
 nblm sources add \
   --notebook-id abc123 \
-  --drive-id "FILE_ID" \
-  --drive-resource-key "RESOURCE_KEY" \
-  --drive-mime-type "application/pdf"
+  --drive-document-id "FILE_ID" \
+  --drive-mime-type "application/vnd.google-apps.presentation" \
+  --drive-name "Team Update Slides"
 ```
+
+> **Tip:** `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`). Ensure the authenticated account has view access to the file.
 
 **JSON output:**
 
@@ -115,7 +116,7 @@ Output:
 - Web URLs are fetched and indexed automatically
 - Text content must not be empty
 - Video URLs currently only support YouTube (`youtubeUrl` field)
-- **Google Drive sources return HTTP 500 error** (API issue as of 2025-10-25)
+- Google Drive sources require `gcloud auth login --enable-gdrive-access` and the authenticated account must have access to the document
 - The `--web-name` and `--text-name` options are optional; if not provided, defaults are used
 
 ## upload
@@ -361,14 +362,6 @@ Cause: The --text option was provided with empty string
 ```
 Error: File not found: /path/to/file
 Cause: The specified file does not exist or is not readable
-```
-
-**Google Drive API error:**
-
-```
-Error: Failed to add source
-Cause: API returned 500 Internal Server Error
-Note: Google Drive sources are currently not working (as of 2025-10-25)
 ```
 
 **Invalid notebook ID:**

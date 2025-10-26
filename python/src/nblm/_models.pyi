@@ -30,6 +30,28 @@ class TextSource:
             name: Optional display name for the source
         """
 
+class GoogleDriveSource:
+    """Source type for adding Google Drive documents to a notebook."""
+
+    document_id: str
+    mime_type: str
+    name: str | None
+
+    def __init__(
+        self,
+        document_id: str,
+        mime_type: str,
+        name: str | None = None,
+    ) -> None:
+        """
+        Create a GoogleDriveSource.
+
+        Args:
+            document_id: Google Drive document ID
+            mime_type: MIME type returned by the Drive API
+            name: Optional display name for the source
+        """
+
 class VideoSource:
     """Source type for adding YouTube videos to a notebook."""
 

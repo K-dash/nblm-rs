@@ -8,10 +8,11 @@ use crate::auth::PyTokenProvider;
 use crate::error::{map_nblm_error, map_runtime_error, IntoPyResult, PyResult};
 use crate::models::{
     AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesResponse,
-    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, ListRecentlyViewedResponse, Notebook,
-    NotebookSource, TextSource, UploadSourceFileResponse, VideoSource, WebSource,
+    BatchDeleteNotebooksResponse, BatchDeleteSourcesResponse, GoogleDriveSource,
+    ListRecentlyViewedResponse, Notebook, NotebookSource, TextSource, UploadSourceFileResponse,
+    VideoSource, WebSource,
 };
-use nblm_core::models::{TextContent, UserContent, VideoContent, WebContent};
+use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -124,6 +125,7 @@ impl NblmClient {
     ///     notebook_id: Notebook identifier (notebook resource ID, not full name)
     ///     web_sources: Optional list of WebSource objects
     ///     text_sources: Optional list of TextSource objects
+    ///     drive_sources: Optional list of GoogleDriveSource objects
     ///     video_sources: Optional list of VideoSource objects
     ///
     /// Returns:
@@ -131,13 +133,14 @@ impl NblmClient {
     ///
     /// Raises:
     ///     NblmError: If the request fails or validation fails
-    #[pyo3(signature = (notebook_id, web_sources=None, text_sources=None, video_sources=None))]
+    #[pyo3(signature = (notebook_id, web_sources=None, text_sources=None, drive_sources=None, video_sources=None))]
     fn add_sources(
         &self,
         py: Python,
         notebook_id: String,
         web_sources: Option<Vec<WebSource>>,
         text_sources: Option<Vec<TextSource>>,
+        drive_sources: Option<Vec<GoogleDriveSource>>,
         video_sources: Option<Vec<VideoSource>>,
     ) -> PyResult<BatchCreateSourcesResponse> {
         let inner = self.inner.clone();
@@ -167,6 +170,41 @@ impl NblmClient {
                             text_content: TextContent {
                                 content: source.content,
                                 source_name: source.name,
+                            },
+                        });
+                    }
+                }
+
+                if let Some(sources) = drive_sources {
+                    for source in sources {
+                        let document_id = source.document_id.trim();
+                        if document_id.is_empty() {
+                            return Err(nblm_core::Error::validation(
+                                "drive document ID cannot be empty",
+                            ));
+                        }
+
+                        let mime_type = source.mime_type.trim();
+                        if mime_type.is_empty() {
+                            return Err(nblm_core::Error::validation(
+                                "drive mime type cannot be empty",
+                            ));
+                        }
+
+                        let source_name = source.name.as_ref().and_then(|name| {
+                            let trimmed = name.trim();
+                            if trimmed.is_empty() {
+                                None
+                            } else {
+                                Some(trimmed.to_string())
+                            }
+                        });
+
+                        contents.push(UserContent::GoogleDrive {
+                            google_drive_content: GoogleDriveContent {
+                                document_id: document_id.to_string(),
+                                mime_type: mime_type.to_string(),
+                                source_name,
                             },
                         });
                     }

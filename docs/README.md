@@ -19,7 +19,6 @@ Complete command-line interface documentation:
 - [Sources Commands](cli/sources.md) - Add, upload, and manage sources
 - [Audio Commands](cli/audio.md) - Create and delete audio overviews
 - [Share Commands](cli/share.md) - Share notebooks with users
-- [Advanced Usage](cli/advanced.md) - JSON output, error handling, scripting
 
 ## Python SDK Reference
 
@@ -41,7 +40,6 @@ Python bindings documentation:
 ## Contributing
 
 - [Contributing Guide](../CONTRIBUTING.md) - Development setup and guidelines
-- [CHANGELOG](../CHANGELOG.md) - Version history
 
 ---
 

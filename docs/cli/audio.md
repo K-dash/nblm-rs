@@ -215,4 +215,3 @@ The typical workflow for audio overviews:
 
 - [Notebooks Commands](notebooks.md) - Create and manage notebooks
 - [Sources Commands](sources.md) - Add content to notebooks
-- [Advanced Usage](advanced.md) - Scripting and automation

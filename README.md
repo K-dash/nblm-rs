@@ -1,5 +1,7 @@
 <div align="center">
 
+  <img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/5ecea7aa-a771-4455-9851-c35f20430faa" />
+
   # _nblm-rs_
 
   **Unofficial NotebookLM Enterprise API client**
@@ -10,10 +12,6 @@
   [![Crates.io](https://img.shields.io/crates/v/nblm-cli.svg)](https://crates.io/crates/nblm-cli)
   [![PyPI](https://img.shields.io/pypi/v/nblm.svg)](https://pypi.org/project/nblm/)
   [![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
-
-  <img width="256" alt="logo" src="https://github.com/user-attachments/assets/37f0f882-65ca-436e-8053-3db8c18cac59" />
-
-
 
 </div>
 
@@ -205,7 +203,6 @@ response = client.add_sources(
 - [Getting Started](docs/getting-started/installation.md) - Installation, authentication, configuration
 - [CLI Reference](docs/cli/README.md) - All commands, options, and examples
 - [Python SDK Reference](docs/python/README.md) - API reference and usage patterns
-- [API Limitations](docs/api/limitations.md) - Known issues and workarounds
 
 ## Known API Issues
 

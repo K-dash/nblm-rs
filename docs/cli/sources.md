@@ -375,4 +375,3 @@ Cause: The specified notebook does not exist or you don't have access
 
 - [Notebooks Commands](notebooks.md) - Create and manage notebooks
 - [Audio Commands](audio.md) - Create audio overviews from sources
-- [Advanced Usage](advanced.md) - Scripting and automation

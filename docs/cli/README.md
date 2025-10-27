@@ -201,4 +201,3 @@ nblm --json notebooks recent | jq '.notebooks | length'
 - [Notebooks Commands](notebooks.md) - Notebook management
 - [Sources Commands](sources.md) - Source management
 - [Audio Commands](audio.md) - Audio overview operations
-- [Advanced Usage](advanced.md) - Scripting and automation

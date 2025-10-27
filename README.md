@@ -38,13 +38,13 @@ While you can interact with the API using simple `curl` commands, this approach 
   - **Problem**: Cryptic HTTP error codes without context or recovery suggestions
   - **Solution**: Clear, actionable error messages with automatic retries for transient failures
 
-- **Batch operations**
-  - **Problem**: Writing loops to process multiple items, managing API call sequences
-  - **Solution**: Built-in batch commands with simplified syntax for multiple operations
+- **Repeated operations**
+  - **Problem**: Writing boilerplate loops for fetch/add/delete sequences
+  - **Solution**: Higher-level client helpers and CLI flags that wrap single API calls (with retries built in) so scripts stay concise
 
 - **Output parsing**
   - **Problem**: Manual JSON parsing and extracting specific fields from responses
-  - **Solution**: Structured output formats and JSON mode for easy integration with `jq` and other tools
+  - **Solution**: Structured response objects in the Python SDK and `--json` output in the CLI for easy integration with tools like `jq`
 
 ### Project Goals
 

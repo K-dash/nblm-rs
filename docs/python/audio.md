@@ -148,30 +148,6 @@ for notebook_id in notebook_ids:
 print(f"\nSummary: {len(created)} succeeded, {len(failed)} failed")
 ```
 
-### Context Manager for Cleanup
-
-```python
-from contextlib import contextmanager
-from typing import Generator
-
-@contextmanager
-def temporary_audio(
-    client: NblmClient,
-    notebook_id: str
-) -> Generator[AudioOverviewResponse, None, None]:
-    """Create audio overview and delete it when done."""
-    audio = client.create_audio_overview(notebook_id=notebook_id)
-    try:
-        yield audio
-    finally:
-        client.delete_audio_overview(notebook_id=notebook_id)
-
-# Usage
-with temporary_audio(client, "abc123") as audio:
-    print(f"Testing audio: {audio.audio_overview_id}")
-    # Audio is automatically deleted after this block
-```
-
 ## Audio Overview Status
 
 > **Important**: As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
@@ -329,23 +305,6 @@ def recreate_audio(client: NblmClient, notebook_id: str):
     # Create new audio
     audio = client.create_audio_overview(notebook_id=notebook_id)
     return audio
-```
-
-### Wait for Completion
-
-```python
-import time
-
-def wait_for_audio_message(notebook_id: str):
-    """Print message about waiting for audio generation."""
-    print(f"Audio overview created for notebook: {notebook_id}")
-    print("Generation in progress (typically 3-5 minutes)...")
-    print("Check NotebookLM web UI for completion status")
-    print(f"URL: https://notebooklm.google.com/notebook/{notebook_id}")
-
-# Usage
-audio = client.create_audio_overview(notebook_id="abc123")
-wait_for_audio_message("abc123")
 ```
 
 ## Next Steps

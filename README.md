@@ -1,5 +1,7 @@
 <div align="center">
 
+  <img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/5ecea7aa-a771-4455-9851-c35f20430faa" />
+
   # _nblm-rs_
 
   **Unofficial NotebookLM Enterprise API client**
@@ -10,10 +12,6 @@
   [![Crates.io](https://img.shields.io/crates/v/nblm-cli.svg)](https://crates.io/crates/nblm-cli)
   [![PyPI](https://img.shields.io/pypi/v/nblm.svg)](https://pypi.org/project/nblm/)
   [![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
-
-  <img width="256" alt="logo" src="https://github.com/user-attachments/assets/37f0f882-65ca-436e-8053-3db8c18cac59" />
-
-
 
 </div>
 
@@ -40,13 +38,13 @@ While you can interact with the API using simple `curl` commands, this approach 
   - **Problem**: Cryptic HTTP error codes without context or recovery suggestions
   - **Solution**: Clear, actionable error messages with automatic retries for transient failures
 
-- **Batch operations**
-  - **Problem**: Writing loops to process multiple items, managing API call sequences
-  - **Solution**: Built-in batch commands with simplified syntax for multiple operations
+- **Repeated operations**
+  - **Problem**: Writing boilerplate loops for fetch/add/delete sequences
+  - **Solution**: Higher-level client helpers and CLI flags that wrap single API calls (with retries built in) so scripts stay concise
 
 - **Output parsing**
   - **Problem**: Manual JSON parsing and extracting specific fields from responses
-  - **Solution**: Structured output formats and JSON mode for easy integration with `jq` and other tools
+  - **Solution**: Structured response objects in the Python SDK and `--json` output in the CLI for easy integration with tools like `jq`
 
 ### Project Goals
 
@@ -205,7 +203,6 @@ response = client.add_sources(
 - [Getting Started](docs/getting-started/installation.md) - Installation, authentication, configuration
 - [CLI Reference](docs/cli/README.md) - All commands, options, and examples
 - [Python SDK Reference](docs/python/README.md) - API reference and usage patterns
-- [API Limitations](docs/api/limitations.md) - Known issues and workarounds
 
 ## Known API Issues
 

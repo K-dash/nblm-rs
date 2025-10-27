@@ -8,7 +8,6 @@ This document tracks verified API limitations and workarounds implemented in nbl
 
 **Discovered**: 2025-10-19
 **Status**: Confirmed API limitation
-**Severity**: Medium
 
 ### Issue
 
@@ -55,7 +54,6 @@ pub async fn delete_notebooks(&self, notebook_names: Vec<String>) -> Result<...>
 
 **Discovered**: 2025-10-19 (per README)
 **Status**: Confirmed API limitation
-**Severity**: Low
 
 ### Issue
 
@@ -78,45 +76,10 @@ None needed. The API returns all results in one call.
 - Cannot paginate through large notebook lists
 - May cause performance issues with very large notebook collections (untested)
 
-## Google Drive Source Addition Requirements
-
-**Discovered**: 2025-10-19 (per README)  
-**Status**: Works with prerequisites  
-**Severity**: Medium
-
-### Issue
-
-The API returns 404/500 errors when the authenticated principal cannot access the target Drive document. Early testing interpreted this as an API limitation, but it is caused by insufficient Drive permissions.
-
-**API Endpoint**: `POST /v1alpha1/.../sources:batchCreate`
-
-### Behavior
-
-```bash
-$ nblm sources add --notebook-id ID \
-    --drive-document-id FILE_ID \
-    --drive-mime-type application/pdf
-Error: http error 404 Not Found: Requested entity was not found.
-```
-
-### Workaround
-
-- Authenticate with Drive-enabled credentials: `gcloud auth login --enable-gdrive-access`
-- Ensure the Drive document is shared with (or owned by) the authenticated account
-- Provide the correct MIME type reported by the Drive API
-
-Once these prerequisites are satisfied, Drive sources ingest successfully.
-
-### Impact
-
-- Users must configure Drive access explicitly before automation works
-- Helpful to document authentication instructions for contributors
-
 ## Audio Overview Configuration Fields Not Supported
 
 **Discovered**: 2025-10-19 (per README)
 **Status**: Confirmed API limitation
-**Severity**: Low
 
 ### Issue
 
@@ -143,18 +106,3 @@ API documentation mentions configuration fields (`languageCode`, `sourceIds`, `e
 ### Workaround
 
 Create audio overview with empty request, then configure settings through NotebookLM web UI.
-
-### Impact
-
-- Cannot specify language or source selection via API
-- Cannot focus episode on specific topics via API
-- Audio overview creation is "fire and forget" from API perspective
-
-## Summary
-
-| Limitation | Severity | Workaround | Status |
-|------------|----------|------------|--------|
-| Batch delete only accepts 1 item | Medium | Sequential deletion | Implemented |
-| Pagination not working | Low | None needed | Noted |
-| Google Drive sources require Drive access | Medium | Enable gcloud --enable-gdrive-access and share document | Documented |
-| Audio config fields rejected | Low | Use web UI for config | Documented |

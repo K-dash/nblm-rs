@@ -253,4 +253,3 @@ Cause: Notebook name must be in format: projects/PROJECT_NUMBER/locations/LOCATI
 - [Sources Commands](sources.md) - Add content to notebooks
 - [Audio Commands](audio.md) - Create audio overviews
 - [Share Commands](share.md) - Share notebooks with others
-- [Advanced Usage](advanced.md) - Scripting and automation

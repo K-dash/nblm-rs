@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img width="512" height="512" alt="logo" src="https://github.com/user-attachments/assets/5ecea7aa-a771-4455-9851-c35f20430faa" />
+  <img width="256" alt="logo" src="https://github.com/user-attachments/assets/37f0f882-65ca-436e-8053-3db8c18cac59" />
 
   # _nblm-rs_
 

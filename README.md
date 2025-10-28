@@ -10,8 +10,15 @@
   🐍 **Python SDK**: Python bindings for integration in Python applications
 
   [![Crates.io](https://img.shields.io/crates/v/nblm-cli.svg)](https://crates.io/crates/nblm-cli)
-  [![PyPI](https://img.shields.io/pypi/v/nblm.svg)](https://pypi.org/project/nblm/)
+  [![Crates.io](https://img.shields.io/crates/d/nblm-cli.svg?color=orange&label=downloads)](https://crates.io/crates/nblm-cli)
   [![codecov](https://codecov.io/gh/K-dash/nblm-rs/graph/badge.svg?token=OhxeTdnxTw)](https://codecov.io/gh/K-dash/nblm-rs)
+  <br/>
+  [![PyPI](https://img.shields.io/pypi/v/nblm.svg?color=blue)](https://pypi.org/project/nblm/)
+  [![Python versions](https://img.shields.io/pypi/pyversions/nblm.svg)](https://pypi.org/project/nblm/)
+  [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+  [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+  [![mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy-lang.org/)
+  
 
 </div>
 

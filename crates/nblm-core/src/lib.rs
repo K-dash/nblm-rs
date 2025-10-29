@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod client;
+pub mod doctor;
 mod error;
 pub mod models;
 

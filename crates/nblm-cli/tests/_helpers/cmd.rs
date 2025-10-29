@@ -2,7 +2,7 @@ use assert_cmd::Command;
 
 /// Create a Command for the nblm CLI binary with common setup
 pub fn nblm() -> Command {
-    Command::cargo_bin("nblm").unwrap()
+    Command::new(assert_cmd::cargo::cargo_bin!("nblm"))
 }
 
 /// Common arguments for all CLI tests

@@ -93,66 +93,78 @@ impl DiagnosticsSummary {
     /// Format summary for display
     pub fn format_summary(&self) -> String {
         let total = self.checks.len();
-        let failed = self.count_by_status(CheckStatus::Error)
-            + self.count_by_status(CheckStatus::Warning);
+        let failed =
+            self.count_by_status(CheckStatus::Error) + self.count_by_status(CheckStatus::Warning);
 
         if failed == 0 {
             format!("\nSummary: All {} checks passed.", total)
         } else {
-            format!("\nSummary: {} checks failing out of {}. See above for details.", failed, total)
+            format!(
+                "\nSummary: {} checks failing out of {}. See above for details.",
+                failed, total
+            )
         }
     }
 }
 
-/// Check environment variable presence and value
-pub fn check_env_var(var_name: &str, required: bool) -> CheckResult {
-    match env::var(var_name) {
-        Ok(value) if !value.is_empty() => {
-            CheckResult::new(
-                format!("env_var_{}", var_name.to_lowercase()),
-                CheckStatus::Pass,
-                format!("{}={}", var_name, value),
-            )
-        }
+/// Configuration for an environment variable check
+pub struct EnvVarCheck {
+    pub name: &'static str,
+    pub required: bool,
+    pub suggestion: &'static str,
+}
+
+/// Static configuration table for environment variable checks
+const ENV_VAR_CHECKS: &[EnvVarCheck] = &[
+    EnvVarCheck {
+        name: "NBLM_PROJECT_NUMBER",
+        required: true,
+        suggestion: "export NBLM_PROJECT_NUMBER=<your-project-number>",
+    },
+    EnvVarCheck {
+        name: "NBLM_ENDPOINT_LOCATION",
+        required: false,
+        suggestion: "export NBLM_ENDPOINT_LOCATION=us-central1",
+    },
+    EnvVarCheck {
+        name: "NBLM_LOCATION",
+        required: false,
+        suggestion: "export NBLM_LOCATION=us-central1",
+    },
+];
+
+/// Check a single environment variable
+fn check_env_var(config: &EnvVarCheck) -> CheckResult {
+    match env::var(config.name) {
+        Ok(value) if !value.is_empty() => CheckResult::new(
+            format!("env_var_{}", config.name.to_lowercase()),
+            CheckStatus::Pass,
+            format!("{}={}", config.name, value),
+        ),
         Ok(_) | Err(env::VarError::NotPresent) => {
-            let status = if required {
+            let status = if config.required {
                 CheckStatus::Error
             } else {
                 CheckStatus::Warning
             };
-            let suggestion = match var_name {
-                "NBLM_PROJECT_NUMBER" => {
-                    "export NBLM_PROJECT_NUMBER=<your-project-number>".to_string()
-                }
-                "ENDPOINT_LOCATION" | "NBLM_ENDPOINT_LOCATION" => {
-                    "export ENDPOINT_LOCATION=us-central1".to_string()
-                }
-                "LOCATION" | "NBLM_LOCATION" => "export LOCATION=us-central1".to_string(),
-                _ => format!("export {}=<value>", var_name),
-            };
-
             CheckResult::new(
-                format!("env_var_{}", var_name.to_lowercase()),
+                format!("env_var_{}", config.name.to_lowercase()),
                 status,
-                format!("{} missing", var_name),
+                format!("{} missing", config.name),
             )
-            .with_suggestion(suggestion)
+            .with_suggestion(config.suggestion)
         }
         Err(env::VarError::NotUnicode(_)) => CheckResult::new(
-            format!("env_var_{}", var_name.to_lowercase()),
+            format!("env_var_{}", config.name.to_lowercase()),
             CheckStatus::Error,
-            format!("{} contains invalid UTF-8", var_name),
+            format!("{} contains invalid UTF-8", config.name),
         ),
     }
 }
 
 /// Run all environment variable checks
 pub fn check_environment_variables() -> Vec<CheckResult> {
-    vec![
-        check_env_var("NBLM_PROJECT_NUMBER", true),
-        check_env_var("ENDPOINT_LOCATION", false),
-        check_env_var("LOCATION", false),
-    ]
+    ENV_VAR_CHECKS.iter().map(check_env_var).collect()
 }
 
 #[cfg(test)]
@@ -178,9 +190,8 @@ mod tests {
         let result = CheckResult::new("test", CheckStatus::Pass, "Test passed");
         assert_eq!(result.format(), "[ok] Test passed");
 
-        let result_with_suggestion =
-            CheckResult::new("test", CheckStatus::Warning, "Test warning")
-                .with_suggestion("Try this fix");
+        let result_with_suggestion = CheckResult::new("test", CheckStatus::Warning, "Test warning")
+            .with_suggestion("Try this fix");
         assert!(result_with_suggestion.format().contains("Suggestion:"));
     }
 
@@ -208,7 +219,12 @@ mod tests {
     #[test]
     fn test_check_env_var_present() {
         env::set_var("TEST_VAR", "test_value");
-        let result = check_env_var("TEST_VAR", true);
+        let config = EnvVarCheck {
+            name: "TEST_VAR",
+            required: true,
+            suggestion: "export TEST_VAR=value",
+        };
+        let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Pass);
         assert!(result.message.contains("test_value"));
         env::remove_var("TEST_VAR");
@@ -217,7 +233,12 @@ mod tests {
     #[test]
     fn test_check_env_var_missing_required() {
         env::remove_var("MISSING_VAR");
-        let result = check_env_var("MISSING_VAR", true);
+        let config = EnvVarCheck {
+            name: "MISSING_VAR",
+            required: true,
+            suggestion: "export MISSING_VAR=value",
+        };
+        let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Error);
         assert!(result.message.contains("missing"));
         assert!(result.suggestion.is_some());
@@ -226,7 +247,12 @@ mod tests {
     #[test]
     fn test_check_env_var_missing_optional() {
         env::remove_var("OPTIONAL_VAR");
-        let result = check_env_var("OPTIONAL_VAR", false);
+        let config = EnvVarCheck {
+            name: "OPTIONAL_VAR",
+            required: false,
+            suggestion: "export OPTIONAL_VAR=value",
+        };
+        let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Warning);
         assert!(result.message.contains("missing"));
     }

@@ -66,6 +66,7 @@ pub enum Command {
     Audio(ops::audio::Command),
     #[command(subcommand)]
     Share(ops::share::Command),
+    Doctor(ops::doctor::DoctorArgs),
 }
 
 #[derive(Copy, Clone, ValueEnum)]

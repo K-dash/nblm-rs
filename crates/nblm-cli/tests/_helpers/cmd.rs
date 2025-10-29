@@ -42,6 +42,9 @@ impl CommonArgs {
         ]);
     }
 
+    // Some integration tests reuse this helper while others do not; keep the helper available
+    // without tripping per-test dead_code lints.
+    #[allow(dead_code)]
     pub fn with_base_url(&self, cmd: &mut Command, base_url: &str) {
         self.apply(cmd);
         cmd.args(["--base-url", base_url]);

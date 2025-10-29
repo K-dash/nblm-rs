@@ -6,7 +6,7 @@ use tracing_subscriber::EnvFilter;
 use nblm_core::{NblmClient, RetryConfig};
 
 use crate::args::{Cli, Command};
-use crate::ops::{audio, notebooks, share, sources};
+use crate::ops::{audio, doctor, notebooks, share, sources};
 use crate::util::auth::build_token_provider;
 
 pub struct NblmApp {
@@ -59,6 +59,7 @@ impl NblmApp {
             Command::Sources(cmd) => sources::run(cmd, &self.client, json_mode).await,
             Command::Audio(cmd) => audio::run(cmd, &self.client, json_mode).await,
             Command::Share(cmd) => share::run(cmd, &self.client, json_mode).await,
+            Command::Doctor(cmd) => doctor::run(cmd).await,
         }
     }
 }

@@ -9,19 +9,19 @@ use crate::error::Result;
 mod api;
 mod http;
 mod retry;
-mod url_builder;
+mod url;
 
 pub use self::retry::{RetryConfig, Retryer};
 
 use self::api::backends::{BackendContext, ClientBackends};
 use self::http::HttpClient;
-use self::url_builder::UrlBuilder;
+use self::url::{new_url_builder, UrlBuilder};
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub struct NblmClient {
     pub(self) http: Arc<HttpClient>,
-    pub(self) url_builder: Arc<UrlBuilder>,
+    pub(self) url_builder: Arc<dyn UrlBuilder>,
     backends: ClientBackends,
     environment: EnvironmentConfig,
     timeout: Duration,
@@ -40,10 +40,11 @@ impl NblmClient {
 
         let retryer = Retryer::new(RetryConfig::default());
         let http = Arc::new(HttpClient::new(client, token_provider, retryer, None));
-        let url_builder = Arc::new(UrlBuilder::new(
+        let url_builder = new_url_builder(
+            environment.profile(),
             environment.base_url().to_string(),
             environment.parent_path().to_string(),
-        ));
+        );
         let ctx = BackendContext::new(Arc::clone(&http), Arc::clone(&url_builder));
         let backends = ClientBackends::new(environment.profile(), ctx);
 
@@ -136,7 +137,7 @@ impl NblmClient {
         let _ = Url::parse(&base).map_err(crate::error::Error::from)?;
         self.environment = self.environment.clone().with_base_url(base.clone());
         let parent = self.environment.parent_path().to_string();
-        self.url_builder = Arc::new(UrlBuilder::new(base, parent));
+        self.url_builder = new_url_builder(self.environment.profile(), base, parent);
         self.rebuild_backends();
         Ok(self)
     }

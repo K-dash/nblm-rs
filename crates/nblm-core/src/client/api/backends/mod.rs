@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::client::{http::HttpClient, url_builder::UrlBuilder};
+use crate::client::{http::HttpClient, url::UrlBuilder};
 use crate::env::ApiProfile;
 use crate::error::Result;
 use crate::models::{
@@ -14,14 +14,22 @@ use crate::models::{
     NotebookSource, ShareResponse, UploadSourceFileResponse, UserContent,
 };
 
-#[derive(Clone)]
 pub(crate) struct BackendContext {
     pub http: Arc<HttpClient>,
-    pub url_builder: Arc<UrlBuilder>,
+    pub url_builder: Arc<dyn UrlBuilder>,
+}
+
+impl Clone for BackendContext {
+    fn clone(&self) -> Self {
+        Self {
+            http: Arc::clone(&self.http),
+            url_builder: Arc::clone(&self.url_builder),
+        }
+    }
 }
 
 impl BackendContext {
-    pub fn new(http: Arc<HttpClient>, url_builder: Arc<UrlBuilder>) -> Self {
+    pub fn new(http: Arc<HttpClient>, url_builder: Arc<dyn UrlBuilder>) -> Self {
         Self { http, url_builder }
     }
 }
@@ -146,10 +154,11 @@ mod tests {
         let token = Arc::new(StaticTokenProvider::new("token"));
         let retryer = Retryer::new(RetryConfig::default());
         let http = Arc::new(HttpClient::new(client, token, retryer, None));
-        let url_builder = Arc::new(UrlBuilder::new(
+        let url_builder = crate::client::url::new_url_builder(
+            env.profile(),
             env.base_url().to_string(),
             env.parent_path().to_string(),
-        ));
+        );
         BackendContext::new(http, url_builder)
     }
 

@@ -36,7 +36,14 @@ nblm --project-number PROJECT_NUMBER \
   --location global \
   --endpoint-location global \
   notebooks recent
-```
+
+# Using gcloud authentication
+#  (when you specify --auth gcloud, the CLI automatically runs `gcloud auth print-access-token` internally to obtain the access token for authentication)
+nblm --auth gcloud \
+  --project-number PROJECT_NUMBER \
+  --location global \
+  --endpoint-location global \
+  notebooks recent
 
 ### Python Usage
 

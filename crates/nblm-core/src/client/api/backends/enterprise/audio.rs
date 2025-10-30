@@ -57,7 +57,7 @@ mod tests {
     use super::*;
     use crate::auth::StaticTokenProvider;
     use crate::client::http::HttpClient;
-    use crate::client::url_builder::UrlBuilder;
+    use crate::client::url::new_url_builder;
     use crate::client::{RetryConfig, Retryer};
     use crate::env::EnvironmentConfig;
     use std::sync::Arc;
@@ -72,10 +72,11 @@ mod tests {
         let token = Arc::new(StaticTokenProvider::new("token"));
         let retryer = Retryer::new(RetryConfig::default());
         let http = Arc::new(HttpClient::new(client, token, retryer, None));
-        let url_builder = Arc::new(UrlBuilder::new(
+        let url_builder = new_url_builder(
+            env.profile(),
             env.base_url().to_string(),
             env.parent_path().to_string(),
-        ));
+        );
         let ctx = BackendContext::new(http, url_builder);
         EnterpriseAudioBackend::new(ctx)
     }

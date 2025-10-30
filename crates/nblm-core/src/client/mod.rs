@@ -159,7 +159,9 @@ mod tests {
 
         // Verify base URL is constructed correctly
         let url = client.url_builder.build_url("/test").unwrap();
-        assert!(url.as_str().starts_with("https://us-discoveryengine.googleapis.com/v1alpha"));
+        assert!(url
+            .as_str()
+            .starts_with("https://us-discoveryengine.googleapis.com/v1alpha"));
 
         // Verify parent path is set correctly
         let notebooks_url = client.url_builder.notebooks_collection();

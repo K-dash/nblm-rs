@@ -13,14 +13,17 @@ mod url_builder;
 
 pub use self::retry::{RetryConfig, Retryer};
 
+use self::api::backends::{BackendContext, ClientBackends};
 use self::http::HttpClient;
 use self::url_builder::UrlBuilder;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub struct NblmClient {
-    pub(self) http: HttpClient,
-    pub(self) url_builder: UrlBuilder,
+    pub(self) http: Arc<HttpClient>,
+    pub(self) url_builder: Arc<UrlBuilder>,
+    backends: ClientBackends,
+    environment: EnvironmentConfig,
     timeout: Duration,
 }
 
@@ -36,15 +39,19 @@ impl NblmClient {
             .map_err(crate::error::Error::from)?;
 
         let retryer = Retryer::new(RetryConfig::default());
-        let http = HttpClient::new(client, token_provider, retryer, None);
-        let url_builder = UrlBuilder::new(
+        let http = Arc::new(HttpClient::new(client, token_provider, retryer, None));
+        let url_builder = Arc::new(UrlBuilder::new(
             environment.base_url().to_string(),
             environment.parent_path().to_string(),
-        );
+        ));
+        let ctx = BackendContext::new(Arc::clone(&http), Arc::clone(&url_builder));
+        let backends = ClientBackends::new(environment.profile(), ctx);
 
         Ok(Self {
             http,
             url_builder,
+            backends,
+            environment,
             timeout: DEFAULT_TIMEOUT,
         })
     }
@@ -72,7 +79,13 @@ impl NblmClient {
         let token_provider = Arc::clone(&self.http.token_provider);
         let retryer = self.http.retryer.clone();
         let user_project = self.http.user_project.clone();
-        self.http = HttpClient::new(client, token_provider, retryer, user_project);
+        self.http = Arc::new(HttpClient::new(
+            client,
+            token_provider,
+            retryer,
+            user_project,
+        ));
+        self.rebuild_backends();
         self
     }
 
@@ -86,7 +99,13 @@ impl NblmClient {
         let token_provider = Arc::clone(&self.http.token_provider);
         let retryer = Retryer::new(config);
         let user_project = self.http.user_project.clone();
-        self.http = HttpClient::new(client, token_provider, retryer, user_project);
+        self.http = Arc::new(HttpClient::new(
+            client,
+            token_provider,
+            retryer,
+            user_project,
+        ));
+        self.rebuild_backends();
         self
     }
 
@@ -100,7 +119,13 @@ impl NblmClient {
         let token_provider = Arc::clone(&self.http.token_provider);
         let retryer = self.http.retryer.clone();
         let user_project = Some(project.into());
-        self.http = HttpClient::new(client, token_provider, retryer, user_project);
+        self.http = Arc::new(HttpClient::new(
+            client,
+            token_provider,
+            retryer,
+            user_project,
+        ));
+        self.rebuild_backends();
         self
     }
 
@@ -109,9 +134,18 @@ impl NblmClient {
         let base = base.into().trim().trim_end_matches('/').to_string();
         // Basic sanity check: absolute URL
         let _ = Url::parse(&base).map_err(crate::error::Error::from)?;
-        let parent = self.url_builder.parent.clone();
-        self.url_builder = UrlBuilder::new(base, parent);
+        self.environment = self.environment.clone().with_base_url(base.clone());
+        let parent = self.environment.parent_path().to_string();
+        self.url_builder = Arc::new(UrlBuilder::new(base, parent));
+        self.rebuild_backends();
         Ok(self)
+    }
+}
+
+impl NblmClient {
+    fn rebuild_backends(&mut self) {
+        let ctx = BackendContext::new(Arc::clone(&self.http), Arc::clone(&self.url_builder));
+        self.backends = ClientBackends::new(self.environment.profile(), ctx);
     }
 }
 

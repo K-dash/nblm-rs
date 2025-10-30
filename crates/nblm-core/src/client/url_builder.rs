@@ -3,6 +3,7 @@ use reqwest::Url;
 use crate::error::{Error, Result};
 
 /// URL construction utilities for NBLM API endpoints
+#[derive(Clone)]
 pub(crate) struct UrlBuilder {
     pub(super) base: String,
     pub(super) parent: String,

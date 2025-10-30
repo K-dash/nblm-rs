@@ -65,7 +65,7 @@ args = ["fetch"]
 description = "Generate coverage report using cargo-llvm-cov"
 dependencies = ["before-build"]
 command = "cargo"
-args = ["llvm-cov", "--workspace", "--all-features", "--open"]
+args = ["llvm-cov", "--workspace", "--all-features", "--exclude", "nblm-python", "--open"]
 
 [tasks.all]
 description = "Run fmt, lint, and test together"

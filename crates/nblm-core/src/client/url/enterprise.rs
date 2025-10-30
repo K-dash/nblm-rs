@@ -1,34 +1,36 @@
 use reqwest::Url;
 
+use super::UrlBuilder;
 use crate::error::{Error, Result};
 
-/// URL construction utilities for NBLM API endpoints
-// TODO(profile-support): Lift Enterprise-specific URL assumptions into profile-specific builders.
+/// Enterprise-specific URL builder.
 #[derive(Clone)]
-pub(crate) struct UrlBuilder {
-    pub(super) base: String,
-    pub(super) parent: String,
+pub(crate) struct EnterpriseUrlBuilder {
+    base: String,
+    parent: String,
 }
 
-impl UrlBuilder {
+impl EnterpriseUrlBuilder {
     pub fn new(base: String, parent: String) -> Self {
         Self { base, parent }
     }
+}
 
-    pub fn notebooks_collection(&self) -> String {
+impl UrlBuilder for EnterpriseUrlBuilder {
+    fn notebooks_collection(&self) -> String {
         format!("{}/notebooks", self.parent)
     }
 
-    pub fn notebook_path(&self, notebook_id: &str) -> String {
+    fn notebook_path(&self, notebook_id: &str) -> String {
         format!("{}/notebooks/{}", self.parent, notebook_id)
     }
 
-    pub fn build_url(&self, path: &str) -> Result<Url> {
+    fn build_url(&self, path: &str) -> Result<Url> {
         let path = path.trim_start_matches('/');
         Url::parse(&format!("{}/{}", self.base, path)).map_err(Error::from)
     }
 
-    pub fn build_upload_url(&self, path: &str) -> Result<Url> {
+    fn build_upload_url(&self, path: &str) -> Result<Url> {
         let base = self.base.trim_end_matches('/');
         let trimmed_path = path.trim_start_matches('/');
         let upload_base = if let Some((prefix, _)) = base.rsplit_once("/v1alpha") {
@@ -46,7 +48,7 @@ mod tests {
 
     #[test]
     fn build_url_combines_base_and_path_correctly() {
-        let builder = UrlBuilder::new(
+        let builder = EnterpriseUrlBuilder::new(
             "http://example.com/v1alpha".to_string(),
             "projects/123/locations/global".to_string(),
         );
@@ -68,7 +70,7 @@ mod tests {
 
     #[test]
     fn build_upload_url_handles_v1alpha_correctly() {
-        let builder = UrlBuilder::new(
+        let builder = EnterpriseUrlBuilder::new(
             "https://us-discoveryengine.googleapis.com/v1alpha".to_string(),
             "projects/123/locations/global".to_string(),
         );

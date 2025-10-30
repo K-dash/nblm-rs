@@ -42,7 +42,9 @@ Two authentication methods are supported:
 
 ```bash
 gcloud auth login
-nblm notebooks recent
+nblm --auth gcloud notebooks recent
+# or let environment variables fill in project details
+nblm --auth gcloud --project-number "$NBLM_PROJECT_NUMBER" notebooks recent
 ```
 
 ### Environment Variable

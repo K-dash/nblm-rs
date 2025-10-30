@@ -150,4 +150,27 @@ mod tests {
         let result = client.with_base_url("/relative/path");
         assert!(result.is_err());
     }
+
+    #[test]
+    #[allow(deprecated)]
+    fn new_enterprise_constructs_client_correctly() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new_enterprise(provider, "123", "global", "us").unwrap();
+
+        // Verify base URL is constructed correctly
+        let url = client.url_builder.build_url("/test").unwrap();
+        assert!(url.as_str().starts_with("https://us-discoveryengine.googleapis.com/v1alpha"));
+
+        // Verify parent path is set correctly
+        let notebooks_url = client.url_builder.notebooks_collection();
+        assert_eq!(notebooks_url, "projects/123/locations/global/notebooks");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn new_enterprise_handles_invalid_endpoint() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let result = NblmClient::new_enterprise(provider, "123", "global", "invalid");
+        assert!(result.is_err());
+    }
 }

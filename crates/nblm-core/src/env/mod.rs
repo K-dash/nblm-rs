@@ -104,4 +104,13 @@ mod tests {
         let err = normalize_endpoint_location("asia".into()).unwrap_err();
         assert!(format!("{err}").contains("unsupported endpoint location"));
     }
+
+    #[test]
+    fn with_base_url_overrides_base_url() {
+        let env = EnvironmentConfig::enterprise("123", "global", "us")
+            .unwrap()
+            .with_base_url("http://localhost:8080/v1alpha");
+        assert_eq!(env.base_url(), "http://localhost:8080/v1alpha");
+        assert_eq!(env.parent_path(), "projects/123/locations/global");
+    }
 }

@@ -38,47 +38,9 @@ impl UrlBuilder {
     }
 }
 
-/// Normalize endpoint location to the expected format
-pub(crate) fn normalize_endpoint_location(input: String) -> Result<String> {
-    let trimmed = input.trim().trim_end_matches('-').to_lowercase();
-    let normalized = match trimmed.as_str() {
-        "us" => "us-",
-        "eu" => "eu-",
-        "global" => "global-",
-        other => {
-            return Err(Error::Endpoint(format!(
-                "unsupported endpoint location: {other}"
-            )))
-        }
-    };
-    Ok(normalized.to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn normalize_endpoint_location_variants() {
-        assert_eq!(
-            normalize_endpoint_location("us".into()).unwrap(),
-            "us-".to_string()
-        );
-        assert_eq!(
-            normalize_endpoint_location("eu-".into()).unwrap(),
-            "eu-".to_string()
-        );
-        assert_eq!(
-            normalize_endpoint_location(" global ".into()).unwrap(),
-            "global-".to_string()
-        );
-    }
-
-    #[test]
-    fn normalize_endpoint_location_invalid() {
-        let err = normalize_endpoint_location("asia".into()).unwrap_err();
-        assert!(format!("{err}").contains("unsupported endpoint location"));
-    }
 
     #[test]
     fn build_url_combines_base_and_path_correctly() {

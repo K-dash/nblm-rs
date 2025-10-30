@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::Result;
 use tracing_subscriber::EnvFilter;
 
-use nblm_core::{NblmClient, RetryConfig};
+use nblm_core::{EnvironmentConfig, NblmClient, RetryConfig};
 
 use crate::args::{Cli, Command};
 use crate::ops::{audio, doctor, notebooks, share, sources};
@@ -23,12 +23,12 @@ impl NblmApp {
         }
 
         let provider = build_token_provider(&cli.global)?;
-        let mut client = NblmClient::new(
-            provider,
+        let environment = EnvironmentConfig::enterprise(
             &cli.global.project_number,
             &cli.global.location,
             &cli.global.endpoint_location,
         )?;
+        let mut client = NblmClient::new(provider, environment)?;
 
         if let Some(timeout) = cli.global.timeout {
             client = client.with_timeout(timeout);

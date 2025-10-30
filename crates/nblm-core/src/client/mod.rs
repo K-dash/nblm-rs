@@ -3,6 +3,7 @@ use std::{sync::Arc, time::Duration};
 use reqwest::{Client, Url};
 
 use crate::auth::TokenProvider;
+use crate::env::EnvironmentConfig;
 use crate::error::Result;
 
 mod api;
@@ -13,7 +14,7 @@ mod url_builder;
 pub use self::retry::{RetryConfig, Retryer};
 
 use self::http::HttpClient;
-use self::url_builder::{normalize_endpoint_location, UrlBuilder};
+use self::url_builder::UrlBuilder;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -26,19 +27,8 @@ pub struct NblmClient {
 impl NblmClient {
     pub fn new(
         token_provider: Arc<dyn TokenProvider>,
-        project_number: impl Into<String>,
-        location: impl Into<String>,
-        endpoint_location: impl Into<String>,
+        environment: EnvironmentConfig,
     ) -> Result<Self> {
-        let project_number = project_number.into();
-        let location = location.into();
-        let endpoint_location = endpoint_location.into();
-        let base = format!(
-            "https://{}discoveryengine.googleapis.com/v1alpha",
-            normalize_endpoint_location(endpoint_location)?
-        );
-        let parent = format!("projects/{}/locations/{}", project_number, location);
-
         let client = Client::builder()
             .user_agent(concat!("nblm-cli/", env!("CARGO_PKG_VERSION")))
             .timeout(DEFAULT_TIMEOUT)
@@ -47,13 +37,27 @@ impl NblmClient {
 
         let retryer = Retryer::new(RetryConfig::default());
         let http = HttpClient::new(client, token_provider, retryer, None);
-        let url_builder = UrlBuilder::new(base, parent);
+        let url_builder = UrlBuilder::new(
+            environment.base_url().to_string(),
+            environment.parent_path().to_string(),
+        );
 
         Ok(Self {
             http,
             url_builder,
             timeout: DEFAULT_TIMEOUT,
         })
+    }
+
+    #[deprecated(note = "Use EnvironmentConfig::enterprise(...) with NblmClient::new")]
+    pub fn new_enterprise(
+        token_provider: Arc<dyn TokenProvider>,
+        project_number: impl Into<String>,
+        location: impl Into<String>,
+        endpoint_location: impl Into<String>,
+    ) -> Result<Self> {
+        let env = EnvironmentConfig::enterprise(project_number, location, endpoint_location)?;
+        Self::new(token_provider, env)
     }
 
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
@@ -118,7 +122,8 @@ mod tests {
     #[test]
     fn with_base_url_accepts_absolute_url() {
         let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
-        let client = NblmClient::new(provider, "123", "global", "us").unwrap();
+        let env = EnvironmentConfig::enterprise("123", "global", "us").unwrap();
+        let client = NblmClient::new(provider, env).unwrap();
         let result = client.with_base_url("http://localhost:8080/v1alpha");
         assert!(result.is_ok());
     }
@@ -126,7 +131,8 @@ mod tests {
     #[test]
     fn with_base_url_trims_trailing_slash() {
         let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
-        let client = NblmClient::new(provider, "123", "global", "us")
+        let env = EnvironmentConfig::enterprise("123", "global", "us").unwrap();
+        let client = NblmClient::new(provider, env)
             .unwrap()
             .with_base_url("http://example.com/v1alpha/")
             .unwrap();
@@ -139,8 +145,34 @@ mod tests {
     #[test]
     fn with_base_url_rejects_relative_path() {
         let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
-        let client = NblmClient::new(provider, "123", "global", "us").unwrap();
+        let env = EnvironmentConfig::enterprise("123", "global", "us").unwrap();
+        let client = NblmClient::new(provider, env).unwrap();
         let result = client.with_base_url("/relative/path");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn new_enterprise_constructs_client_correctly() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let client = NblmClient::new_enterprise(provider, "123", "global", "us").unwrap();
+
+        // Verify base URL is constructed correctly
+        let url = client.url_builder.build_url("/test").unwrap();
+        assert!(url
+            .as_str()
+            .starts_with("https://us-discoveryengine.googleapis.com/v1alpha"));
+
+        // Verify parent path is set correctly
+        let notebooks_url = client.url_builder.notebooks_collection();
+        assert_eq!(notebooks_url, "projects/123/locations/global/notebooks");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn new_enterprise_handles_invalid_endpoint() {
+        let provider = Arc::new(crate::auth::StaticTokenProvider::new("test"));
+        let result = NblmClient::new_enterprise(provider, "123", "global", "invalid");
         assert!(result.is_err());
     }
 }

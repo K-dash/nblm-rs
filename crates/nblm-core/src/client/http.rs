@@ -12,6 +12,7 @@ use crate::error::{Error, Result};
 use super::retry::Retryer;
 
 /// HTTP layer implementation for NBLM API requests
+#[derive(Clone)]
 pub(crate) struct HttpClient {
     pub(super) client: Client,
     pub(super) token_provider: Arc<dyn TokenProvider>,

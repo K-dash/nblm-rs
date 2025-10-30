@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
+use nblm_core::ApiProfile;
+
 use crate::ops;
 
 #[derive(Parser)]
@@ -29,6 +31,10 @@ pub struct GlobalArgs {
 
     #[arg(long, env = "NBLM_ENDPOINT_LOCATION", default_value = "global")]
     pub endpoint_location: String,
+
+    /// (hidden) API profile selector. Defaults to Enterprise until additional SKUs are public.
+    #[arg(long, value_enum, default_value_t = ProfileArg::Enterprise, hide = true)]
+    pub profile: ProfileArg,
 
     #[arg(long, value_enum, default_value_t = AuthMethod::Gcloud)]
     pub auth: AuthMethod,
@@ -77,4 +83,17 @@ pub enum AuthMethod {
 
 fn parse_duration(input: &str) -> std::result::Result<Duration, String> {
     humantime::parse_duration(input).map_err(|err| err.to_string())
+}
+
+#[derive(Copy, Clone, ValueEnum)]
+pub enum ProfileArg {
+    Enterprise,
+}
+
+impl From<ProfileArg> for ApiProfile {
+    fn from(arg: ProfileArg) -> Self {
+        match arg {
+            ProfileArg::Enterprise => ApiProfile::Enterprise,
+        }
+    }
 }

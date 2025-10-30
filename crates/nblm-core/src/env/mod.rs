@@ -6,6 +6,21 @@ pub enum ApiProfile {
     Enterprise,
 }
 
+impl ApiProfile {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ApiProfile::Enterprise => "enterprise",
+        }
+    }
+
+    pub fn parse(input: &str) -> Result<Self> {
+        match input.trim().to_ascii_lowercase().as_str() {
+            "enterprise" => Ok(ApiProfile::Enterprise),
+            other => Err(Error::Endpoint(format!("unsupported API profile: {other}"))),
+        }
+    }
+}
+
 /// Runtime configuration describing the API environment.
 #[derive(Debug, Clone)]
 pub struct EnvironmentConfig {
@@ -49,6 +64,17 @@ impl EnvironmentConfig {
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
+    }
+
+    pub fn for_profile(
+        profile: ApiProfile,
+        project_number: impl Into<String>,
+        location: impl Into<String>,
+        endpoint_location: impl Into<String>,
+    ) -> Result<Self> {
+        match profile {
+            ApiProfile::Enterprise => Self::enterprise(project_number, location, endpoint_location),
+        }
     }
 }
 
@@ -112,5 +138,12 @@ mod tests {
             .with_base_url("http://localhost:8080/v1alpha");
         assert_eq!(env.base_url(), "http://localhost:8080/v1alpha");
         assert_eq!(env.parent_path(), "projects/123/locations/global");
+    }
+
+    #[test]
+    fn api_profile_parse_accepts_enterprise() {
+        let profile = ApiProfile::parse("enterprise").unwrap();
+        assert_eq!(profile, ApiProfile::Enterprise);
+        assert_eq!(profile.as_str(), "enterprise");
     }
 }

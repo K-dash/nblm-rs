@@ -13,7 +13,7 @@ use crate::models::{
     VideoSource, WebSource,
 };
 use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
-use nblm_core::EnvironmentConfig;
+use nblm_core::{ApiProfile, EnvironmentConfig};
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -24,16 +24,18 @@ pub struct NblmClient {
 #[pymethods]
 impl NblmClient {
     #[new]
-    #[pyo3(signature = (token_provider, project_number, location = "global".to_string(), endpoint_location = "global".to_string()))]
+    #[pyo3(signature = (token_provider, project_number, location = "global".to_string(), endpoint_location = "global".to_string(), profile = "enterprise".to_string()))]
     fn new(
         token_provider: PyTokenProvider,
         project_number: String,
         location: String,
         endpoint_location: String,
+        profile: String,
     ) -> PyResult<Self> {
         let provider = token_provider.get_inner();
+        let profile = ApiProfile::parse(&profile).into_py_result()?;
         let environment =
-            EnvironmentConfig::enterprise(project_number, location, endpoint_location)
+            EnvironmentConfig::for_profile(profile, project_number, location, endpoint_location)
                 .into_py_result()?;
         let client = nblm_core::NblmClient::new(provider, environment).into_py_result()?;
 

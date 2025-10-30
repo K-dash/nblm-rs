@@ -21,12 +21,12 @@ fn doctor_all_env_vars_present() {
             "Running NotebookLM environment diagnostics",
         ))
         .stdout(predicate::str::contains(
-            "[ok] NBLM_PROJECT_NUMBER=224840249322",
+            "   [ok] NBLM_PROJECT_NUMBER=224840249322",
         ))
         .stdout(predicate::str::contains(
-            "[ok] NBLM_ENDPOINT_LOCATION=us-central1",
+            "   [ok] NBLM_ENDPOINT_LOCATION=us-central1",
         ))
-        .stdout(predicate::str::contains("[ok] NBLM_LOCATION=global"))
+        .stdout(predicate::str::contains("   [ok] NBLM_LOCATION=global"))
         .stdout(predicate::str::contains("Summary: All 3 checks passed"))
         .stdout(predicate::str::contains(
             "All critical checks passed. You're ready to use nblm",
@@ -73,15 +73,15 @@ fn doctor_missing_optional_env_vars() {
     assert
         .code(1) // Warning exit code
         .stdout(predicate::str::contains(
-            "[ok] NBLM_PROJECT_NUMBER=224840249322",
+            "   [ok] NBLM_PROJECT_NUMBER=224840249322",
         ))
         .stdout(predicate::str::contains(
-            "[warn] NBLM_ENDPOINT_LOCATION missing",
+            " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_ENDPOINT_LOCATION=us-central1",
         ))
-        .stdout(predicate::str::contains("[warn] NBLM_LOCATION missing"))
+        .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_LOCATION=us-central1",
         ))
@@ -108,9 +108,9 @@ fn doctor_all_env_vars_missing() {
             "[error] NBLM_PROJECT_NUMBER missing",
         ))
         .stdout(predicate::str::contains(
-            "[warn] NBLM_ENDPOINT_LOCATION missing",
+            " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
-        .stdout(predicate::str::contains("[warn] NBLM_LOCATION missing"))
+        .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
         .stdout(predicate::str::contains(
             "Summary: 3 checks failing out of 3",
         ));

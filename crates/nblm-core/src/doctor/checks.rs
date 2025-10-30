@@ -9,15 +9,6 @@ pub enum CheckStatus {
 }
 
 impl CheckStatus {
-    /// Convert status to ASCII marker
-    pub fn as_marker(&self) -> &'static str {
-        match self {
-            CheckStatus::Pass => "[ok]",
-            CheckStatus::Warning => "[warn]",
-            CheckStatus::Error => "[error]",
-        }
-    }
-
     /// Convert status to exit code contribution
     pub fn exit_code(&self) -> i32 {
         match self {
@@ -25,6 +16,17 @@ impl CheckStatus {
             CheckStatus::Warning => 1,
             CheckStatus::Error => 2,
         }
+    }
+
+    /// Convert status to ASCII marker with aligned label
+    pub fn as_marker(&self) -> String {
+        let label = match self {
+            CheckStatus::Pass => "ok",
+            CheckStatus::Warning => "warn",
+            CheckStatus::Error => "error",
+        };
+        let total_width = "error".len() + 2; // include brackets
+        format!("{:>width$}", format!("[{}]", label), width = total_width)
     }
 }
 
@@ -173,8 +175,8 @@ mod tests {
 
     #[test]
     fn test_check_status_markers() {
-        assert_eq!(CheckStatus::Pass.as_marker(), "[ok]");
-        assert_eq!(CheckStatus::Warning.as_marker(), "[warn]");
+        assert_eq!(CheckStatus::Pass.as_marker(), "   [ok]");
+        assert_eq!(CheckStatus::Warning.as_marker(), " [warn]");
         assert_eq!(CheckStatus::Error.as_marker(), "[error]");
     }
 
@@ -188,7 +190,7 @@ mod tests {
     #[test]
     fn test_check_result_format() {
         let result = CheckResult::new("test", CheckStatus::Pass, "Test passed");
-        assert_eq!(result.format(), "[ok] Test passed");
+        assert_eq!(result.format(), "   [ok] Test passed");
 
         let result_with_suggestion = CheckResult::new("test", CheckStatus::Warning, "Test warning")
             .with_suggestion("Try this fix");

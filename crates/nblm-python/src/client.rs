@@ -13,6 +13,7 @@ use crate::models::{
     VideoSource, WebSource,
 };
 use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
+use nblm_core::EnvironmentConfig;
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -31,9 +32,10 @@ impl NblmClient {
         endpoint_location: String,
     ) -> PyResult<Self> {
         let provider = token_provider.get_inner();
-        let client =
-            nblm_core::NblmClient::new(provider, project_number, location, endpoint_location)
+        let environment =
+            EnvironmentConfig::enterprise(project_number, location, endpoint_location)
                 .into_py_result()?;
+        let client = nblm_core::NblmClient::new(provider, environment).into_py_result()?;
 
         Ok(Self {
             inner: Arc::new(client),

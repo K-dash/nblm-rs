@@ -3,6 +3,7 @@ use reqwest::Url;
 use crate::error::{Error, Result};
 
 /// URL construction utilities for NBLM API endpoints
+// TODO(profile-support): Lift Enterprise-specific URL assumptions into profile-specific builders.
 #[derive(Clone)]
 pub(crate) struct UrlBuilder {
     pub(super) base: String,

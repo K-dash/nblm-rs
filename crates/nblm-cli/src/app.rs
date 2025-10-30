@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::Result;
 use tracing_subscriber::EnvFilter;
 
-use nblm_core::{EnvironmentConfig, NblmClient, RetryConfig};
+use nblm_core::{ApiProfile, EnvironmentConfig, NblmClient, RetryConfig};
 
 use crate::args::{Cli, Command};
 use crate::ops::{audio, doctor, notebooks, share, sources};
@@ -23,7 +23,10 @@ impl NblmApp {
         }
 
         let provider = build_token_provider(&cli.global)?;
-        let environment = EnvironmentConfig::enterprise(
+        let profile: ApiProfile = cli.global.profile.into();
+        // TODO(profile-docs): Document profile selection once additional SKUs are available publicly.
+        let environment = EnvironmentConfig::for_profile(
+            profile,
             &cli.global.project_number,
             &cli.global.location,
             &cli.global.endpoint_location,

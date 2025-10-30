@@ -28,6 +28,7 @@ class NblmClient:
         project_number: str,
         location: str = "global",
         endpoint_location: str = "global",
+        profile: str = "enterprise",
     ) -> None:
         """
         Create a new NblmClient
@@ -37,6 +38,7 @@ class NblmClient:
             project_number: Google Cloud project number
             location: NotebookLM location (default: "global")
             endpoint_location: API endpoint location (default: "global")
+            profile: API profile selection (experimental, default: "enterprise")
 
         Raises:
             NblmError: If the client cannot be created

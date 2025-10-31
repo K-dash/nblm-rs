@@ -25,5 +25,11 @@ pub(crate) fn new_url_builder(
     // TODO(profile-support): add profile-specific builders when new SKUs become available.
     match profile {
         ApiProfile::Enterprise => Arc::new(EnterpriseUrlBuilder::new(base, parent)),
+        ApiProfile::Personal | ApiProfile::Workspace => {
+            unimplemented!(
+                "UrlBuilder for profile '{}' is not implemented",
+                profile.as_str()
+            )
+        }
     }
 }

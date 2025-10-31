@@ -120,6 +120,12 @@ impl ClientBackends {
                     audio,
                 }
             }
+            ApiProfile::Personal | ApiProfile::Workspace => {
+                unimplemented!(
+                    "Client backends for profile '{}' are not implemented",
+                    profile.as_str()
+                )
+            }
         }
     }
 

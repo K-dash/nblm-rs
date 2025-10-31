@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::{NotebookSource, NotebookSourceId};
+use crate::models::enterprise::source::{NotebookSource, NotebookSourceId};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]

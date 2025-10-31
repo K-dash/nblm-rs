@@ -3,7 +3,10 @@ use reqwest::Method;
 
 use crate::client::api::backends::{AudioBackend, BackendContext};
 use crate::error::Result;
-use crate::models::{AudioOverviewRequest, AudioOverviewResponse};
+use crate::models::enterprise::{
+    requests::audio::AudioOverviewRequest,
+    responses::audio::{AudioOverviewApiResponse, AudioOverviewResponse},
+};
 
 pub(crate) struct EnterpriseAudioBackend {
     ctx: BackendContext,
@@ -28,7 +31,7 @@ impl AudioBackend for EnterpriseAudioBackend {
         );
         let url = self.ctx.url_builder.build_url(&path)?;
 
-        let api_response: crate::models::responses::audio::AudioOverviewApiResponse = self
+        let api_response: AudioOverviewApiResponse = self
             .ctx
             .http
             .request_json(Method::POST, url, Some(&request))

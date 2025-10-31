@@ -3,9 +3,15 @@ use reqwest::Method;
 
 use crate::client::api::backends::{BackendContext, NotebooksBackend};
 use crate::error::Result;
-use crate::models::{
-    AccountRole, BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, CreateNotebookRequest,
-    ListRecentlyViewedResponse, Notebook, ShareRequest, ShareResponse,
+use crate::models::enterprise::{
+    notebook::Notebook,
+    requests::{
+        notebook::{
+            BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, CreateNotebookRequest,
+        },
+        share::{AccountRole, ShareRequest},
+    },
+    responses::{list::ListRecentlyViewedResponse, share::ShareResponse},
 };
 
 pub(crate) struct EnterpriseNotebooksBackend {

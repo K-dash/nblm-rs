@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::source::UserContent;
+use crate::models::enterprise::source::UserContent;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +26,7 @@ pub struct BatchDeleteSourcesResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::source::{TextContent, WebContent};
+    use crate::models::enterprise::source::{TextContent, WebContent};
 
     #[test]
     fn batch_create_sources_request_serializes_with_user_contents() {

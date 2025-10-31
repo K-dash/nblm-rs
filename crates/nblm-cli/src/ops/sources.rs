@@ -2,7 +2,9 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context, Result};
 use clap::{Args, Subcommand};
-use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
+use nblm_core::models::enterprise::source::{
+    GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent,
+};
 use nblm_core::NblmClient;
 
 use crate::util::{

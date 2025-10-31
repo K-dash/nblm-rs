@@ -7,7 +7,7 @@ pub mod models;
 
 pub use auth::{EnvTokenProvider, GcloudTokenProvider, StaticTokenProvider, TokenProvider};
 pub use client::{NblmClient, RetryConfig, Retryer};
-pub use env::{ApiProfile, EnvironmentConfig};
+pub use env::{ApiProfile, EnvironmentConfig, ProfileParams};
 pub use error::{Error, Result};
 
 use std::sync::Arc;

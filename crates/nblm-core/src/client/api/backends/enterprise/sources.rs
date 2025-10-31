@@ -7,9 +7,12 @@ use reqwest::{
 
 use crate::client::api::backends::{BackendContext, SourcesBackend};
 use crate::error::{Error, Result};
-use crate::models::{
-    BatchCreateSourcesRequest, BatchCreateSourcesResponse, BatchDeleteSourcesRequest,
-    BatchDeleteSourcesResponse, NotebookSource, UploadSourceFileResponse, UserContent,
+use crate::models::enterprise::{
+    requests::source::{
+        BatchCreateSourcesRequest, BatchDeleteSourcesRequest, BatchDeleteSourcesResponse,
+    },
+    responses::source::{BatchCreateSourcesResponse, UploadSourceFileResponse},
+    source::{NotebookSource, UserContent},
 };
 
 pub(crate) struct EnterpriseSourcesBackend {
@@ -169,6 +172,7 @@ mod tests {
     use crate::client::url::new_url_builder;
     use crate::client::{RetryConfig, Retryer};
     use crate::env::EnvironmentConfig;
+    use crate::models::enterprise::source::TextContent;
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -310,7 +314,7 @@ mod tests {
     #[test]
     fn add_sources_builds_request_correctly() {
         let contents = vec![UserContent::Text {
-            text_content: crate::models::TextContent {
+            text_content: TextContent {
                 content: "Content".to_string(),
                 source_name: Some("Test".to_string()),
             },

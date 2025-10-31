@@ -7,11 +7,23 @@ use async_trait::async_trait;
 use crate::client::{http::HttpClient, url::UrlBuilder};
 use crate::env::ApiProfile;
 use crate::error::Result;
-use crate::models::{
-    AccountRole, AudioOverviewRequest, AudioOverviewResponse, BatchCreateSourcesRequest,
-    BatchCreateSourcesResponse, BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse,
-    BatchDeleteSourcesRequest, BatchDeleteSourcesResponse, ListRecentlyViewedResponse, Notebook,
-    NotebookSource, ShareResponse, UploadSourceFileResponse, UserContent,
+use crate::models::enterprise::{
+    notebook::Notebook,
+    requests::{
+        audio::AudioOverviewRequest,
+        notebook::{BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse},
+        share::AccountRole,
+        source::{
+            BatchCreateSourcesRequest, BatchDeleteSourcesRequest, BatchDeleteSourcesResponse,
+        },
+    },
+    responses::{
+        audio::AudioOverviewResponse,
+        list::ListRecentlyViewedResponse,
+        share::ShareResponse,
+        source::{BatchCreateSourcesResponse, UploadSourceFileResponse},
+    },
+    source::{NotebookSource, UserContent},
 };
 
 pub(crate) struct BackendContext {

@@ -12,7 +12,9 @@ use crate::models::{
     ListRecentlyViewedResponse, Notebook, NotebookSource, TextSource, UploadSourceFileResponse,
     VideoSource, WebSource,
 };
-use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
+use nblm_core::models::enterprise::source::{
+    GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent,
+};
 use nblm_core::{ApiProfile, EnvironmentConfig, ProfileParams, PROFILE_EXPERIMENT_FLAG};
 
 #[pyclass(module = "nblm")]

@@ -26,7 +26,7 @@ impl ListRecentlyViewedResponse {
 impl ListRecentlyViewedResponse {
     pub fn from_core(
         py: Python,
-        response: nblm_core::models::ListRecentlyViewedResponse,
+        response: nblm_core::models::enterprise::responses::list::ListRecentlyViewedResponse,
     ) -> PyResult<Self> {
         let notebooks_list = PyList::empty(py);
         for notebook in response.notebooks {
@@ -66,7 +66,7 @@ impl BatchDeleteNotebooksResponse {
 impl BatchDeleteNotebooksResponse {
     pub fn from_core(
         py: Python,
-        _response: nblm_core::models::BatchDeleteNotebooksResponse,
+        _response: nblm_core::models::enterprise::requests::notebook::BatchDeleteNotebooksResponse,
         deleted: Vec<String>,
         failed: Vec<String>,
     ) -> PyResult<Self> {
@@ -111,7 +111,7 @@ impl BatchCreateSourcesResponse {
 impl BatchCreateSourcesResponse {
     pub fn from_core(
         py: Python,
-        response: nblm_core::models::BatchCreateSourcesResponse,
+        response: nblm_core::models::enterprise::responses::source::BatchCreateSourcesResponse,
     ) -> PyResult<Self> {
         let sources_list = PyList::empty(py);
         for source in response.sources {
@@ -146,7 +146,7 @@ impl BatchDeleteSourcesResponse {
 impl BatchDeleteSourcesResponse {
     pub fn from_core(
         py: Python,
-        response: nblm_core::models::BatchDeleteSourcesResponse,
+        response: nblm_core::models::enterprise::requests::source::BatchDeleteSourcesResponse,
     ) -> PyResult<Self> {
         Ok(Self {
             extra: extra_to_pydict(py, &response.extra)?,
@@ -181,7 +181,7 @@ impl UploadSourceFileResponse {
 impl UploadSourceFileResponse {
     pub fn from_core(
         py: Python,
-        response: nblm_core::models::UploadSourceFileResponse,
+        response: nblm_core::models::enterprise::responses::source::UploadSourceFileResponse,
     ) -> PyResult<Self> {
         let source_id = match response.source_id {
             Some(id) => Some(Py::new(py, NotebookSourceId::from_core(py, id)?)?),

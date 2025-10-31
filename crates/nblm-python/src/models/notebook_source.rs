@@ -32,7 +32,7 @@ impl NotebookSourceYoutubeMetadata {
 impl NotebookSourceYoutubeMetadata {
     pub(crate) fn from_core(
         py: Python,
-        metadata: nblm_core::models::NotebookSourceYoutubeMetadata,
+        metadata: nblm_core::models::enterprise::source::NotebookSourceYoutubeMetadata,
     ) -> PyResult<Self> {
         Ok(Self {
             channel_name: metadata.channel_name,
@@ -64,7 +64,7 @@ impl NotebookSourceSettings {
 impl NotebookSourceSettings {
     pub(crate) fn from_core(
         py: Python,
-        settings: nblm_core::models::NotebookSourceSettings,
+        settings: nblm_core::models::enterprise::source::NotebookSourceSettings,
     ) -> PyResult<Self> {
         Ok(Self {
             status: settings.status,
@@ -95,7 +95,7 @@ impl NotebookSourceId {
 impl NotebookSourceId {
     pub(crate) fn from_core(
         py: Python,
-        source_id: nblm_core::models::NotebookSourceId,
+        source_id: nblm_core::models::enterprise::source::NotebookSourceId,
     ) -> PyResult<Self> {
         Ok(Self {
             id: source_id.id,
@@ -133,7 +133,7 @@ impl NotebookSourceMetadata {
 impl NotebookSourceMetadata {
     pub(crate) fn from_core(
         py: Python,
-        metadata: nblm_core::models::NotebookSourceMetadata,
+        metadata: nblm_core::models::enterprise::source::NotebookSourceMetadata,
     ) -> PyResult<Self> {
         let youtube_metadata = match metadata.youtube_metadata {
             Some(youtube) => Some(Py::new(
@@ -187,7 +187,7 @@ impl NotebookSource {
 impl NotebookSource {
     pub(crate) fn from_core(
         py: Python,
-        source: nblm_core::models::NotebookSource,
+        source: nblm_core::models::enterprise::source::NotebookSource,
     ) -> PyResult<Self> {
         let metadata = match source.metadata {
             Some(meta) => Some(Py::new(py, NotebookSourceMetadata::from_core(py, meta)?)?),

@@ -36,7 +36,7 @@ impl NotebookMetadata {
 impl NotebookMetadata {
     pub(crate) fn from_core(
         py: Python,
-        metadata: nblm_core::models::NotebookMetadata,
+        metadata: nblm_core::models::enterprise::notebook::NotebookMetadata,
     ) -> PyResult<Self> {
         Ok(Self {
             create_time: metadata.create_time,
@@ -82,7 +82,10 @@ impl Notebook {
 }
 
 impl Notebook {
-    pub fn from_core(py: Python, notebook: nblm_core::models::Notebook) -> PyResult<Self> {
+    pub fn from_core(
+        py: Python,
+        notebook: nblm_core::models::enterprise::notebook::Notebook,
+    ) -> PyResult<Self> {
         let extra = extra_to_pydict(py, &notebook.extra)?;
         let metadata = match notebook.metadata {
             Some(meta) => Some(Py::new(py, NotebookMetadata::from_core(py, meta)?)?),

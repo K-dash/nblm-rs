@@ -35,6 +35,7 @@ impl NblmClient {
         let provider = token_provider.get_inner();
         let profile = ApiProfile::parse(&profile).into_py_result()?;
         ensure_profile_allowed(profile)?;
+        ensure_token_provider_allowed(&provider)?;
         let params = build_profile_params(profile, project_number, location, endpoint_location)?;
         let environment = EnvironmentConfig::from_profile(profile, params).into_py_result()?;
         let client = nblm_core::NblmClient::new(provider, environment).into_py_result()?;
@@ -442,6 +443,17 @@ fn ensure_profile_allowed(profile: ApiProfile) -> PyResult<()> {
         return Err(map_nblm_error(nblm_core::Error::Endpoint(format!(
             "profile '{}' is experimental and not yet available. Set {}=1 to enable experimental profile support.",
             profile.as_str(),
+            PROFILE_EXPERIMENT_FLAG
+        ))));
+    }
+    Ok(())
+}
+
+fn ensure_token_provider_allowed(provider: &Arc<dyn nblm_core::TokenProvider>) -> PyResult<()> {
+    if provider.kind().is_experimental() && !profile_experiment_enabled() {
+        return Err(map_nblm_error(nblm_core::Error::TokenProvider(format!(
+            "token provider '{}' is experimental and not yet available. Set {}=1 to enable experimental auth methods.",
+            provider.kind().as_str(),
             PROFILE_EXPERIMENT_FLAG
         ))));
     }

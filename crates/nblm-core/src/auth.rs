@@ -5,11 +5,38 @@ use tokio::process::Command;
 
 use crate::error::{Error, Result};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderKind {
+    GcloudOauth,
+    EnvAccessToken,
+    StaticToken,
+    UserOauth,
+}
+
+impl ProviderKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ProviderKind::GcloudOauth => "gcloud-oauth",
+            ProviderKind::EnvAccessToken => "env-access-token",
+            ProviderKind::StaticToken => "static-token",
+            ProviderKind::UserOauth => "user-oauth",
+        }
+    }
+
+    pub fn is_experimental(&self) -> bool {
+        matches!(self, ProviderKind::UserOauth)
+    }
+}
+
 #[async_trait]
 pub trait TokenProvider: Send + Sync {
     async fn access_token(&self) -> Result<String>;
     async fn refresh_token(&self) -> Result<String> {
         self.access_token().await
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::StaticToken
     }
 }
 
@@ -54,6 +81,10 @@ impl TokenProvider for GcloudTokenProvider {
 
         Ok(token.trim().to_owned())
     }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::GcloudOauth
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +103,10 @@ impl TokenProvider for EnvTokenProvider {
     async fn access_token(&self) -> Result<String> {
         env::var(&self.key)
             .map_err(|_| Error::TokenProvider(format!("environment variable {} missing", self.key)))
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::EnvAccessToken
     }
 }
 
@@ -92,6 +127,10 @@ impl StaticTokenProvider {
 impl TokenProvider for StaticTokenProvider {
     async fn access_token(&self) -> Result<String> {
         Ok(self.token.clone())
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::StaticToken
     }
 }
 
@@ -125,5 +164,39 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("environment variable NONEXISTENT_TOKEN missing"));
+    }
+
+    #[test]
+    fn provider_kind_as_str_returns_correct_labels() {
+        assert_eq!(ProviderKind::GcloudOauth.as_str(), "gcloud-oauth");
+        assert_eq!(ProviderKind::EnvAccessToken.as_str(), "env-access-token");
+        assert_eq!(ProviderKind::StaticToken.as_str(), "static-token");
+        assert_eq!(ProviderKind::UserOauth.as_str(), "user-oauth");
+    }
+
+    #[test]
+    fn provider_kind_is_experimental_only_for_user_oauth() {
+        assert!(!ProviderKind::GcloudOauth.is_experimental());
+        assert!(!ProviderKind::EnvAccessToken.is_experimental());
+        assert!(!ProviderKind::StaticToken.is_experimental());
+        assert!(ProviderKind::UserOauth.is_experimental());
+    }
+
+    #[test]
+    fn gcloud_token_provider_returns_correct_kind() {
+        let provider = GcloudTokenProvider::new("gcloud");
+        assert_eq!(provider.kind(), ProviderKind::GcloudOauth);
+    }
+
+    #[test]
+    fn env_token_provider_returns_correct_kind() {
+        let provider = EnvTokenProvider::new("TEST_TOKEN");
+        assert_eq!(provider.kind(), ProviderKind::EnvAccessToken);
+    }
+
+    #[test]
+    fn static_token_provider_returns_correct_kind() {
+        let provider = StaticTokenProvider::new("token");
+        assert_eq!(provider.kind(), ProviderKind::StaticToken);
     }
 }

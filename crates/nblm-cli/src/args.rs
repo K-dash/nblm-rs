@@ -79,6 +79,14 @@ pub enum Command {
 pub enum AuthMethod {
     Gcloud,
     Env,
+    #[value(name = "user-oauth", hide = true)]
+    UserOauth,
+}
+
+impl AuthMethod {
+    pub fn requires_experimental_flag(self) -> bool {
+        matches!(self, AuthMethod::UserOauth)
+    }
 }
 
 fn parse_duration(input: &str) -> std::result::Result<Duration, String> {

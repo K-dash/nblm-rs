@@ -35,7 +35,7 @@ impl ApiProfile {
     }
 }
 
-const PROFILE_EXPERIMENT_FLAG: &str = "NBLM_PROFILE_EXPERIMENT";
+pub const PROFILE_EXPERIMENT_FLAG: &str = "NBLM_PROFILE_EXPERIMENT";
 
 #[derive(Debug, Clone)]
 pub enum ProfileParams {
@@ -178,7 +178,7 @@ pub fn normalize_endpoint_location(input: String) -> Result<String> {
 
 fn unsupported_profile_error(profile: ApiProfile) -> Error {
     Error::Endpoint(format!(
-        "API profile '{}' is not available yet (requires {PROFILE_EXPERIMENT_FLAG}=1)",
+        "API profile '{}' is not available yet",
         profile.as_str()
     ))
 }
@@ -273,7 +273,6 @@ mod tests {
         .unwrap_err();
         let msg = format!("{err}");
         assert!(msg.contains("not available yet"));
-        assert!(msg.contains(PROFILE_EXPERIMENT_FLAG));
     }
 
     #[test]
@@ -285,7 +284,6 @@ mod tests {
         .unwrap_err();
         let msg = format!("{err}");
         assert!(msg.contains("not available yet"));
-        assert!(msg.contains(PROFILE_EXPERIMENT_FLAG));
     }
 
     #[test]

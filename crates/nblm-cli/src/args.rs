@@ -24,7 +24,7 @@ pub struct Cli {
 #[derive(Args)]
 pub struct GlobalArgs {
     #[arg(long, env = "NBLM_PROJECT_NUMBER")]
-    pub project_number: String,
+    pub project_number: Option<String>,
 
     #[arg(long, env = "NBLM_LOCATION", default_value = "global")]
     pub location: String,
@@ -88,12 +88,22 @@ fn parse_duration(input: &str) -> std::result::Result<Duration, String> {
 #[derive(Copy, Clone, ValueEnum)]
 pub enum ProfileArg {
     Enterprise,
+    Personal,
+    Workspace,
+}
+
+impl ProfileArg {
+    pub fn requires_experimental_flag(self) -> bool {
+        matches!(self, ProfileArg::Personal | ProfileArg::Workspace)
+    }
 }
 
 impl From<ProfileArg> for ApiProfile {
     fn from(arg: ProfileArg) -> Self {
         match arg {
             ProfileArg::Enterprise => ApiProfile::Enterprise,
+            ProfileArg::Personal => ApiProfile::Personal,
+            ProfileArg::Workspace => ApiProfile::Workspace,
         }
     }
 }

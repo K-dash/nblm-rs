@@ -25,7 +25,7 @@ class NblmClient:
     def __init__(
         self,
         token_provider: TokenProvider,
-        project_number: str,
+        project_number: str | None = ...,
         location: str = "global",
         endpoint_location: str = "global",
         profile: str = "enterprise",
@@ -35,7 +35,7 @@ class NblmClient:
 
         Args:
             token_provider: Token provider for authentication
-            project_number: Google Cloud project number
+            project_number: Google Cloud project number (required for the enterprise profile)
             location: NotebookLM location (default: "global")
             endpoint_location: API endpoint location (default: "global")
             profile: API profile selection (experimental, default: "enterprise")

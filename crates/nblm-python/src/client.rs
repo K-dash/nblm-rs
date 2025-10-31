@@ -13,7 +13,7 @@ use crate::models::{
     VideoSource, WebSource,
 };
 use nblm_core::models::{GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent};
-use nblm_core::{ApiProfile, EnvironmentConfig, ProfileParams};
+use nblm_core::{ApiProfile, EnvironmentConfig, ProfileParams, PROFILE_EXPERIMENT_FLAG};
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -24,17 +24,18 @@ pub struct NblmClient {
 #[pymethods]
 impl NblmClient {
     #[new]
-    #[pyo3(signature = (token_provider, project_number, location = "global".to_string(), endpoint_location = "global".to_string(), profile = "enterprise".to_string()))]
+    #[pyo3(signature = (token_provider, project_number=None, location = "global".to_string(), endpoint_location = "global".to_string(), profile = "enterprise".to_string()))]
     fn new(
         token_provider: PyTokenProvider,
-        project_number: String,
+        project_number: Option<String>,
         location: String,
         endpoint_location: String,
         profile: String,
     ) -> PyResult<Self> {
         let provider = token_provider.get_inner();
         let profile = ApiProfile::parse(&profile).into_py_result()?;
-        let params = ProfileParams::enterprise(project_number, location, endpoint_location);
+        ensure_profile_allowed(profile)?;
+        let params = build_profile_params(profile, project_number, location, endpoint_location)?;
         let environment = EnvironmentConfig::from_profile(profile, params).into_py_result()?;
         let client = nblm_core::NblmClient::new(provider, environment).into_py_result()?;
 
@@ -427,6 +428,48 @@ impl NblmClient {
             block_on_with_runtime(future)
         })
     }
+}
+
+fn profile_experiment_enabled() -> bool {
+    match std::env::var(PROFILE_EXPERIMENT_FLAG) {
+        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
+        Err(_) => false,
+    }
+}
+
+fn ensure_profile_allowed(profile: ApiProfile) -> PyResult<()> {
+    if profile.requires_experimental_flag() && !profile_experiment_enabled() {
+        return Err(map_nblm_error(nblm_core::Error::Endpoint(format!(
+            "profile '{}' is experimental and not yet available. Set {}=1 to enable experimental profile support.",
+            profile.as_str(),
+            PROFILE_EXPERIMENT_FLAG
+        ))));
+    }
+    Ok(())
+}
+
+fn build_profile_params(
+    profile: ApiProfile,
+    project_number: Option<String>,
+    location: String,
+    endpoint_location: String,
+) -> PyResult<ProfileParams> {
+    Ok(match profile {
+        ApiProfile::Enterprise => {
+            let project_number = project_number
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    nblm_core::Error::validation(
+                        "project_number is required for the enterprise profile",
+                    )
+                })
+                .into_py_result()?;
+            ProfileParams::enterprise(project_number, location, endpoint_location)
+        }
+        ApiProfile::Personal => ProfileParams::personal::<String>(None),
+        ApiProfile::Workspace => ProfileParams::workspace::<String, String>(None, None),
+    })
 }
 
 fn block_on_with_runtime<F, T>(future: F) -> PyResult<T>

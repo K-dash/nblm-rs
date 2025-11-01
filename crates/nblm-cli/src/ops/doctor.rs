@@ -1,7 +1,9 @@
 use anyhow::Result;
 use clap::Args;
 use colored::Colorize;
-use nblm_core::doctor::{check_commands, check_environment_variables, DiagnosticsSummary};
+use nblm_core::doctor::{
+    check_commands, check_drive_access_token, check_environment_variables, DiagnosticsSummary,
+};
 
 #[derive(Args)]
 pub struct DoctorArgs {}
@@ -12,6 +14,7 @@ pub async fn run(_args: DoctorArgs) -> Result<()> {
     // Run all checks
     let mut all_checks = Vec::new();
     all_checks.extend(check_environment_variables());
+    all_checks.extend(check_drive_access_token().await);
     all_checks.extend(check_commands());
 
     // Print individual check results

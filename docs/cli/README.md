@@ -27,12 +27,13 @@ Options that can be used with any command:
 
 ## Commands
 
-| Command     | Description                | Documentation                |
-| ----------- | -------------------------- | ---------------------------- |
-| `notebooks` | Manage notebooks           | [notebooks.md](notebooks.md) |
-| `sources`   | Manage notebook sources    | [sources.md](sources.md)     |
-| `audio`     | Manage audio overviews     | [audio.md](audio.md)         |
-| `share`     | Share notebooks with users | [share.md](share.md)         |
+| Command     | Description                    | Documentation                |
+| ----------- | -------------------------------- | ---------------------------- |
+| `doctor`    | Run environment diagnostics      | [doctor.md](doctor.md)       |
+| `notebooks` | Manage notebooks                 | [notebooks.md](notebooks.md) |
+| `sources`   | Manage notebook sources          | [sources.md](sources.md)     |
+| `audio`     | Manage audio overviews           | [audio.md](audio.md)         |
+| `share`     | Share notebooks with users       | [share.md](share.md)         |
 
 ## Authentication
 

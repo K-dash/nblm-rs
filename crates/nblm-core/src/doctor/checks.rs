@@ -1,6 +1,9 @@
 use colored::Colorize;
 use std::env;
 
+use crate::auth::{ensure_drive_scope, EnvTokenProvider};
+use crate::error::Error;
+
 /// Status of a diagnostic check
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CheckStatus {
@@ -158,6 +161,7 @@ pub struct EnvVarCheck {
     pub name: &'static str,
     pub required: bool,
     pub suggestion: &'static str,
+    pub show_value: bool,
 }
 
 /// Static configuration table for environment variable checks
@@ -166,32 +170,43 @@ const ENV_VAR_CHECKS: &[EnvVarCheck] = &[
         name: "NBLM_PROJECT_NUMBER",
         required: true,
         suggestion: "export NBLM_PROJECT_NUMBER=<your-project-number>",
+        show_value: true,
     },
     EnvVarCheck {
         name: "NBLM_ENDPOINT_LOCATION",
         required: false,
         suggestion: "export NBLM_ENDPOINT_LOCATION=us-central1",
+        show_value: true,
     },
     EnvVarCheck {
         name: "NBLM_LOCATION",
         required: false,
         suggestion: "export NBLM_LOCATION=us-central1",
+        show_value: true,
     },
     EnvVarCheck {
         name: "NBLM_ACCESS_TOKEN",
         required: false,
         suggestion: "export NBLM_ACCESS_TOKEN=$(gcloud auth print-access-token)",
+        show_value: false,
     },
 ];
 
 /// Check a single environment variable
 fn check_env_var(config: &EnvVarCheck) -> CheckResult {
     match env::var(config.name) {
-        Ok(value) if !value.is_empty() => CheckResult::new(
-            format!("env_var_{}", config.name.to_lowercase()),
-            CheckStatus::Pass,
-            format!("{}={}", config.name, value),
-        ),
+        Ok(value) if !value.is_empty() => {
+            let message = if config.show_value {
+                format!("{}={}", config.name, value)
+            } else {
+                format!("{} set (value hidden)", config.name)
+            };
+            CheckResult::new(
+                format!("env_var_{}", config.name.to_lowercase()),
+                CheckStatus::Pass,
+                message,
+            )
+        }
         Ok(_) | Err(env::VarError::NotPresent) => {
             let status = if config.required {
                 CheckStatus::Error
@@ -271,9 +286,80 @@ pub fn check_commands() -> Vec<CheckResult> {
     COMMAND_CHECKS.iter().map(check_command).collect()
 }
 
+/// Validate that `NBLM_ACCESS_TOKEN`, when present, grants Google Drive access.
+pub async fn check_drive_access_token() -> Vec<CheckResult> {
+    match env::var("NBLM_ACCESS_TOKEN") {
+        Ok(value) if !value.trim().is_empty() => {
+            let provider = EnvTokenProvider::new("NBLM_ACCESS_TOKEN");
+            match ensure_drive_scope(&provider).await {
+                Ok(_) => vec![CheckResult::new(
+                    "drive_scope_nblm_access_token",
+                    CheckStatus::Pass,
+                    "NBLM_ACCESS_TOKEN grants Google Drive access",
+                )],
+                Err(Error::TokenProvider(message)) => {
+                    if message.contains("missing the required drive.file scope") {
+                        vec![CheckResult::new(
+                            "drive_scope_nblm_access_token",
+                            CheckStatus::Warning,
+                            "NBLM_ACCESS_TOKEN lacks Google Drive scope",
+                        )
+                        .with_suggestion(
+                            "Run `gcloud auth login --enable-gdrive-access` and refresh NBLM_ACCESS_TOKEN",
+                        )]
+                    } else {
+                        vec![CheckResult::new(
+                            "drive_scope_nblm_access_token",
+                            CheckStatus::Warning,
+                            format!(
+                                "Could not confirm Google Drive scope for NBLM_ACCESS_TOKEN: {}",
+                                message
+                            ),
+                        )]
+                    }
+                }
+                Err(err) => vec![CheckResult::new(
+                    "drive_scope_nblm_access_token",
+                    CheckStatus::Warning,
+                    format!(
+                        "Could not confirm Google Drive scope for NBLM_ACCESS_TOKEN: {}",
+                        err
+                    ),
+                )],
+            }
+        }
+        _ => Vec::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
+    use wiremock::matchers::{method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    struct EnvGuard {
+        key: &'static str,
+        original: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn new(key: &'static str) -> Self {
+            let original = env::var(key).ok();
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                env::set_var(self.key, value);
+            } else {
+                env::remove_var(self.key);
+            }
+        }
+    }
 
     #[test]
     fn test_check_status_markers() {
@@ -364,6 +450,7 @@ mod tests {
             name: "TEST_VAR",
             required: true,
             suggestion: "export TEST_VAR=value",
+            show_value: true,
         };
         let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Pass);
@@ -378,6 +465,7 @@ mod tests {
             name: "MISSING_VAR",
             required: true,
             suggestion: "export MISSING_VAR=value",
+            show_value: true,
         };
         let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Error);
@@ -392,6 +480,7 @@ mod tests {
             name: "OPTIONAL_VAR",
             required: false,
             suggestion: "export OPTIONAL_VAR=value",
+            show_value: true,
         };
         let result = check_env_var(&config);
         assert_eq!(result.status, CheckStatus::Warning);
@@ -423,5 +512,67 @@ mod tests {
         let result = check_command(&config);
         assert_eq!(result.status, CheckStatus::Error);
         assert!(result.message.contains("not found"));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_drive_access_check_passes_with_valid_scope() {
+        let token_guard = EnvGuard::new("NBLM_ACCESS_TOKEN");
+        let endpoint_guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
+
+        env::set_var("NBLM_ACCESS_TOKEN", "test-token");
+
+        let server = MockServer::start().await;
+        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
+        env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
+
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "scope": "https://www.googleapis.com/auth/drive.file"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let results = check_drive_access_token().await;
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].status, CheckStatus::Pass);
+        assert!(results[0].message.contains("grants Google Drive access"));
+
+        drop(token_guard);
+        drop(endpoint_guard);
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_drive_access_check_reports_missing_scope() {
+        let token_guard = EnvGuard::new("NBLM_ACCESS_TOKEN");
+        let endpoint_guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
+
+        env::set_var("NBLM_ACCESS_TOKEN", "test-token");
+
+        let server = MockServer::start().await;
+        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
+        env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
+
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "scope": "https://www.googleapis.com/auth/cloud-platform"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let results = check_drive_access_token().await;
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].status, CheckStatus::Warning);
+        assert!(results[0].message.contains("lacks Google Drive scope"));
+
+        drop(token_guard);
+        drop(endpoint_guard);
     }
 }

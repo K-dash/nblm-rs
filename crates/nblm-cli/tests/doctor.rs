@@ -2,11 +2,34 @@ mod _helpers;
 
 use predicates::function;
 use predicates::prelude::*;
+use serde_json::json;
 use serial_test::serial;
+use tokio::runtime::Runtime;
+use wiremock::matchers::{method, path, query_param};
+use wiremock::{Mock, MockServer, ResponseTemplate};
+
+fn setup_drive_tokeninfo() -> (Runtime, MockServer, String) {
+    let runtime = Runtime::new().expect("runtime");
+    let server = runtime.block_on(async {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "scope": "https://www.googleapis.com/auth/drive.file"
+            })))
+            .mount(&server)
+            .await;
+        server
+    });
+    let endpoint = format!("{}/tokeninfo", server.uri());
+    (runtime, server, endpoint)
+}
 
 #[test]
 #[serial]
 fn doctor_all_env_vars_present() {
+    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
     let mut cmd = _helpers::cmd::nblm();
     let common = _helpers::cmd::CommonArgs::default();
     common.apply(&mut cmd);
@@ -14,6 +37,7 @@ fn doctor_all_env_vars_present() {
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
+    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -30,12 +54,19 @@ fn doctor_all_env_vars_present() {
         .stdout(predicate::str::contains(
             "   [ok] NBLM_ENDPOINT_LOCATION=us-central1",
         ))
-        .stdout(predicate::str::contains("   [ok] NBLM_LOCATION=global"));
+        .stdout(predicate::str::contains("   [ok] NBLM_LOCATION=global"))
+        .stdout(predicate::str::contains(
+            "   [ok] NBLM_ACCESS_TOKEN set (value hidden)",
+        ))
+        .stdout(predicate::str::contains(
+            "   [ok] NBLM_ACCESS_TOKEN grants Google Drive access",
+        ));
 }
 
 #[test]
 #[serial]
 fn doctor_missing_required_env_var() {
+    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
     let mut cmd = _helpers::cmd::nblm();
     let common = _helpers::cmd::CommonArgs::default();
     common.apply(&mut cmd);
@@ -43,6 +74,7 @@ fn doctor_missing_required_env_var() {
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
+    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -119,6 +151,7 @@ fn doctor_all_env_vars_missing() {
 #[test]
 #[serial]
 fn doctor_empty_env_var_treated_as_missing() {
+    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
     let mut cmd = _helpers::cmd::nblm();
     let common = _helpers::cmd::CommonArgs::default();
     common.apply(&mut cmd);
@@ -126,6 +159,7 @@ fn doctor_empty_env_var_treated_as_missing() {
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
+    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
     cmd.arg("doctor");
 
     let assert = cmd.assert();

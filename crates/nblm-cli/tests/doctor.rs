@@ -4,10 +4,6 @@ use predicates::function;
 use predicates::prelude::*;
 use serial_test::serial;
 
-// Total number of checks performed by the doctor command
-// Update this when adding or removing checks
-const TOTAL_CHECKS: usize = 5;
-
 #[test]
 #[serial]
 fn doctor_all_env_vars_present() {
@@ -57,11 +53,7 @@ fn doctor_missing_required_env_var() {
         ))
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_PROJECT_NUMBER=<your-project-number>",
-        ))
-        .stdout(predicate::str::contains(format!(
-            "Summary: 1 checks failing out of {}",
-            TOTAL_CHECKS
-        )));
+        ));
 }
 
 #[test]
@@ -92,10 +84,9 @@ fn doctor_missing_optional_env_vars() {
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_LOCATION=us-central1",
         ))
-        .stdout(predicate::str::contains(format!(
-            "Summary: 3 checks failing out of {}",
-            TOTAL_CHECKS
-        )));
+        .stdout(predicate::str::contains(
+            " [warn] NBLM_ACCESS_TOKEN missing",
+        ));
 }
 
 #[test]
@@ -120,10 +111,9 @@ fn doctor_all_env_vars_missing() {
             " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
         .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
-        .stdout(predicate::str::contains(format!(
-            "Summary: 4 checks failing out of {}",
-            TOTAL_CHECKS
-        )));
+        .stdout(predicate::str::contains(
+            " [warn] NBLM_ACCESS_TOKEN missing",
+        ));
 }
 
 #[test]

@@ -4,13 +4,8 @@ NotebookLM Enterprise API client for Python
 This package provides Python bindings for the NotebookLM Enterprise API.
 """
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING
-
-try:
-    from importlib.metadata import PackageNotFoundError, version
-except ImportError:
-    # Python < 3.8
-    from importlib_metadata import PackageNotFoundError, version  # type: ignore
 
 from .nblm import (
     DEFAULT_ENV_TOKEN_KEY,

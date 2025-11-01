@@ -62,12 +62,14 @@ impl NblmApp {
     }
 
     pub async fn run(self) -> Result<()> {
-        let json_mode = self.cli.global.json;
-        match self.cli.command {
-            Command::Notebooks(cmd) => notebooks::run(cmd, &self.client, json_mode).await,
-            Command::Sources(cmd) => sources::run(cmd, &self.client, json_mode).await,
-            Command::Audio(cmd) => audio::run(cmd, &self.client, json_mode).await,
-            Command::Share(cmd) => share::run(cmd, &self.client, json_mode).await,
+        let NblmApp { cli, client } = self;
+
+        let json_mode = cli.global.json;
+        match cli.command {
+            Command::Notebooks(cmd) => notebooks::run(cmd, &client, json_mode).await,
+            Command::Sources(cmd) => sources::run(cmd, &client, json_mode).await,
+            Command::Audio(cmd) => audio::run(cmd, &client, json_mode).await,
+            Command::Share(cmd) => share::run(cmd, &client, json_mode).await,
             Command::Doctor(cmd) => doctor::run(cmd).await,
         }
     }

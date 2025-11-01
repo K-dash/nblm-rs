@@ -1,6 +1,8 @@
 use std::env;
 
 use async_trait::async_trait;
+use reqwest::Client;
+use serde::Deserialize;
 use tokio::process::Command;
 
 use crate::error::{Error, Result};
@@ -38,6 +40,81 @@ pub trait TokenProvider: Send + Sync {
     fn kind(&self) -> ProviderKind {
         ProviderKind::StaticToken
     }
+}
+
+const TOKENINFO_ENDPOINT: &str = "https://www.googleapis.com/oauth2/v3/tokeninfo";
+const DRIVE_SCOPE: &str = "https://www.googleapis.com/auth/drive";
+const DRIVE_FILE_SCOPE: &str = "https://www.googleapis.com/auth/drive.file";
+
+#[derive(Debug, Deserialize)]
+struct TokenInfoResponse {
+    scope: Option<String>,
+}
+
+pub async fn ensure_drive_scope(provider: &dyn TokenProvider) -> Result<()> {
+    let client = Client::new();
+    let endpoint =
+        std::env::var("NBLM_TOKENINFO_ENDPOINT").unwrap_or_else(|_| TOKENINFO_ENDPOINT.to_string());
+    ensure_drive_scope_internal(provider, &client, &endpoint).await
+}
+
+async fn ensure_drive_scope_internal(
+    provider: &dyn TokenProvider,
+    client: &Client,
+    endpoint: &str,
+) -> Result<()> {
+    let access_token = provider.access_token().await?;
+
+    let response = client
+        .get(endpoint)
+        .query(&[("access_token", access_token.as_str())])
+        .send()
+        .await
+        .map_err(|err| {
+            Error::TokenProvider(format!("failed to validate Google Drive token: {err}"))
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| String::from("<failed to read body>"));
+        return Err(Error::TokenProvider(format!(
+            "failed to validate Google Drive token (status {}): {}",
+            status.as_u16(),
+            body.trim()
+        )));
+    }
+
+    let info: TokenInfoResponse = response
+        .json()
+        .await
+        .map_err(|err| Error::TokenProvider(format!("invalid tokeninfo response: {err}")))?;
+
+    let scopes = info.scope.unwrap_or_default();
+    if scope_grants_drive_access(&scopes) {
+        Ok(())
+    } else {
+        Err(Error::TokenProvider(
+            "Google Drive access token is missing the required drive.file scope. Run `gcloud auth login --enable-gdrive-access` and retry.".to_string(),
+        ))
+    }
+}
+
+fn scope_grants_drive_access(scopes: &str) -> bool {
+    scopes
+        .split_whitespace()
+        .any(|scope| scope == DRIVE_FILE_SCOPE || scope == DRIVE_SCOPE)
+}
+
+#[cfg(test)]
+pub(crate) async fn ensure_drive_scope_with_endpoint(
+    provider: &dyn TokenProvider,
+    client: &Client,
+    endpoint: &str,
+) -> Result<()> {
+    ensure_drive_scope_internal(provider, client, endpoint).await
 }
 
 #[derive(Debug, Default, Clone)]
@@ -137,6 +214,8 @@ impl TokenProvider for StaticTokenProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wiremock::matchers::{method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
     async fn static_token_provider_returns_token() {
@@ -198,5 +277,94 @@ mod tests {
     fn static_token_provider_returns_correct_kind() {
         let provider = StaticTokenProvider::new("token");
         assert_eq!(provider.kind(), ProviderKind::StaticToken);
+    }
+
+    fn expect_scope_result(scopes: &str, expected: bool) {
+        assert_eq!(scope_grants_drive_access(scopes), expected);
+    }
+
+    #[test]
+    fn scope_grants_drive_access_detects_required_scopes() {
+        expect_scope_result(DRIVE_FILE_SCOPE, true);
+        expect_scope_result(DRIVE_SCOPE, true);
+        expect_scope_result(
+            "https://www.googleapis.com/auth/spreadsheets.readonly",
+            false,
+        );
+        expect_scope_result(
+            &format!("{DRIVE_FILE_SCOPE} https://www.googleapis.com/auth/calendar"),
+            true,
+        );
+    }
+
+    #[tokio::test]
+    async fn ensure_drive_scope_accepts_valid_scope() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/oauth2/v3/tokeninfo"))
+            .and(query_param("access_token", "valid-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "scope": DRIVE_FILE_SCOPE
+            })))
+            .mount(&server)
+            .await;
+
+        let provider = StaticTokenProvider::new("valid-token");
+        let client = reqwest::Client::new();
+        let endpoint = format!("{}/oauth2/v3/tokeninfo", server.uri());
+        let result = ensure_drive_scope_with_endpoint(&provider, &client, &endpoint).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn ensure_drive_scope_rejects_missing_scope() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/oauth2/v3/tokeninfo"))
+            .and(query_param("access_token", "no-scope"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "scope": "https://www.googleapis.com/auth/spreadsheets.readonly"
+            })))
+            .mount(&server)
+            .await;
+
+        let provider = StaticTokenProvider::new("no-scope");
+        let client = reqwest::Client::new();
+        let endpoint = format!("{}/oauth2/v3/tokeninfo", server.uri());
+        let err = ensure_drive_scope_with_endpoint(&provider, &client, &endpoint)
+            .await
+            .unwrap_err();
+
+        match err {
+            Error::TokenProvider(message) => {
+                assert!(message.contains("drive.file scope"));
+            }
+            _ => panic!("expected TokenProvider error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn ensure_drive_scope_converts_http_failures() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/oauth2/v3/tokeninfo"))
+            .and(query_param("access_token", "bad-token"))
+            .respond_with(ResponseTemplate::new(400).set_body_string("invalid_token"))
+            .mount(&server)
+            .await;
+
+        let provider = StaticTokenProvider::new("bad-token");
+        let client = reqwest::Client::new();
+        let endpoint = format!("{}/oauth2/v3/tokeninfo", server.uri());
+        let err = ensure_drive_scope_with_endpoint(&provider, &client, &endpoint)
+            .await
+            .unwrap_err();
+
+        match err {
+            Error::TokenProvider(message) => {
+                assert!(message.contains("status 400"));
+            }
+            _ => panic!("expected TokenProvider error"),
+        }
     }
 }

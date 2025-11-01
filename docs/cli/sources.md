@@ -88,6 +88,8 @@ nblm sources add \
 ```
 
 > **Tip:** `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`). Ensure the authenticated account has view access to the file.
+>
+> **Drive access checks:** When you add Drive sources, nblm validates that the token includes the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope and that the authenticated account can open the document. If either check fails, the upload is aborted with an error instead of creating placeholder metadata.
 
 **JSON output:**
 

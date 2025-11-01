@@ -1,15 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./scripts/bump-version.sh 0.1.1
+# Usage: ./scripts/bump-version.sh
 
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 <version>"
-  echo "Example: $0 0.1.1"
-  exit 1
+# Fetch latest tags from remote
+echo "Fetching latest tags from remote..."
+git fetch --tags --quiet
+
+# Get the latest tag version
+LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -n 1)
+if [ -z "$LATEST_TAG" ]; then
+  echo "No existing tags found."
+  LATEST_VERSION="none"
+else
+  LATEST_VERSION="${LATEST_TAG#v}"
+  echo "Current latest tag: ${LATEST_TAG} (${LATEST_VERSION})"
 fi
 
-NEW_VERSION="$1"
+# Prompt for new version
+echo ""
+read -p "Enter new version: " NEW_VERSION
+
+if [ -z "$NEW_VERSION" ]; then
+  echo "Error: Version cannot be empty"
+  exit 1
+fi
 
 echo "Bumping version to ${NEW_VERSION}..."
 
@@ -19,6 +34,10 @@ sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" Cargo.toml
 sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" crates/nblm-core/Cargo.toml
 sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" crates/nblm-cli/Cargo.toml
 sed -i.bak "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" crates/nblm-python/Cargo.toml
+
+# Update nblm-core dependency version in nblm-cli
+echo "Updating nblm-core dependency in nblm-cli..."
+sed -i.bak "s/^nblm-core = { version = \"[^\"]*\"/nblm-core = { version = \"${NEW_VERSION}\"/" crates/nblm-cli/Cargo.toml
 
 # Python package
 echo "Updating Python package..."

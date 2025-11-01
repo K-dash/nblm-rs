@@ -254,6 +254,7 @@ source = GoogleDriveSource(
 
 > **Prerequisite:** Authenticate with Drive access enabled (`gcloud auth login --enable-gdrive-access`) and ensure the document is shared with the authenticated account.
 > **Tip:** `document_id` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`).
+> **Validation:** `NblmClient.add_sources` checks that the token has Drive scope and that the account can open the document. Missing scope or permissions raises `NblmError`.
 
 #### Attributes
 

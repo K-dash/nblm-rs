@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::{Args, Subcommand, ValueEnum};
 use nblm_core::{
-    models::enterprise::requests::share::{AccountRole, ProjectRole},
+    models::enterprise::share::{AccountRole, ProjectRole},
     NblmClient,
 };
 

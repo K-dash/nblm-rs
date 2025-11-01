@@ -1,12 +1,8 @@
 use anyhow::Result;
 use nblm_core::models::enterprise::{
-    notebook::Notebook,
-    responses::{
-        list::ListRecentlyViewedResponse,
-        share::ShareResponse,
-        source::{BatchCreateSourcesResponse, UploadSourceFileResponse},
-    },
-    source::NotebookSource,
+    notebook::{ListRecentlyViewedResponse, Notebook},
+    share::ShareResponse,
+    source::{BatchCreateSourcesResponse, NotebookSource, UploadSourceFileResponse},
 };
 use serde_json::json;
 

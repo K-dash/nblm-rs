@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Args, Subcommand};
-use nblm_core::{models::enterprise::requests::audio::AudioOverviewRequest, NblmClient};
+use nblm_core::{models::enterprise::audio::AudioOverviewRequest, NblmClient};
 use serde_json::json;
 
 use crate::util::io::emit_json;

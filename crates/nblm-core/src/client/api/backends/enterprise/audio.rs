@@ -3,9 +3,10 @@ use reqwest::Method;
 
 use crate::client::api::backends::{AudioBackend, BackendContext};
 use crate::error::Result;
-use crate::models::enterprise::{
-    requests::audio::AudioOverviewRequest,
-    responses::audio::{AudioOverviewApiResponse, AudioOverviewResponse},
+use crate::models::enterprise::audio::{AudioOverviewRequest, AudioOverviewResponse};
+
+use super::models::{
+    requests::audio as wire_audio_req, responses::audio::AudioOverviewApiResponse,
 };
 
 pub(crate) struct EnterpriseAudioBackend {
@@ -31,13 +32,14 @@ impl AudioBackend for EnterpriseAudioBackend {
         );
         let url = self.ctx.url_builder.build_url(&path)?;
 
+        let wire_request: wire_audio_req::AudioOverviewRequest = request.into();
         let api_response: AudioOverviewApiResponse = self
             .ctx
             .http
-            .request_json(Method::POST, url, Some(&request))
+            .request_json(Method::POST, url, Some(&wire_request))
             .await?;
 
-        Ok(api_response.audio_overview)
+        Ok(api_response.audio_overview.into())
     }
 
     async fn delete_audio_overview(&self, notebook_id: &str) -> Result<()> {

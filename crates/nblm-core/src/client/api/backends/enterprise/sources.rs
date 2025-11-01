@@ -7,12 +7,14 @@ use reqwest::{
 
 use crate::client::api::backends::{BackendContext, SourcesBackend};
 use crate::error::{Error, Result};
-use crate::models::enterprise::{
-    requests::source::{
-        BatchCreateSourcesRequest, BatchDeleteSourcesRequest, BatchDeleteSourcesResponse,
-    },
-    responses::source::{BatchCreateSourcesResponse, UploadSourceFileResponse},
-    source::{NotebookSource, UserContent},
+use crate::models::enterprise::source::{
+    BatchCreateSourcesRequest, BatchCreateSourcesResponse, BatchDeleteSourcesRequest,
+    BatchDeleteSourcesResponse, NotebookSource, UploadSourceFileResponse, UserContent,
+};
+
+use super::models::{
+    requests::source as wire_source_req, responses::source as wire_source_resp,
+    source as wire_source,
 };
 
 pub(crate) struct EnterpriseSourcesBackend {
@@ -27,8 +29,8 @@ impl EnterpriseSourcesBackend {
     async fn batch_create_internal(
         &self,
         notebook_id: &str,
-        request: BatchCreateSourcesRequest,
-    ) -> Result<BatchCreateSourcesResponse> {
+        request: wire_source_req::BatchCreateSourcesRequest,
+    ) -> Result<wire_source_resp::BatchCreateSourcesResponse> {
         let path = format!(
             "{}/sources:batchCreate",
             self.ctx.url_builder.notebook_path(notebook_id)
@@ -43,8 +45,8 @@ impl EnterpriseSourcesBackend {
     async fn batch_delete_internal(
         &self,
         notebook_id: &str,
-        request: BatchDeleteSourcesRequest,
-    ) -> Result<BatchDeleteSourcesResponse> {
+        request: wire_source_req::BatchDeleteSourcesRequest,
+    ) -> Result<wire_source_req::BatchDeleteSourcesResponse> {
         let path = format!(
             "{}/sources:batchDelete",
             self.ctx.url_builder.notebook_path(notebook_id)
@@ -64,7 +66,11 @@ impl SourcesBackend for EnterpriseSourcesBackend {
         notebook_id: &str,
         request: BatchCreateSourcesRequest,
     ) -> Result<BatchCreateSourcesResponse> {
-        self.batch_create_internal(notebook_id, request).await
+        let wire_request: wire_source_req::BatchCreateSourcesRequest = request.into();
+        let response = self
+            .batch_create_internal(notebook_id, wire_request)
+            .await?;
+        Ok(response.into())
     }
 
     async fn add_sources(
@@ -72,10 +78,16 @@ impl SourcesBackend for EnterpriseSourcesBackend {
         notebook_id: &str,
         contents: Vec<UserContent>,
     ) -> Result<BatchCreateSourcesResponse> {
-        let request = BatchCreateSourcesRequest {
-            user_contents: contents,
+        let wire_request = wire_source_req::BatchCreateSourcesRequest {
+            user_contents: contents
+                .into_iter()
+                .map(wire_source::UserContent::from)
+                .collect(),
         };
-        self.batch_create_internal(notebook_id, request).await
+        let response = self
+            .batch_create_internal(notebook_id, wire_request)
+            .await?;
+        Ok(response.into())
     }
 
     async fn batch_delete_sources(
@@ -83,7 +95,11 @@ impl SourcesBackend for EnterpriseSourcesBackend {
         notebook_id: &str,
         request: BatchDeleteSourcesRequest,
     ) -> Result<BatchDeleteSourcesResponse> {
-        self.batch_delete_internal(notebook_id, request).await
+        let wire_request: wire_source_req::BatchDeleteSourcesRequest = request.into();
+        let response = self
+            .batch_delete_internal(notebook_id, wire_request)
+            .await?;
+        Ok(response.into())
     }
 
     async fn delete_sources(
@@ -94,7 +110,7 @@ impl SourcesBackend for EnterpriseSourcesBackend {
         let request = BatchDeleteSourcesRequest {
             names: source_names,
         };
-        self.batch_delete_internal(notebook_id, request).await
+        self.batch_delete_sources(notebook_id, request).await
     }
 
     async fn upload_source_file(
@@ -137,10 +153,12 @@ impl SourcesBackend for EnterpriseSourcesBackend {
         headers.insert(CONTENT_TYPE, content_type_header);
 
         let bytes = Bytes::from(data);
-        self.ctx
+        let response: wire_source_resp::UploadSourceFileResponse = self
+            .ctx
             .http
             .request_binary(Method::POST, url, headers, bytes)
-            .await
+            .await?;
+        Ok(response.into())
     }
 
     async fn get_source(&self, notebook_id: &str, source_id: &str) -> Result<NotebookSource> {
@@ -157,10 +175,12 @@ impl SourcesBackend for EnterpriseSourcesBackend {
             source_id
         );
         let url = self.ctx.url_builder.build_url(&path)?;
-        self.ctx
+        let source: wire_source::NotebookSource = self
+            .ctx
             .http
             .request_json::<(), _>(Method::GET, url, None::<&()>)
-            .await
+            .await?;
+        Ok(source.into())
     }
 }
 

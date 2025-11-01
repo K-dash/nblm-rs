@@ -3,22 +3,16 @@ pub(crate) mod backends;
 use crate::client::NblmClient;
 use crate::error::Result;
 use crate::models::enterprise::{
-    notebook::Notebook,
-    requests::{
-        audio::AudioOverviewRequest,
-        notebook::{BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse},
-        share::AccountRole,
-        source::{
-            BatchCreateSourcesRequest, BatchDeleteSourcesRequest, BatchDeleteSourcesResponse,
-        },
+    audio::{AudioOverviewRequest, AudioOverviewResponse},
+    notebook::{
+        BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse,
+        Notebook,
     },
-    responses::{
-        audio::AudioOverviewResponse,
-        list::ListRecentlyViewedResponse,
-        share::ShareResponse,
-        source::{BatchCreateSourcesResponse, UploadSourceFileResponse},
+    share::{AccountRole, ShareResponse},
+    source::{
+        BatchCreateSourcesRequest, BatchCreateSourcesResponse, BatchDeleteSourcesRequest,
+        BatchDeleteSourcesResponse, NotebookSource, UploadSourceFileResponse, UserContent,
     },
-    source::{NotebookSource, UserContent},
 };
 
 impl NblmClient {

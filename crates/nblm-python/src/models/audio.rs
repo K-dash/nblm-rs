@@ -39,10 +39,8 @@ impl AudioOverviewRequest {
 }
 
 impl AudioOverviewRequest {
-    pub(crate) fn to_core(
-        &self,
-    ) -> nblm_core::models::enterprise::requests::audio::AudioOverviewRequest {
-        nblm_core::models::enterprise::requests::audio::AudioOverviewRequest::default()
+    pub(crate) fn to_core(&self) -> nblm_core::models::enterprise::audio::AudioOverviewRequest {
+        nblm_core::models::enterprise::audio::AudioOverviewRequest::default()
     }
 }
 
@@ -78,7 +76,7 @@ impl AudioOverviewResponse {
 impl AudioOverviewResponse {
     pub(crate) fn from_core(
         py: Python,
-        response: nblm_core::models::enterprise::responses::audio::AudioOverviewResponse,
+        response: nblm_core::models::enterprise::audio::AudioOverviewResponse,
     ) -> PyResult<Self> {
         let generation_options = match response.generation_options {
             Some(value) => crate::models::json_value_to_py(py, &value)?,

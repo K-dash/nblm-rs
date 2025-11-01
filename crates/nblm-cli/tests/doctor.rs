@@ -3,6 +3,10 @@ mod _helpers;
 use predicates::prelude::*;
 use serial_test::serial;
 
+// Total number of checks performed by the doctor command
+// Update this when adding or removing checks
+const TOTAL_CHECKS: usize = 5;
+
 #[test]
 #[serial]
 fn doctor_all_env_vars_present() {
@@ -12,6 +16,7 @@ fn doctor_all_env_vars_present() {
     cmd.env("NBLM_PROJECT_NUMBER", "224840249322");
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
+    cmd.env("NBLM_ACCESS_TOKEN", "test-token");
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -27,7 +32,10 @@ fn doctor_all_env_vars_present() {
             "   [ok] NBLM_ENDPOINT_LOCATION=us-central1",
         ))
         .stdout(predicate::str::contains("   [ok] NBLM_LOCATION=global"))
-        .stdout(predicate::str::contains("Summary: All 3 checks passed"))
+        .stdout(predicate::str::contains(format!(
+            "Summary: All {} checks passed",
+            TOTAL_CHECKS
+        )))
         .stdout(predicate::str::contains(
             "All critical checks passed. You're ready to use nblm",
         ));
@@ -42,6 +50,7 @@ fn doctor_missing_required_env_var() {
     cmd.env_remove("NBLM_PROJECT_NUMBER");
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
+    cmd.env("NBLM_ACCESS_TOKEN", "test-token");
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -53,9 +62,10 @@ fn doctor_missing_required_env_var() {
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_PROJECT_NUMBER=<your-project-number>",
         ))
-        .stdout(predicate::str::contains(
-            "Summary: 1 checks failing out of 3",
-        ));
+        .stdout(predicate::str::contains(format!(
+            "Summary: 1 checks failing out of {}",
+            TOTAL_CHECKS
+        )));
 }
 
 #[test]
@@ -67,6 +77,7 @@ fn doctor_missing_optional_env_vars() {
     cmd.env("NBLM_PROJECT_NUMBER", "224840249322");
     cmd.env_remove("NBLM_ENDPOINT_LOCATION");
     cmd.env_remove("NBLM_LOCATION");
+    cmd.env_remove("NBLM_ACCESS_TOKEN");
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -85,9 +96,10 @@ fn doctor_missing_optional_env_vars() {
         .stdout(predicate::str::contains(
             "Suggestion: export NBLM_LOCATION=us-central1",
         ))
-        .stdout(predicate::str::contains(
-            "Summary: 2 checks failing out of 3",
-        ));
+        .stdout(predicate::str::contains(format!(
+            "Summary: 3 checks failing out of {}",
+            TOTAL_CHECKS
+        )));
 }
 
 #[test]
@@ -99,6 +111,7 @@ fn doctor_all_env_vars_missing() {
     cmd.env_remove("NBLM_PROJECT_NUMBER");
     cmd.env_remove("NBLM_ENDPOINT_LOCATION");
     cmd.env_remove("NBLM_LOCATION");
+    cmd.env_remove("NBLM_ACCESS_TOKEN");
     cmd.arg("doctor");
 
     let assert = cmd.assert();
@@ -111,9 +124,10 @@ fn doctor_all_env_vars_missing() {
             " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
         .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
-        .stdout(predicate::str::contains(
-            "Summary: 3 checks failing out of 3",
-        ));
+        .stdout(predicate::str::contains(format!(
+            "Summary: 4 checks failing out of {}",
+            TOTAL_CHECKS
+        )));
 }
 
 #[test]
@@ -125,6 +139,7 @@ fn doctor_empty_env_var_treated_as_missing() {
     cmd.env("NBLM_PROJECT_NUMBER", ""); // Empty string should be treated as missing
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
+    cmd.env("NBLM_ACCESS_TOKEN", "test-token");
     cmd.arg("doctor");
 
     let assert = cmd.assert();

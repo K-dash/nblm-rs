@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +15,7 @@ pub struct NotebookSource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -29,7 +28,7 @@ pub struct NotebookSourceMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub youtube_metadata: Option<NotebookSourceYoutubeMetadata>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -40,7 +39,7 @@ pub struct NotebookSourceYoutubeMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub video_id: Option<String>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -49,7 +48,7 @@ pub struct NotebookSourceSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -58,7 +57,7 @@ pub struct NotebookSourceId {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,43 +81,6 @@ pub enum UserContent {
     },
 }
 
-impl UserContent {
-    pub fn web(url: String, source_name: Option<String>) -> Self {
-        Self::Web {
-            web_content: WebContent { url, source_name },
-        }
-    }
-
-    pub fn text(content: String, source_name: Option<String>) -> Self {
-        Self::Text {
-            text_content: TextContent {
-                content,
-                source_name,
-            },
-        }
-    }
-
-    pub fn google_drive(
-        document_id: String,
-        mime_type: String,
-        source_name: Option<String>,
-    ) -> Self {
-        Self::GoogleDrive {
-            google_drive_content: GoogleDriveContent {
-                document_id,
-                mime_type,
-                source_name,
-            },
-        }
-    }
-
-    pub fn video(url: String) -> Self {
-        Self::Video {
-            video_content: VideoContent { url },
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WebContent {
@@ -135,6 +97,13 @@ pub struct TextContent {
     pub source_name: Option<String>,
 }
 
+/// Google Drive content for adding sources.
+///
+/// # Requirements
+///
+/// - Use credentials initialized with `gcloud auth login --enable-gdrive-access`
+/// - Ensure the authenticated account has at least viewer access to the document
+/// - Provide the MIME type returned by the Drive API (e.g. `application/pdf`)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct GoogleDriveContent {
@@ -150,40 +119,81 @@ pub struct VideoContent {
     pub url: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchCreateSourcesRequest {
-    #[serde(rename = "userContents")]
-    pub user_contents: Vec<UserContent>,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchCreateSourcesResponse {
-    #[serde(default)]
-    pub sources: Vec<NotebookSource>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error_count: Option<i32>,
-}
+    #[test]
+    fn user_content_untagged_web() {
+        let json = r#"{"webContent":{"url":"https://example.com"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Web { web_content } => {
+                assert_eq!(web_content.url, "https://example.com");
+            }
+            _ => panic!("expected Web variant"),
+        }
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchDeleteSourcesRequest {
-    pub names: Vec<String>,
-}
+    #[test]
+    fn user_content_untagged_text() {
+        let json = r#"{"textContent":{"content":"sample text"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Text { text_content } => {
+                assert_eq!(text_content.content, "sample text");
+            }
+            _ => panic!("expected Text variant"),
+        }
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct BatchDeleteSourcesResponse {
-    #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
-}
+    #[test]
+    fn user_content_untagged_google_drive() {
+        let json = r#"{"googleDriveContent":{"documentId":"123","mimeType":"application/vnd.google-apps.document"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::GoogleDrive {
+                google_drive_content,
+            } => {
+                assert_eq!(google_drive_content.document_id, "123");
+                assert_eq!(
+                    google_drive_content.mime_type,
+                    "application/vnd.google-apps.document"
+                );
+            }
+            _ => panic!("expected GoogleDrive variant"),
+        }
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct UploadSourceFileResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_id: Option<NotebookSourceId>,
-    #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    #[test]
+    fn user_content_untagged_video() {
+        let json = r#"{"videoContent":{"youtubeUrl":"https://youtube.com/watch?v=123"}}"#;
+        let content: UserContent = serde_json::from_str(json).unwrap();
+        match content {
+            UserContent::Video { video_content } => {
+                assert_eq!(video_content.url, "https://youtube.com/watch?v=123");
+            }
+            _ => panic!("expected Video variant"),
+        }
+    }
+
+    #[test]
+    fn user_content_video_serializes_correctly() {
+        let content = UserContent::Video {
+            video_content: VideoContent {
+                url: "https://youtube.com/watch?v=123".to_string(),
+            },
+        };
+        let json = serde_json::to_string(&content).unwrap();
+        assert!(
+            json.contains("videoContent"),
+            "JSON should contain videoContent, got: {}",
+            json
+        );
+        assert!(
+            json.contains(r#""youtubeUrl":"https://youtube.com/watch?v=123""#),
+            "JSON should contain youtubeUrl field, got: {}",
+            json
+        );
+    }
 }

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use super::source::NotebookSource;
 
@@ -19,7 +18,7 @@ pub struct Notebook {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<NotebookMetadata>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,23 +40,41 @@ pub struct NotebookMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_viewed: Option<String>,
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct BatchDeleteNotebooksRequest {
-    pub names: Vec<String>,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct BatchDeleteNotebooksResponse {
-    #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
-}
+    #[test]
+    fn notebook_skips_notebook_id_when_none() {
+        let notebook = Notebook {
+            name: Some("test".to_string()),
+            title: "Test Notebook".to_string(),
+            notebook_id: None,
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
+            extra: Default::default(),
+        };
+        let json = serde_json::to_string(&notebook).unwrap();
+        assert!(!json.contains("notebookId"));
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ListRecentlyViewedResponse {
-    #[serde(default)]
-    pub notebooks: Vec<Notebook>,
+    #[test]
+    fn notebook_includes_notebook_id_when_some() {
+        let notebook = Notebook {
+            name: Some("test".to_string()),
+            title: "Test Notebook".to_string(),
+            notebook_id: Some("nb123".to_string()),
+            emoji: None,
+            metadata: None,
+            sources: Vec::new(),
+            extra: Default::default(),
+        };
+        let json = serde_json::to_string(&notebook).unwrap();
+        assert!(json.contains("notebookId"));
+        assert!(json.contains("nb123"));
+    }
 }

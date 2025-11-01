@@ -4,14 +4,17 @@ use reqwest::Method;
 use crate::client::api::backends::{BackendContext, NotebooksBackend};
 use crate::error::Result;
 use crate::models::enterprise::{
-    notebook::Notebook,
-    requests::{
-        notebook::{
-            BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, CreateNotebookRequest,
-        },
-        share::{AccountRole, ShareRequest},
+    notebook::{
+        BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse,
+        Notebook,
     },
-    responses::{list::ListRecentlyViewedResponse, share::ShareResponse},
+    share::{AccountRole, ShareResponse},
+};
+
+use super::models::{
+    notebook as wire_notebook,
+    requests::{notebook as wire_notebook_req, share as wire_share_req},
+    responses::{list as wire_list_resp, share as wire_share_resp},
 };
 
 pub(crate) struct EnterpriseNotebooksBackend {
@@ -25,8 +28,8 @@ impl EnterpriseNotebooksBackend {
 
     async fn batch_delete_internal(
         &self,
-        request: BatchDeleteNotebooksRequest,
-    ) -> Result<BatchDeleteNotebooksResponse> {
+        request: wire_notebook_req::BatchDeleteNotebooksRequest,
+    ) -> Result<wire_notebook_req::BatchDeleteNotebooksResponse> {
         let path = format!(
             "{}:batchDelete",
             self.ctx.url_builder.notebooks_collection()
@@ -49,18 +52,22 @@ impl NotebooksBackend for EnterpriseNotebooksBackend {
             .ctx
             .url_builder
             .build_url(&self.ctx.url_builder.notebooks_collection())?;
-        let request = CreateNotebookRequest { title };
-        self.ctx
+        let request = wire_notebook_req::CreateNotebookRequest { title };
+        let notebook: wire_notebook::Notebook = self
+            .ctx
             .http
             .request_json(Method::POST, url, Some(&request))
-            .await
+            .await?;
+        Ok(notebook.into())
     }
 
     async fn batch_delete_notebooks(
         &self,
         request: BatchDeleteNotebooksRequest,
     ) -> Result<BatchDeleteNotebooksResponse> {
-        self.batch_delete_internal(request).await
+        let wire_request: wire_notebook_req::BatchDeleteNotebooksRequest = request.into();
+        let response = self.batch_delete_internal(wire_request).await?;
+        Ok(response.into())
     }
 
     async fn delete_notebooks(
@@ -68,7 +75,7 @@ impl NotebooksBackend for EnterpriseNotebooksBackend {
         notebook_names: Vec<String>,
     ) -> Result<BatchDeleteNotebooksResponse> {
         for name in &notebook_names {
-            let request = BatchDeleteNotebooksRequest {
+            let request = wire_notebook_req::BatchDeleteNotebooksRequest {
                 names: vec![name.clone()],
             };
             self.batch_delete_internal(request).await?;
@@ -83,13 +90,15 @@ impl NotebooksBackend for EnterpriseNotebooksBackend {
     ) -> Result<ShareResponse> {
         let path = format!("{}:share", self.ctx.url_builder.notebook_path(notebook_id));
         let url = self.ctx.url_builder.build_url(&path)?;
-        let request = ShareRequest {
-            account_and_roles: accounts,
+        let request = wire_share_req::ShareRequest {
+            account_and_roles: accounts.into_iter().map(Into::into).collect(),
         };
-        self.ctx
+        let response: wire_share_resp::ShareResponse = self
+            .ctx
             .http
             .request_json(Method::POST, url, Some(&request))
-            .await
+            .await?;
+        Ok(response.into())
     }
 
     async fn list_recently_viewed(
@@ -106,10 +115,12 @@ impl NotebooksBackend for EnterpriseNotebooksBackend {
             url.query_pairs_mut()
                 .append_pair("pageSize", &clamped.to_string());
         }
-        self.ctx
+        let response: wire_list_resp::ListRecentlyViewedResponse = self
+            .ctx
             .http
             .request_json::<(), _>(Method::GET, url, None::<&()>)
-            .await
+            .await?;
+        Ok(response.into())
     }
 }
 

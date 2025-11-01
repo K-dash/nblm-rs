@@ -1,4 +1,6 @@
 mod audio;
+mod converter;
+pub(crate) mod models;
 mod notebooks;
 mod sources;
 

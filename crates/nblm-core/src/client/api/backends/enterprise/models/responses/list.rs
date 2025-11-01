@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::enterprise::notebook::Notebook;
+use super::super::notebook::Notebook;
 
 /// Response from list recently viewed notebooks API.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

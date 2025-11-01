@@ -69,6 +69,8 @@ impl NblmClient {
         notebook_id: &str,
         request: BatchCreateSourcesRequest,
     ) -> Result<BatchCreateSourcesResponse> {
+        let includes_drive = has_drive_content(request.user_contents.iter());
+        self.ensure_drive_scope_if_needed(includes_drive).await?;
         self.backends
             .sources()
             .batch_create_sources(notebook_id, request)
@@ -80,6 +82,8 @@ impl NblmClient {
         notebook_id: &str,
         contents: Vec<UserContent>,
     ) -> Result<BatchCreateSourcesResponse> {
+        let includes_drive = has_drive_content(contents.iter());
+        self.ensure_drive_scope_if_needed(includes_drive).await?;
         self.backends
             .sources()
             .add_sources(notebook_id, contents)
@@ -144,5 +148,211 @@ impl NblmClient {
             .audio()
             .delete_audio_overview(notebook_id)
             .await
+    }
+}
+
+fn has_drive_content<'a, I>(contents: I) -> bool
+where
+    I: IntoIterator<Item = &'a UserContent>,
+{
+    contents
+        .into_iter()
+        .any(|content| matches!(content, UserContent::GoogleDrive { .. }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::StaticTokenProvider;
+    use crate::env::EnvironmentConfig;
+    use crate::error::Error;
+    use serde_json::json;
+    use serial_test::serial;
+    use std::sync::Arc;
+    use wiremock::matchers::{method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    struct EnvGuard {
+        key: &'static str,
+        original: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn new(key: &'static str) -> Self {
+            let original = std::env::var(key).ok();
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    async fn build_client(base_url: &str) -> NblmClient {
+        let provider = Arc::new(StaticTokenProvider::new("test-token"));
+        let env = EnvironmentConfig::enterprise("123", "global", "us").unwrap();
+        NblmClient::new(provider, env)
+            .unwrap()
+            .with_base_url(base_url)
+            .unwrap()
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn add_sources_validates_drive_scope() {
+        let server = MockServer::start().await;
+        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
+        let _guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
+        std::env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
+
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "scope": "https://www.googleapis.com/auth/drive.file"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path(
+                "/v1alpha/projects/123/locations/global/notebooks/notebook-id/sources:batchCreate",
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "sources": [],
+                "errorCount": 0
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = build_client(&format!("{}/v1alpha", server.uri())).await;
+
+        let result = client
+            .add_sources(
+                "notebook-id",
+                vec![UserContent::google_drive(
+                    "doc".to_string(),
+                    "application/pdf".to_string(),
+                    None,
+                )],
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "expected add_sources to succeed: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn add_sources_rejects_missing_drive_scope() {
+        let server = MockServer::start().await;
+        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
+        let _guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
+        std::env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
+
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "scope": "https://www.googleapis.com/auth/cloud-platform"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path(
+                "/v1alpha/projects/123/locations/global/notebooks/notebook-id/sources:batchCreate",
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "sources": [],
+                "errorCount": 0
+            })))
+            .expect(0)
+            .mount(&server)
+            .await;
+
+        let client = build_client(&format!("{}/v1alpha", server.uri())).await;
+
+        let err = client
+            .add_sources(
+                "notebook-id",
+                vec![UserContent::google_drive(
+                    "doc".to_string(),
+                    "application/pdf".to_string(),
+                    None,
+                )],
+            )
+            .await
+            .expect_err("expected add_sources to fail when drive scope is missing");
+
+        match err {
+            Error::TokenProvider(message) => {
+                assert!(
+                    message.contains("drive.file"),
+                    "unexpected message: {message}"
+                );
+            }
+            other => panic!("expected TokenProvider error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn batch_create_sources_validates_drive_scope() {
+        let server = MockServer::start().await;
+        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
+        let _guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
+        std::env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
+
+        Mock::given(method("GET"))
+            .and(path("/tokeninfo"))
+            .and(query_param("access_token", "test-token"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "scope": "https://www.googleapis.com/auth/drive"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path(
+                "/v1alpha/projects/123/locations/global/notebooks/notebook-id/sources:batchCreate",
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "sources": [],
+                "errorCount": 0
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = build_client(&format!("{}/v1alpha", server.uri())).await;
+
+        let request = BatchCreateSourcesRequest {
+            user_contents: vec![UserContent::google_drive(
+                "doc".to_string(),
+                "application/pdf".to_string(),
+                None,
+            )],
+        };
+
+        let result = client
+            .batch_create_sources("notebook-id", request)
+            .await
+            .expect("expected batch_create_sources to succeed");
+
+        assert!(result.sources.is_empty());
     }
 }

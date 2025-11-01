@@ -134,6 +134,8 @@ export MY_CUSTOM_TOKEN=$(gcloud auth print-access-token)
 token_provider = EnvTokenProvider("MY_CUSTOM_TOKEN")
 ```
 
+> **Drive-specific requirement:** If you intend to ingest Google Drive sources, the token must include the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope. The CLI and SDK validate this scope before uploading Drive documents.
+
 ### Pros & Cons
 
 **Pros**:

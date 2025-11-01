@@ -370,6 +370,8 @@ client.add_sources(
 ```
 
 > **Tip:** The authenticated account must have view access to the Drive document. Use the Drive web UI to confirm you can open the file before ingesting it. `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`).
+>
+> **Drive validation:** The SDK performs a token scope check (`drive` or `drive.file`) and verifies that the authenticated account can access the document. Failing either check raises an `NblmError` immediately, preventing partial uploads.
 
 ### Bulk Upload from Directory
 

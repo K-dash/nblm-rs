@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use reqwest::{Client, Url};
 
-use crate::auth::TokenProvider;
+use crate::auth::{ensure_drive_scope, TokenProvider};
 use crate::env::EnvironmentConfig;
 use crate::error::Result;
 
@@ -147,6 +147,13 @@ impl NblmClient {
     fn rebuild_backends(&mut self) {
         let ctx = BackendContext::new(Arc::clone(&self.http), Arc::clone(&self.url_builder));
         self.backends = ClientBackends::new(self.environment.profile(), ctx);
+    }
+
+    pub(crate) async fn ensure_drive_scope_if_needed(&self, includes_drive: bool) -> Result<()> {
+        if includes_drive {
+            ensure_drive_scope(self.http.token_provider.as_ref()).await?;
+        }
+        Ok(())
     }
 }
 

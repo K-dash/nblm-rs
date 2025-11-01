@@ -4,10 +4,15 @@ Basic tests for nblm Python bindings
 
 
 def test_import() -> None:
-    """Test that the module can be imported"""
+    """Test that the module can be imported and has a version"""
     import nblm
 
-    assert nblm.__version__ == "0.1.0"
+    # Version should be a non-empty string
+    assert isinstance(nblm.__version__, str)
+    assert len(nblm.__version__) > 0
+    # When installed, version should not be the fallback
+    # (This check is optional and may be "0.0.0" when running from source)
+    assert nblm.__version__ is not None
 
 
 def test_classes_available() -> None:

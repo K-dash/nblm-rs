@@ -49,17 +49,17 @@ Output:
 }
 ```
 
-### Notes
-
-- The notebook must have at least one source before creating an audio overview
-- Audio generation takes several minutes to complete
-- Only one audio overview can exist per notebook
-- **Configuration options are not supported**: Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts an empty request body (as of 2025-10-25)
-- Language and other settings must be configured through the NotebookLM web UI
+!!! note "Audio Overview Requirements"
+    - The notebook must have at least one source before creating an audio overview
+    - Audio generation takes several minutes to complete
+    - Only one audio overview can exist per notebook
+    - **Configuration options are not supported**: Despite API documentation mentioning `languageCode`, `sourceIds`, and `episodeFocus` fields, the API only accepts an empty request body (as of 2025-10-25)
+    - Language and other settings must be configured through the NotebookLM web UI
 
 ### Processing Status
 
-> **Important**: As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
+!!! important "Status Checking Limitation"
+    As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
 
 When creating an audio overview, the initial status is:
 
@@ -103,11 +103,10 @@ Output:
 {}
 ```
 
-### Notes
-
-- Deletion is permanent and cannot be undone
-- You can create a new audio overview after deletion
-- The audio file itself is deleted, but the notebook and sources remain
+!!! warning "Deletion is Permanent"
+    - Deletion is permanent and cannot be undone
+    - You can create a new audio overview after deletion
+    - The audio file itself is deleted, but the notebook and sources remain
 
 ## Common Patterns
 
@@ -191,14 +190,15 @@ Cause: No audio overview exists for this notebook
 
 ## API Limitations
 
-As of 2025-10-25, the audio overview API has the following limitations:
+!!! warning "Current API Limitations"
+    As of 2025-10-25, the audio overview API has the following limitations:
 
-1. **No configuration options**: Cannot specify language, source selection, or episode focus via the API
-2. **No status polling**: Cannot check generation status or progress via the CLI
-3. **One per notebook**: Only one audio overview can exist per notebook
-4. **No download**: Audio files cannot be downloaded via the API
+    1. **No configuration options**: Cannot specify language, source selection, or episode focus via the API
+    2. **No status polling**: Cannot check generation status or progress via the CLI
+    3. **One per notebook**: Only one audio overview can exist per notebook
+    4. **No download**: Audio files cannot be downloaded via the API
 
-These settings must be managed through the NotebookLM web UI.
+    These settings must be managed through the NotebookLM web UI.
 
 ## Workflow
 

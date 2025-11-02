@@ -2,7 +2,8 @@
 
 This document tracks verified API limitations and workarounds implemented in nblm-rs.
 
-> **Last Updated**: 2025-10-24
+!!! info "Last Updated"
+    **2025-10-31**
 
 ## Batch Delete Notebooks
 
@@ -16,6 +17,7 @@ The `batchDeleteNotebooks` API endpoint accepts an array of notebook names in th
 **API Endpoint**: `POST /v1alpha1/projects/{project}/locations/{location}/notebooks:batchDelete`
 
 **Request Format**:
+
 ```json
 {
   "names": [
@@ -26,12 +28,14 @@ The `batchDeleteNotebooks` API endpoint accepts an array of notebook names in th
 ```
 
 **Behavior**:
+
 - ✓ Works: Array with 1 element
 - ✗ Fails: Array with 2+ elements (HTTP 400)
 
 ### Workaround
 
 nblm-rs implements sequential deletion:
+
 ```rust
 pub async fn delete_notebooks(&self, notebook_names: Vec<String>) -> Result<...> {
     for name in &notebook_names {
@@ -90,6 +94,7 @@ API documentation mentions configuration fields (`languageCode`, `sourceIds`, `e
 ### Behavior
 
 **Documented (but rejected)**:
+
 ```json
 {
   "languageCode": "en",
@@ -99,6 +104,7 @@ API documentation mentions configuration fields (`languageCode`, `sourceIds`, `e
 ```
 
 **Actually accepted**:
+
 ```json
 {}
 ```

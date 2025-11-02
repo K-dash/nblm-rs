@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: make-all
+        name: Run 'cargo make all'
+        entry: cargo make all
+        language: system
+        always_run: true
+        pass_filenames: false

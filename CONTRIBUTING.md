@@ -38,19 +38,9 @@ git clone https://github.com/yourusername/nblm-rs.git
 cd nblm-rs
 ```
 
-### 2. Make Your Changes
+### 2. Initial Setup
 
-Create a new branch for your changes:
-
-```bash
-git checkout -b feature/your-feature-name
-```
-
-### 3. Run All Checks
-
-Before submitting a pull request, ensure that all checks pass:
-
-#### Rust Projects
+After cloning the repository, run all checks to set up the development environment:
 
 ```bash
 # Using cargo-make
@@ -60,35 +50,56 @@ cargo make all
 makers all
 ```
 
-This command runs:
+This command will:
 
-- `cargo fmt --all` - Format code
-- `cargo clippy --all-targets --all-features -- -D warnings` - Lint code (zero warnings required)
-- `cargo test --all` - Run all tests
+- Install and set up [prek](https://github.com/j178/prek) (pre-commit hook manager)
+- Run Rust formatting, linting, and tests
+- Run Python formatting, linting, type checking, and build
+
+> [!IMPORTANT]
+> Run `makers all` or `cargo make all` after cloning to ensure your environment is properly configured.
+
+### 3. Make Your Changes
+
+Create a new branch for your changes:
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### 4. Run All Checks
+
+Before submitting a pull request, ensure that all checks pass:
+
+```bash
+# Using cargo-make
+cargo make all
+
+# Or using makers
+makers all
+```
+
+This command automatically:
+
+- Installs and sets up prek (if not already installed)
+- Runs Rust formatting (`cargo fmt --all`)
+- Runs Rust linting (`cargo clippy --all-targets --all-features -- -D warnings`)
+- Runs Rust tests (`cargo test --all`)
+- Runs Python formatting (`ruff format`)
+- Runs Python linting (`ruff check --fix`)
+- Runs Python type checking (`mypy`)
+- Builds Python package (`maturin develop`)
 
 > [!IMPORTANT]
 > All pull requests must pass `cargo make all` or `makers all` before being merged.
 
-#### Python Package
+#### Pre-commit Hooks
 
-```bash
-# Run all Python checks
-cargo make py-all    # or: makers py-all
+This project uses [prek](https://github.com/j178/prek) for pre-commit hooks. When you run `makers all`, prek is automatically installed and configured. The pre-commit hooks will run `cargo make all` and `cargo make py-all` automatically before each commit.
 
-# Build Python package
-cargo make py-build  # or: makers py-build
-```
+> [!IMPORTANT] > **Pre-commit hooks must pass before pushing.** If a hook fails, fix the issues and try committing again. You can manually run hooks with `prek run --all-files` to test before committing.
 
-The `py-all` command runs:
-
-- `ruff format` - Format Python code
-- `ruff check --fix` - Lint and auto-fix issues
-- `mypy` - Type checking
-
-> [!IMPORTANT]
-> If you modify Python bindings (`crates/nblm-python/`) or Python code (`python/`), ensure all Python checks pass.
-
-### 4. Additional Commands
+### 5. Additional Commands
 
 #### Rust Commands
 
@@ -196,12 +207,15 @@ Example:
 ## Pull Request Process
 
 1. Ensure all relevant checks pass:
-   - Rust: `cargo make all` or `makers all`
-   - Python (if modified): `cargo make py-all` and `cargo make py-build`
-2. Update documentation if you've added new features
-3. Add or update tests for your changes
-4. Write clear commit messages
-5. Reference any related issues in your PR description
+   - Run `cargo make all` or `makers all` (this includes all Rust and Python checks)
+2. **Pre-commit hooks must pass** - The pre-commit hooks (managed by prek) will automatically run `cargo make all` and `cargo make py-all` before each commit. Make sure all hooks pass before pushing.
+3. Update documentation if you've added new features
+4. Add or update tests for your changes
+5. Write clear commit messages
+6. Reference any related issues in your PR description
+
+> [!NOTE]
+> If you need to manually run pre-commit hooks before committing, use `prek run --all-files`. To skip hooks temporarily (not recommended), use `git commit --no-verify`, but ensure all checks pass before pushing.
 
 ## Project Structure
 

@@ -175,9 +175,6 @@ For detailed feature status and limitations, see the [Features documentation](ht
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
-> [!IMPORTANT]
-> All pull requests must pass `cargo make all` (Rust) and `cargo make py-all` (Python) before being merged.
-
 ## License
 
 MIT

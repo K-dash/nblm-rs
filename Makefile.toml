@@ -174,3 +174,18 @@ args = [
     "-c",
     "uv venv --clear && uv sync --frozen && touch .venv/timestamp.txt",
 ]
+
+# ------------------------- Docs -------------------------
+[tasks.docs-deploy]
+description = "Deploy documentation to GitHub Pages (manual emergency deployment)"
+command = "uv"
+args = [
+    "run",
+    "--project", "docs",
+    "mkdocs",
+    "gh-deploy",
+    "--config-file", "mkdocs.yml",
+    "--remote-name", "origin",
+    "--remote-branch", "gh-pages",
+    "--force"
+]

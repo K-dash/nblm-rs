@@ -7,6 +7,21 @@ UV_RUN_ARGS = "run;--project;python;--extra;dev;--directory;python"
 
 [tasks.before-build]
 
+# ------------------------- Pre-commit -------------------------
+[tasks.install]
+description = "Install prek and set up git hooks"
+dependencies = ["install-prek", "setup-prek"]
+
+[tasks.install-prek]
+description = "Install prek using cargo install"
+command = "cargo"
+args = ["install", "--locked", "--git", "https://github.com/j178/prek"]
+
+[tasks.setup-prek]
+description = "Set up prek git hooks"
+command = "prek"
+args = ["install"]
+
 [tasks.default]
 description = "Default task"
 dependencies = ["fmt", "lint", "check"]
@@ -65,11 +80,18 @@ args = ["fetch"]
 description = "Generate coverage report using cargo-llvm-cov"
 dependencies = ["before-build"]
 command = "cargo"
-args = ["llvm-cov", "--workspace", "--all-features", "--exclude", "nblm-python", "--open"]
+args = [
+    "llvm-cov",
+    "--workspace",
+    "--all-features",
+    "--exclude",
+    "nblm-python",
+    "--open",
+]
 
 [tasks.all]
 description = "Run fmt, lint, and test together"
-dependencies = ["fmt", "lint", "test"]
+dependencies = ["install","fmt", "lint", "test", "py-all"]
 
 # ------------------------- CI -------------------------
 [tasks.ci]
@@ -165,7 +187,12 @@ dependencies = ["py-fmt", "py-lint-fix", "py-type", "py-build"]
 
 [tasks.py-setup]
 private = true
-condition = { files_modified = { input = ["python/pyproject.toml", "python/uv.lock"], output = ["python/.venv/timestamp.txt"] } }
+condition = { files_modified = { input = [
+    "python/pyproject.toml",
+    "python/uv.lock",
+], output = [
+    "python/.venv/timestamp.txt",
+] } }
 cwd = "python"
 command = "bash"
 args = [
@@ -181,11 +208,15 @@ description = "Deploy documentation to GitHub Pages (manual emergency deployment
 command = "uv"
 args = [
     "run",
-    "--project", "docs",
+    "--project",
+    "docs",
     "mkdocs",
     "gh-deploy",
-    "--config-file", "mkdocs.yml",
-    "--remote-name", "origin",
-    "--remote-branch", "gh-pages",
-    "--force"
+    "--config-file",
+    "mkdocs.yml",
+    "--remote-name",
+    "origin",
+    "--remote-branch",
+    "gh-pages",
+    "--force",
 ]

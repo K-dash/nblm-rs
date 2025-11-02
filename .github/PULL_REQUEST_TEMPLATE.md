@@ -4,8 +4,7 @@
 
 ## Testing
 
-- [ ] `makers all`
-- [ ] `makers py-all`
+- [ ] Pre-commit hooks passed (automatically checked on commit)
 
 <!-- List any additional manual checks or scripts you ran. -->
 

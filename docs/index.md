@@ -13,6 +13,44 @@ Complete documentation for the NotebookLM Enterprise API client (CLI & Python SD
 - [Authentication](getting-started/authentication.md) - Set up authentication with gcloud
 - [Configuration](getting-started/configuration.md) - Project numbers, locations, environment variables
 
+## Features
+
+!!! note "API Status"
+    The NotebookLM API is currently in **alpha**. Some features may not work as documented due to API limitations. See [API Limitations](api/limitations.md) for details.
+
+### Notebooks
+
+| Feature               | CLI | Python | Status  | Notes                                |
+| --------------------- | --- | ------ | ------- | ------------------------------------ |
+| Create notebook       | ✅  | ✅     | Working |                                      |
+| List recent notebooks | ✅  | ✅     | Working | Pagination not implemented by API    |
+| Delete notebook(s)    | ✅  | ✅     | Working | Sequential deletion (API limitation) |
+
+### Sources
+
+| Feature             | CLI | Python | Status  | Notes                       |
+| ------------------- | --- | ------ | ------- | --------------------------- |
+| Add web URL         | ✅  | ✅     | Working |                             |
+| Add text content    | ✅  | ✅     | Working |                             |
+| Add video (YouTube) | ✅  | ✅     | Working | Uses `youtubeUrl` field     |
+| Add Google Drive    | ✅  | ✅     | Working | Requires Drive-enabled auth |
+| Upload file         | ✅  | ✅     | Working |                             |
+| Delete source(s)    | ✅  | ✅     | Working |                             |
+| Get source by ID    | ✅  | ✅     | Working |                             |
+
+### Audio Overview
+
+| Feature               | CLI | Python | Status  | Notes                       |
+| --------------------- | --- | ------ | ------- | --------------------------- |
+| Create audio overview | ✅  | ✅     | Working | Config fields not supported |
+| Delete audio overview | ✅  | ✅     | Working |                             |
+
+### Sharing
+
+| Feature        | CLI | Python | Status   | Notes                     |
+| -------------- | --- | ------ | -------- | ------------------------- |
+| Share notebook | ✅  | ❌     | Untested | Requires additional users |
+
 ## CLI Reference
 
 Complete command-line interface documentation:

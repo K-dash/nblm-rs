@@ -130,11 +130,10 @@ nblm --json notebooks recent | jq '.notebooks[].notebookId'
 nblm --json notebooks recent | jq '.notebooks[0]'
 ```
 
-### Notes
-
-- Notebooks are sorted by most recently updated first
-- The `--page-size` option is accepted but pagination is not implemented by the API (as of 2025-10-25)
-- All notebooks are returned regardless of `--page-size` value
+!!! note "API Limitations"
+    - Notebooks are sorted by most recently updated first
+    - The `--page-size` option is accepted but pagination is not implemented by the API (as of 2025-10-25)
+    - All notebooks are returned regardless of `--page-size` value
 
 ## delete
 

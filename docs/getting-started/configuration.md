@@ -31,9 +31,8 @@ The NotebookLM API supports the following multi-region locations:
 | `us`     | United States only            | For compliance requirements |
 | `eu`     | European Union only           | For compliance requirements |
 
-### Important
-
-`location` and `endpoint_location` must **always be set to the same value**.
+!!! important "Location consistency"
+    `location` and `endpoint_location` must always be set to the same value. The API treats them as a pair, and mismatched values result in `INVALID_ARGUMENT` errors.
 
 ## Environment Variables
 
@@ -48,7 +47,8 @@ Set `NBLM_DEBUG_HTTP=1` to emit full HTTP response bodies for every API call. Th
 export NBLM_DEBUG_HTTP=1
 ```
 
-> ⚠️ The full response payload can contain sensitive information. Only enable this in trusted environments.
+!!! warning "Sensitive data"
+    The full response payload can contain sensitive information. Only enable debug logging in trusted environments and disable it once you finish troubleshooting.
 
 ### CLI
 
@@ -144,6 +144,9 @@ client = NblmClient(
 response = client.list_recently_viewed()
 print(f"Found {len(response.notebooks)} notebooks")
 ```
+
+!!! tip "Validate with doctor"
+    Once your configuration variables are in place, run [`nblm doctor`](../cli/doctor.md) to verify authentication, project bindings, and location settings before moving to production.
 
 ## Next Steps
 

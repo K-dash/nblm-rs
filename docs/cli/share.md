@@ -2,11 +2,14 @@
 
 Share notebooks with other users.
 
-> **Warning**: This command has **not been tested** in a real environment as it requires multiple Google accounts. The documentation is based on the API specification and should work as described, but functionality is not guaranteed. Use at your own risk.
->
-> **Official Documentation**: For detailed information about sharing permissions and requirements, see [Share notebooks - Google Cloud](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/share-notebooks).
->
-> **Contributions Welcome**: If you have access to a multi-user environment and can test this functionality, we would greatly appreciate your contributions. Please see [CONTRIBUTING.md](../../CONTRIBUTING.md) for how to contribute test results or improvements.
+!!! warning "Testing Status"
+    This command has **not been tested** in a real environment as it requires multiple Google accounts. The documentation is based on the API specification and should work as described, but functionality is not guaranteed. Use at your own risk.
+
+!!! info "Official Documentation"
+    For detailed information about sharing permissions and requirements, see [Share notebooks - Google Cloud](https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/share-notebooks).
+
+!!! tip "Contributions Welcome"
+    If you have access to a multi-user environment and can test this functionality, we would greatly appreciate your contributions. Please see [CONTRIBUTING.md](https://github.com/K-dash/nblm-rs/blob/main/CONTRIBUTING.md) for how to contribute test results or improvements.
 
 ## Available Commands
 
@@ -97,18 +100,15 @@ Output:
 }
 ```
 
-### Notes
+!!! note "Sharing Requirements"
+    - Users must have Google accounts with the specified email addresses
+    - Users will receive a notification when a notebook is shared with them
+    - The `owner` role allows users to delete the notebook and manage sharing
+    - Use `not-shared` role to revoke access
 
-- Users must have Google accounts with the specified email addresses
-- Users will receive a notification when a notebook is shared with them
-- The `owner` role allows users to delete the notebook and manage sharing
-- Use `not-shared` role to revoke access
-
-
-## Limitations
-
-- Cannot list current sharing settings via CLI (use NotebookLM web UI)
-- Cannot retrieve audit logs of sharing actions via CLI
+!!! warning "Current Limitations"
+    - Cannot list current sharing settings via CLI (use NotebookLM web UI)
+    - Cannot retrieve audit logs of sharing actions via CLI
 
 ## Next Steps
 

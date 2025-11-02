@@ -9,61 +9,71 @@ Install the NotebookLM Enterprise API client as a CLI tool or Python SDK.
 
 ## CLI Installation
 
-### From crates.io
+=== "Homebrew (macOS)"
 
-```bash
-cargo install nblm-cli
-```
+    ```bash
+    brew tap k-dash/nblm https://github.com/K-dash/homebrew-nblm
+    brew install k-dash/nblm/nblm
+    nblm --version
+    ```
 
-### From Source
+=== "From crates.io"
 
-```bash
-git clone https://github.com/K-dash/nblm-rs.git
-cd nblm-rs
-cargo build --release
-```
+    ```bash
+    cargo install nblm-cli
+    ```
 
-The binary will be available at `target/release/nblm`.
+=== "From Source"
 
-**Optional**: Add to PATH
+    ```bash
+    git clone https://github.com/K-dash/nblm-rs.git
+    cd nblm-rs
+    cargo build --release
+    ```
 
-```bash
-# Linux/macOS
-sudo cp target/release/nblm /usr/local/bin/
+    The binary will be available at `target/release/nblm`.
 
-# Or add to your shell profile
-export PATH="$PATH:/path/to/nblm-rs/target/release"
-```
+    **Optional**: Add to PATH
+
+    ```bash
+    # Linux/macOS
+    sudo cp target/release/nblm /usr/local/bin/
+
+    # Or add to your shell profile
+    export PATH="$PATH:/path/to/nblm-rs/target/release"
+    ```
 
 ### Verify Installation
 
 ```bash
 nblm --version
+
+# nblm 0.2.1
 ```
 
 ## Python SDK Installation
 
-### With pip
+=== "With pip"
 
-```bash
-pip install nblm
-```
+    ```bash
+    pip install nblm
+    ```
 
-### With uv
+=== "With uv"
 
-```bash
-uv add nblm
-```
+    ```bash
+    uv add nblm
+    ```
 
-### From Source
+=== "From Source"
 
-```bash
-git clone https://github.com/K-dash/nblm-rs.git
-cd nblm-rs
-cd python
-pip install maturin
-maturin develop
-```
+    ```bash
+    git clone https://github.com/K-dash/nblm-rs.git
+    cd nblm-rs
+    cd python
+    pip install maturin
+    maturin develop
+    ```
 
 ### Verify Installation
 
@@ -74,15 +84,16 @@ print(nblm.__version__)
 
 ## Platform Support
 
-| Platform              | CLI           | Python SDK    |
-| --------------------- | ------------- | ------------- |
-| Linux (x86_64)        | Supported     | Supported     |
-| Linux (aarch64)       | Supported     | Supported     |
-| macOS (Intel)         | Supported     | Supported     |
-| macOS (Apple Silicon) | Supported     | Supported     |
-| Windows               | Not Supported | Not Supported |
+| Platform                 | CLI              | Python SDK       |
+| ------------------------ | ---------------- | ---------------- |
+| 🐧 Linux (x86_64)        | ✅ Supported     | ✅ Supported     |
+| 🐧 Linux (aarch64)       | ✅ Supported     | ✅ Supported     |
+| 🍎 macOS (Intel)         | ✅ Supported     | ✅ Supported     |
+| 🍎 macOS (Apple Silicon) | ✅ Supported     | ✅ Supported     |
+| 🪟 Windows               | ❌ Not Supported | ❌ Not Supported |
 
-> **Note**: Windows support is not available. Consider using WSL (Windows Subsystem for Linux) as a workaround.
+!!! note "Windows Support"
+    Windows support is not available. Consider using WSL (Windows Subsystem for Linux) as a workaround.
 
 ## Next Steps
 

@@ -150,7 +150,8 @@ print(f"\nSummary: {len(created)} succeeded, {len(failed)} failed")
 
 ## Audio Overview Status
 
-> **Important**: As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
+!!! important "Status Checking Limitation"
+    As of now, there is no API to retrieve audio overview status. You must check the NotebookLM web UI in your browser to see when audio generation is complete or if it has failed.
 
 ### Status Values
 
@@ -172,7 +173,8 @@ print("Check NotebookLM web UI for completion")
 print(f"URL: https://notebooklm.google.com/notebook/{notebook_id}")
 ```
 
-> **Note**: The API only returns `AUDIO_OVERVIEW_STATUS_IN_PROGRESS` upon creation. Status values like `AUDIO_OVERVIEW_STATUS_COMPLETED` or `AUDIO_OVERVIEW_STATUS_FAILED` cannot be obtained via the API and must be checked in the browser.
+!!! note "Status Values"
+    The API only returns `AUDIO_OVERVIEW_STATUS_IN_PROGRESS` upon creation. Status values like `AUDIO_OVERVIEW_STATUS_COMPLETED` or `AUDIO_OVERVIEW_STATUS_FAILED` cannot be obtained via the API and must be checked in the browser.
 
 ## Error Handling
 

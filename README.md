@@ -19,7 +19,6 @@
   [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
   [![mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy-lang.org/)
   
-
 </div>
 
 > [!IMPORTANT]
@@ -34,18 +33,22 @@ While you can interact with the API using simple `curl` commands, this approach 
 ### Challenges with Direct API Calls
 
 - **Authentication complexity**
+
   - **Problem**: Managing OAuth tokens, handling token refresh, and ensuring secure credential storage
   - **Solution**: Seamless `gcloud` CLI integration with automatic token caching and refresh
 
 - **Manual request construction**
+
   - **Problem**: Writing JSON payloads by hand, managing resource names, and handling API versioning
   - **Solution**: Type-safe CLI flags and Python SDK with intelligent defaults and validation
 
 - **Error handling**
+
   - **Problem**: Cryptic HTTP error codes without context or recovery suggestions
   - **Solution**: Clear, actionable error messages with automatic retries for transient failures
 
 - **Repeated operations**
+
   - **Problem**: Writing boilerplate loops for fetch/add/delete sequences
   - **Solution**: Higher-level client helpers and CLI flags that wrap single API calls (with retries built in) so scripts stay concise
 
@@ -64,40 +67,19 @@ This project provides production-ready tools that make the NotebookLM API access
 
 ## Installation
 
-### macOS (Homebrew)
+### CLI
 
 ```bash
+# macOS
 brew tap k-dash/nblm https://github.com/K-dash/homebrew-nblm
 brew install k-dash/nblm/nblm
-nblm --version
+
+# Linux (prebuilt binaries)
+# Download from Releases page: https://github.com/K-dash/nblm-rs/releases
+
+# From source
+cargo install nblm-cli
 ```
-
-### Linux (Prebuilt binaries)
-
-Download the tarball for your architecture from the [Releases](https://github.com/K-dash/nblm-rs/releases) page, then extract and install it. Example for x86_64:
-
-```bash
-VERSION=x.x.x
-ARCH=linux-x86_64   # or linux-aarch64
-curl -LO https://github.com/K-dash/nblm-rs/releases/download/v${VERSION}/nblm-${ARCH}.tar.gz
-tar -xzf nblm-${ARCH}.tar.gz
-chmod +x nblm
-sudo mv nblm /usr/local/bin/
-nblm --version
-```
-
-> Optional: verify the download with `shasum -a 256 nblm-${ARCH}.tar.gz` and compare with the digest listed on the release page.
-
-### Build from source
-
-```bash
-git clone https://github.com/K-dash/nblm-rs.git
-cd nblm-rs
-cargo build --release -p nblm-cli
-./target/release/nblm --version
-```
-
-You can also install the CLI locally with `cargo install --path crates/nblm-cli`.
 
 ### Python SDK
 
@@ -109,7 +91,7 @@ uv add nblm
 
 > Prerequisite: a Google Cloud project with the NotebookLM Enterprise API enabled and either `gcloud auth login` or an OAuth token ready for `NBLM_ACCESS_TOKEN`.
 
-For detailed setup and troubleshooting, see the documentation in [docs/](docs/).
+For detailed installation instructions and troubleshooting, see the [Installation Guide](https://k-dash.github.io/nblm-rs/getting-started/installation/).
 
 ## Quick Start
 
@@ -155,66 +137,34 @@ response = client.add_sources(
 )
 ```
 
-## Features (Verified as of 2025-10-25)
+## Features
 
 > [!NOTE]
-> The NotebookLM API is currently in alpha. Some features may not work as documented due to API limitations. See [Known API Issues](#known-api-issues) for details.
+> The NotebookLM API is currently in **alpha**. Some features may not work as documented due to API limitations. See the [complete feature list](https://k-dash.github.io/nblm-rs/#features) in the documentation.
 
-### Notebooks
+nblm-rs supports the following NotebookLM API operations:
 
-| Feature               | CLI | Python | Status  | Notes                                |
-| --------------------- | --- | ------ | ------- | ------------------------------------ |
-| Create notebook       | ◯   | ◯      | Working |                                      |
-| List recent notebooks | ◯   | ◯      | Working | Pagination not implemented by API    |
-| Delete notebook(s)    | ◯   | ◯      | Working | Sequential deletion (API limitation) |
+- **Notebooks**: Create, list, and delete notebooks
+- **Sources**: Add web URLs, text, videos (YouTube), Google Drive files, and upload files
+- **Audio Overview**: Create and delete audio overviews
+- **Sharing**: Share notebooks with users (CLI only, untested)
 
-### Sources
-
-| Feature             | CLI | Python | Status      | Notes                   |
-| ------------------- | --- | ------ | ----------- | ----------------------- |
-| Add web URL         | ◯   | ◯      | Working     |                         |
-| Add text content    | ◯   | ◯      | Working     |                         |
-| Add video (YouTube) | ◯   | ◯      | Working     | Uses `youtubeUrl` field |
-| Add Google Drive    | ◯   | ◯      | Working     | Requires Drive-enabled auth |
-| Upload file         | ◯   | ◯      | Working     |                         |
-| Delete source(s)    | ◯   | ◯      | Working     |                         |
-| Get source by ID    | ◯   | ◯      | Working     |                         |
-
-### Audio Overview
-
-| Feature               | CLI | Python | Status  | Notes                       |
-| --------------------- | --- | ------ | ------- | --------------------------- |
-| Create audio overview | ◯   | ◯      | Working | Config fields not supported |
-| Delete audio overview | ◯   | ◯      | Working |                             |
-
-### Sharing
-
-| Feature        | CLI | Python | Status   | Notes                     |
-| -------------- | --- | ------ | -------- | ------------------------- |
-| Share notebook | ◯   | ✗      | Untested | Requires additional users |
-
-
-## Platform Support
-
-| Platform | CLI | Python SDK |
-|----------|-----|------------|
-| Linux    | [![Linux CLI supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) | [![Linux Python SDK supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) |
-| macOS    | [![macOS CLI supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) | [![macOS Python SDK supported](https://img.shields.io/badge/support-%E2%9C%85-green)](https://shields.io) |
-| Windows  | [![Windows CLI not supported](https://img.shields.io/badge/support-%E2%9D%8C-red)](https://shields.io) | [![Windows Python SDK not supported](https://img.shields.io/badge/support-%E2%9D%8C-red)](https://shields.io) |
-
+For detailed feature status and limitations, see the [Features documentation](https://k-dash.github.io/nblm-rs/#features).
 
 ## Documentation
 
 **Complete guides and API references:**
 
-- [Getting Started](docs/getting-started/installation.md) - Installation, authentication, configuration
-- [CLI Reference](docs/cli/README.md) - All commands, options, and examples
-- [Python SDK Reference](docs/python/README.md) - API reference and usage patterns
+📖 **[Full Documentation](https://k-dash.github.io/nblm-rs/)** - Complete guides, API references, and examples
+
+- [Getting Started](https://k-dash.github.io/nblm-rs/getting-started/installation/) - Installation, authentication, configuration
+- [CLI Reference](https://k-dash.github.io/nblm-rs/cli/) - All commands, options, and examples
+- [Python SDK Reference](https://k-dash.github.io/nblm-rs/python/) - API reference and usage patterns
 
 ## Known API Issues
 
 > [!NOTE]
-> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](docs/api/limitations.md) for details.
+> The NotebookLM API is currently in **alpha** and has several known limitations. See [API Limitations](https://k-dash.github.io/nblm-rs/api/limitations/) for details.
 
 ## Related Resources
 

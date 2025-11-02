@@ -133,6 +133,7 @@ fn init_logging() {
 mod tests {
     use super::*;
     use crate::args::ProfileArg;
+    use rstest::rstest;
     use serial_test::serial;
 
     // Test helpers
@@ -210,33 +211,21 @@ mod tests {
     }
 
     // Tests for ApiProfile::requires_experimental_flag()
+    #[rstest]
+    #[case::personal(ApiProfile::Personal, true)]
+    #[case::workspace(ApiProfile::Workspace, true)]
+    #[case::enterprise(ApiProfile::Enterprise, false)]
     #[test]
     #[serial]
-    fn experimental_profiles_require_flag_personal() {
+    fn profile_experimental_flag_requirement(
+        #[case] profile: ApiProfile,
+        #[case] requires_flag: bool,
+    ) {
         let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
         std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
 
-        assert!(ApiProfile::Personal.requires_experimental_flag());
+        assert_eq!(profile.requires_experimental_flag(), requires_flag);
         assert!(!profile_experiment_enabled());
-    }
-
-    #[test]
-    #[serial]
-    fn experimental_profiles_require_flag_workspace() {
-        let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
-        std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
-
-        assert!(ApiProfile::Workspace.requires_experimental_flag());
-        assert!(!profile_experiment_enabled());
-    }
-
-    #[test]
-    #[serial]
-    fn enterprise_profile_does_not_require_flag() {
-        let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
-        std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
-
-        assert!(!ApiProfile::Enterprise.requires_experimental_flag());
     }
 
     // Tests for resolve_profile_params() - Enterprise profile

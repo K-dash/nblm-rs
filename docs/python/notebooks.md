@@ -77,11 +77,10 @@ for notebook_data in response.notebooks:
     pass
 ```
 
-### Notes
-
-- Notebooks are sorted by most recently updated first
-- The `page_size` parameter is accepted but **pagination is not implemented by the API** (as of 2025-10-25)
-- All notebooks are returned regardless of the `page_size` value
+!!! note "API Limitations"
+    - Notebooks are sorted by most recently updated first
+    - The `page_size` parameter is accepted but **pagination is not implemented by the API** (as of 2025-10-25)
+    - All notebooks are returned regardless of the `page_size` value
 
 ## Deleting Notebooks
 
@@ -114,12 +113,11 @@ notebook = client.create_notebook(title="Temporary Notebook")
 client.delete_notebooks([notebook.name])
 ```
 
-### Notes
-
-- **Important**: Despite the API being named "batchDelete", it only accepts one notebook at a time (as of 2025-10-25)
-- The SDK handles this limitation by calling the API sequentially for each notebook
-- Deletion is permanent and cannot be undone
-- All sources and content within the notebook are also deleted
+!!! warning "Deletion Limitations"
+    - **Important**: Despite the API being named "batchDelete", it only accepts one notebook at a time (as of 2025-10-25)
+    - The SDK handles this limitation by calling the API sequentially for each notebook
+    - Deletion is permanent and cannot be undone
+    - All sources and content within the notebook are also deleted
 
 ## Common Patterns
 

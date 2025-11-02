@@ -7,13 +7,14 @@ on:
     paths-ignore:
       - README.md
       - CONTRIBUTING.md
+      - docs/**
   pull_request:
     branches:
       - main
     paths-ignore:
       - README.md
       - CONTRIBUTING.md
-
+      - docs/**
 env:
   CARGO_TERM_COLOR: always
 

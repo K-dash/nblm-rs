@@ -45,6 +45,8 @@ nblm --auth gcloud \
   --endpoint-location global \
   notebooks recent
 
+```
+
 ### Python Usage
 
 ```python
@@ -73,16 +75,22 @@ token_provider = GcloudTokenProvider("/custom/path/to/gcloud")
 
 ### Pros & Cons
 
-**Pros**:
-- ✓ Easy setup for developers
-- ✓ Uses existing gcloud credentials
-- ✓ Full API access (read + write)
-- ✓ Automatic token refresh
+<div class="grid cards" markdown>
 
-**Cons**:
-- ✗ Requires gcloud CLI installed
-- ✗ Interactive login needed initially
-- ✗ Not suitable for unattended automation
+-   :material-thumb-up-outline: **Pros**
+
+    - Easy setup for developers
+    - Uses existing gcloud credentials
+    - Full API access (read + write)
+    - Automatic token refresh
+
+-   :material-thumb-down-outline: **Cons**
+
+    - Requires gcloud CLI installed
+    - Interactive login needed initially
+    - Not suitable for unattended automation
+
+</div>
 
 ## Method 2: Environment Variable
 
@@ -98,7 +106,8 @@ export NBLM_ACCESS_TOKEN=$(gcloud auth print-access-token)
 export NBLM_ACCESS_TOKEN="ya29...."
 ```
 
-> **Note**: Tokens expire after 1 hour. You'll need to refresh them periodically.
+!!! note "Token lifetime"
+    Tokens acquired via `gcloud auth print-access-token` — and any environment variables that reuse them — expire after roughly one hour. Refresh them regularly and, for unattended workloads, favor tokens issued from a dedicated service account or Workload Identity Federation with automatic rotation.
 
 ### CLI Usage
 
@@ -134,20 +143,27 @@ export MY_CUSTOM_TOKEN=$(gcloud auth print-access-token)
 token_provider = EnvTokenProvider("MY_CUSTOM_TOKEN")
 ```
 
-> **Drive-specific requirement:** If you intend to ingest Google Drive sources, the token must include the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope. The CLI and SDK validate this scope before uploading Drive documents.
+!!! note "Drive-specific requirement"
+    If you intend to ingest Google Drive sources, the token must include the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope. The CLI and SDK validate this scope before uploading Drive documents.
 
 ### Pros & Cons
 
-**Pros**:
-- ✓ No gcloud CLI required at runtime
-- ✓ Works in containerized environments
-- ✓ Suitable for CI/CD pipelines
-- ✓ Full API access (read + write)
+<div class="grid cards" markdown>
 
-**Cons**:
-- ✗ Tokens expire after 1 hour
-- ✗ Manual token refresh needed
-- ✗ Token must be obtained from authenticated source
+-   :material-thumb-up-outline: **Pros**
+
+    - No gcloud CLI required at runtime
+    - Works in containerized environments
+    - Suitable for CI/CD pipelines
+    - Full API access (read + write)
+
+-   :material-thumb-down-outline: **Cons**
+
+    - Tokens expire after 1 hour
+    - Manual token refresh needed
+    - Token must be obtained from authenticated source
+
+</div>
 
 ## Configuration
 
@@ -174,7 +190,8 @@ NotebookLM API supports these multi-region locations:
 - `us` - United States (for compliance requirements)
 - `eu` - European Union (for compliance requirements)
 
-> **Important**: `NBLM_LOCATION` and `NBLM_ENDPOINT_LOCATION` must be set to the same value.
+!!! important "Location consistency"
+    `NBLM_LOCATION` and `NBLM_ENDPOINT_LOCATION` must always be set to the same value.
 
 ## Troubleshooting
 

@@ -1,0 +1,74 @@
+site_name: NBLM Docs
+site_description: Official documentation for the NotebookLM Enterprise client
+site_url: https://k-dash.github.io/nblm-rs/
+repo_url: https://github.com/K-dash/nblm-rs
+repo_name: K-dash/nblm-rs
+docs_dir: docs
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/notebook
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - content.code.copy
+    - navigation.expand
+  palette:
+    - scheme: slate
+      primary: brown
+      accent: yellow
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+        default: true
+    - scheme: default
+      primary: brown
+      accent: yellow
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Authentication: getting-started/authentication.md
+      - Configuration: getting-started/configuration.md
+  - CLI:
+      - Overview: cli/README.md
+      - Notebooks: cli/notebooks.md
+      - Sources: cli/sources.md
+      - Audio: cli/audio.md
+      - Share: cli/share.md
+      - Doctor: cli/doctor.md
+  - Python SDK:
+      - Overview: python/README.md
+      - Quickstart: python/quickstart.md
+      - API Reference: python/api-reference.md
+      - Source Management: python/sources.md
+      - Notebooks: python/notebooks.md
+      - Audio: python/audio.md
+      - Error Handling: python/error-handling.md
+  - Rust:
+      - Getting Started: rust/getting-started.md
+  - Guides:
+      - Troubleshooting: guides/troubleshooting.md
+  - API:
+      - Limitations: api/limitations.md

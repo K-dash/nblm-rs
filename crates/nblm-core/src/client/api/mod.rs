@@ -203,9 +203,16 @@ mod tests {
             .unwrap()
     }
 
+    #[rstest::rstest]
+    #[case::with_drive_scope("https://www.googleapis.com/auth/drive.file", true, 1)]
+    #[case::without_drive_scope("https://www.googleapis.com/auth/cloud-platform", false, 0)]
     #[tokio::test]
     #[serial]
-    async fn add_sources_validates_drive_scope() {
+    async fn add_sources_validates_drive_scope(
+        #[case] scope: &str,
+        #[case] should_succeed: bool,
+        #[case] api_call_count: u64,
+    ) {
         let server = MockServer::start().await;
         let tokeninfo_url = format!("{}/tokeninfo", server.uri());
         let _guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
@@ -215,7 +222,7 @@ mod tests {
             .and(path("/tokeninfo"))
             .and(query_param("access_token", "test-token"))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "scope": "https://www.googleapis.com/auth/drive.file"
+                "scope": scope
             })))
             .expect(1)
             .mount(&server)
@@ -229,7 +236,7 @@ mod tests {
                 "sources": [],
                 "errorCount": 0
             })))
-            .expect(1)
+            .expect(api_call_count)
             .mount(&server)
             .await;
 
@@ -246,65 +253,23 @@ mod tests {
             )
             .await;
 
-        assert!(
-            result.is_ok(),
-            "expected add_sources to succeed: {:?}",
-            result
-        );
-    }
-
-    #[tokio::test]
-    #[serial]
-    async fn add_sources_rejects_missing_drive_scope() {
-        let server = MockServer::start().await;
-        let tokeninfo_url = format!("{}/tokeninfo", server.uri());
-        let _guard = EnvGuard::new("NBLM_TOKENINFO_ENDPOINT");
-        std::env::set_var("NBLM_TOKENINFO_ENDPOINT", &tokeninfo_url);
-
-        Mock::given(method("GET"))
-            .and(path("/tokeninfo"))
-            .and(query_param("access_token", "test-token"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "scope": "https://www.googleapis.com/auth/cloud-platform"
-            })))
-            .expect(1)
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path(
-                "/v1alpha/projects/123/locations/global/notebooks/notebook-id/sources:batchCreate",
-            ))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "sources": [],
-                "errorCount": 0
-            })))
-            .expect(0)
-            .mount(&server)
-            .await;
-
-        let client = build_client(&format!("{}/v1alpha", server.uri())).await;
-
-        let err = client
-            .add_sources(
-                "notebook-id",
-                vec![UserContent::google_drive(
-                    "doc".to_string(),
-                    "application/pdf".to_string(),
-                    None,
-                )],
-            )
-            .await
-            .expect_err("expected add_sources to fail when drive scope is missing");
-
-        match err {
-            Error::TokenProvider(message) => {
-                assert!(
-                    message.contains("drive.file"),
-                    "unexpected message: {message}"
-                );
+        if should_succeed {
+            assert!(
+                result.is_ok(),
+                "expected add_sources to succeed: {:?}",
+                result
+            );
+        } else {
+            let err = result.expect_err("expected add_sources to fail when drive scope is missing");
+            match err {
+                Error::TokenProvider(message) => {
+                    assert!(
+                        message.contains("drive.file"),
+                        "unexpected message: {message}"
+                    );
+                }
+                other => panic!("expected TokenProvider error, got {other:?}"),
             }
-            other => panic!("expected TokenProvider error, got {other:?}"),
         }
     }
 

@@ -87,9 +87,11 @@ nblm sources add \
   --drive-name "Team Update Slides"
 ```
 
-> **Tip:** `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`). Ensure the authenticated account has view access to the file.
->
-> **Drive access checks:** When you add Drive sources, nblm validates that the token includes the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope and that the authenticated account can open the document. If either check fails, the upload is aborted with an error instead of creating placeholder metadata.
+!!! tip "Google Drive File ID"
+    `FILE_ID` can be extracted from the Drive URL at `/d/<ID>/` (e.g., `https://drive.google.com/file/d/<ID>/xxx`). Ensure the authenticated account has view access to the file.
+
+!!! info "Drive Access Validation"
+    When you add Drive sources, nblm validates that the token includes the `https://www.googleapis.com/auth/drive.file` (or broader `drive`) scope and that the authenticated account can open the document. If either check fails, the upload is aborted with an error instead of creating placeholder metadata.
 
 **JSON output:**
 
@@ -113,13 +115,12 @@ Output:
 }
 ```
 
-### Notes
-
-- Web URLs are fetched and indexed automatically
-- Text content must not be empty
-- Video URLs currently only support YouTube (`youtubeUrl` field)
-- Google Drive sources require `gcloud auth login --enable-gdrive-access` and the authenticated account must have access to the document
-- The `--web-name` and `--text-name` options are optional; if not provided, defaults are used
+!!! note "Source Requirements"
+    - Web URLs are fetched and indexed automatically
+    - Text content must not be empty
+    - Video URLs currently only support YouTube (`youtubeUrl` field)
+    - Google Drive sources require `gcloud auth login --enable-gdrive-access` and the authenticated account must have access to the document
+    - The `--web-name` and `--text-name` options are optional; if not provided, defaults are used
 
 ## upload
 
@@ -184,13 +185,12 @@ Output:
 }
 ```
 
-### Notes
-
-- Content type is auto-detected from file extension if not specified
-- Supported file types include: PDF, TXT, DOCX, and more
-- File must exist and be readable
-- Empty files cannot be uploaded
-- Maximum file size may be limited by the API
+!!! note "Upload Requirements"
+    - Content type is auto-detected from file extension if not specified
+    - Supported file types include: PDF, TXT, DOCX, and more
+    - File must exist and be readable
+    - Empty files cannot be uploaded
+    - Maximum file size may be limited by the API
 
 ## get
 
@@ -243,11 +243,10 @@ Output:
 }
 ```
 
-### Notes
-
-- Use this to verify source details after adding
-- Useful for checking processing status
-- The `source-id` can be extracted from the full source name
+!!! tip "Source Details"
+    - Use this to verify source details after adding
+    - Useful for checking processing status
+    - The `source-id` can be extracted from the full source name
 
 ## delete
 
@@ -296,11 +295,10 @@ nblm sources delete \
   --source-name "$SOURCE_NAME"
 ```
 
-### Notes
-
-- Deletion is permanent and cannot be undone
-- The full source resource name is required (not just the source ID)
-- Multiple sources can be deleted in a single command
+!!! warning "Deletion is Permanent"
+    - Deletion is permanent and cannot be undone
+    - The full source resource name is required (not just the source ID)
+    - Multiple sources can be deleted in a single command
 
 ## Common Patterns
 

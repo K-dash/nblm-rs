@@ -43,3 +43,4 @@ default = []
 [dev-dependencies]
 wiremock = "0.6.5"
 serial_test = "3.2.0"
+rstest = "0.26.1"

@@ -2,8 +2,6 @@
 
 Python bindings for the NotebookLM Enterprise API, powered by Rust via PyO3.
 
-> **Warning**: This project is not affiliated with, sponsored, or endorsed by Google. nblm-rs is an independent, unofficial tool. It is provided "as is" without any warranty.
-
 ## Features
 
 - **Type-safe API**: Full type hints for IDE autocomplete and static analysis

@@ -2,6 +2,7 @@ mod _helpers;
 
 use predicates::function;
 use predicates::prelude::*;
+use rstest::rstest;
 use serde_json::json;
 use serial_test::serial;
 use tokio::runtime::Runtime;
@@ -63,14 +64,27 @@ fn doctor_all_env_vars_present() {
         ));
 }
 
+enum ProjectNumberValue {
+    Missing,
+    Empty,
+}
+
+#[rstest]
+#[case::missing(ProjectNumberValue::Missing)]
+#[case::empty(ProjectNumberValue::Empty)]
 #[test]
 #[serial]
-fn doctor_missing_required_env_var() {
+fn doctor_missing_or_empty_required_env_var(#[case] value: ProjectNumberValue) {
     let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
     let mut cmd = _helpers::cmd::nblm();
     let common = _helpers::cmd::CommonArgs::default();
     common.apply(&mut cmd);
-    cmd.env_remove("NBLM_PROJECT_NUMBER");
+
+    match value {
+        ProjectNumberValue::Missing => cmd.env_remove("NBLM_PROJECT_NUMBER"),
+        ProjectNumberValue::Empty => cmd.env("NBLM_PROJECT_NUMBER", ""),
+    };
+
     cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
@@ -145,30 +159,5 @@ fn doctor_all_env_vars_missing() {
         .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
         .stdout(predicate::str::contains(
             " [warn] NBLM_ACCESS_TOKEN missing",
-        ));
-}
-
-#[test]
-#[serial]
-fn doctor_empty_env_var_treated_as_missing() {
-    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
-    let mut cmd = _helpers::cmd::nblm();
-    let common = _helpers::cmd::CommonArgs::default();
-    common.apply(&mut cmd);
-    cmd.env("NBLM_PROJECT_NUMBER", ""); // Empty string should be treated as missing
-    cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
-    cmd.env("NBLM_LOCATION", "global");
-    cmd.env("NBLM_ACCESS_TOKEN", "test-token");
-    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
-    cmd.arg("doctor");
-
-    let assert = cmd.assert();
-    assert
-        .code(2) // Error exit code
-        .stdout(predicate::str::contains(
-            "[error] NBLM_PROJECT_NUMBER missing",
-        ))
-        .stdout(predicate::str::contains(
-            "Suggestion: export NBLM_PROJECT_NUMBER=<your-project-number>",
         ));
 }

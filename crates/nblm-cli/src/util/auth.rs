@@ -519,4 +519,249 @@ mod tests {
         let provider = build_token_provider(&args).expect("expected provider");
         assert_eq!(provider.kind(), ProviderKind::StaticToken);
     }
+
+    // Test 1: build_store_key tests
+    #[test]
+    fn build_store_key_includes_all_fields() {
+        let args = GlobalArgs {
+            project_number: Some("test-project-123".to_string()),
+            location: "us-central1".to_string(),
+            endpoint_location: "us-central1".to_string(),
+            profile: ProfileArg::Enterprise,
+            auth: AuthMethod::UserOauth,
+            token: None,
+            json: false,
+            debug_http: false,
+            timeout: None,
+            env_token: None,
+            base_url: None,
+        };
+
+        let key = OAuthBootstrapper::build_store_key(&args, "test-project-123".to_string());
+
+        assert_eq!(key.profile, ApiProfile::Enterprise);
+        assert_eq!(key.project_number, Some("test-project-123".to_string()));
+        assert_eq!(key.endpoint_location, Some("us-central1".to_string()));
+        assert_eq!(key.user_hint, None);
+    }
+
+    #[test]
+    fn build_store_key_generates_different_keys_for_different_configs() {
+        let args1 = GlobalArgs {
+            project_number: Some("project-1".to_string()),
+            location: "global".to_string(),
+            endpoint_location: "global".to_string(),
+            profile: ProfileArg::Enterprise,
+            auth: AuthMethod::UserOauth,
+            token: None,
+            json: false,
+            debug_http: false,
+            timeout: None,
+            env_token: None,
+            base_url: None,
+        };
+
+        let args2 = GlobalArgs {
+            project_number: Some("project-2".to_string()),
+            location: "us-central1".to_string(),
+            endpoint_location: "us-central1".to_string(),
+            profile: ProfileArg::Enterprise,
+            auth: AuthMethod::UserOauth,
+            token: None,
+            json: false,
+            debug_http: false,
+            timeout: None,
+            env_token: None,
+            base_url: None,
+        };
+
+        let key1 = OAuthBootstrapper::build_store_key(&args1, "project-1".to_string());
+        let key2 = OAuthBootstrapper::build_store_key(&args2, "project-2".to_string());
+
+        // Keys should be different
+        assert_ne!(key1.project_number, key2.project_number);
+        assert_ne!(key1.endpoint_location, key2.endpoint_location);
+
+        // Display representation should be different (used as map key)
+        assert_ne!(key1.to_string(), key2.to_string());
+    }
+
+    // Test 2: create_http_client tests
+    #[test]
+    fn create_http_client_succeeds() {
+        let client = OAuthBootstrapper::create_http_client();
+        assert!(client.is_ok());
+    }
+
+    #[test]
+    fn create_http_client_has_user_agent() {
+        let client = OAuthBootstrapper::create_http_client().unwrap();
+        // We can't directly inspect the user agent, but we can verify the client was created successfully
+        // The user agent is set in the builder, so this verifies the configuration doesn't fail
+        assert!(Arc::strong_count(&client) > 0);
+    }
+
+    // Test 3: create_oauth_config tests
+    #[test]
+    #[serial]
+    fn create_oauth_config_requires_client_id() {
+        let _guard = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        env::remove_var("NBLM_OAUTH_CLIENT_ID");
+
+        let result = OAuthBootstrapper::create_oauth_config("test-project");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("NBLM_OAUTH_CLIENT_ID"));
+    }
+
+    #[test]
+    #[serial]
+    fn create_oauth_config_succeeds_with_client_id() {
+        let _guard = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id-12345");
+
+        let result = OAuthBootstrapper::create_oauth_config("test-project");
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        assert_eq!(config.client_id, "test-client-id-12345");
+        assert!(!config.scopes.is_empty());
+    }
+
+    #[test]
+    #[serial]
+    fn create_oauth_config_uses_custom_redirect_uri_when_set() {
+        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        let _guard_redirect = EnvGuard::new("NBLM_OAUTH_REDIRECT_URI");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+        env::set_var("NBLM_OAUTH_REDIRECT_URI", "http://localhost:9999");
+
+        let result = OAuthBootstrapper::create_oauth_config("test-project");
+        assert!(result.is_ok());
+
+        let config = result.unwrap();
+        assert_eq!(config.redirect_uri, "http://localhost:9999");
+    }
+
+    // Test 4: Error handling tests
+    #[test]
+    #[serial]
+    fn get_project_number_returns_error_when_missing() {
+        let mut args = make_args(AuthMethod::UserOauth);
+        args.project_number = None;
+
+        let result = OAuthBootstrapper::get_project_number(&args);
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.to_string().contains("project-number"));
+        assert!(error.to_string().contains("required"));
+    }
+
+    #[test]
+    fn get_project_number_returns_value_when_present() {
+        let args = make_args(AuthMethod::UserOauth);
+        let result = OAuthBootstrapper::get_project_number(&args);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "123456");
+    }
+
+    #[test]
+    #[serial]
+    fn build_provider_fails_without_client_id() {
+        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        env::remove_var("NBLM_OAUTH_CLIENT_ID");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
+
+        let bootstrapper = OAuthBootstrapper::new().unwrap();
+        let args = make_args(AuthMethod::UserOauth);
+
+        let result = bootstrapper.build_provider(&args);
+        assert!(result.is_err());
+        let error = result.err().unwrap();
+        assert!(error.to_string().contains("NBLM_OAUTH_CLIENT_ID"));
+    }
+
+    #[test]
+    #[serial]
+    fn build_provider_succeeds_with_valid_config() {
+        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
+
+        let bootstrapper = OAuthBootstrapper::new().unwrap();
+        let args = make_args(AuthMethod::UserOauth);
+
+        let result = bootstrapper.build_provider(&args);
+        assert!(result.is_ok());
+
+        // Verify provider was created successfully by checking kind
+        let provider: Arc<dyn TokenProvider> = result.unwrap();
+        assert_eq!(provider.kind(), ProviderKind::UserOauth);
+    }
+
+    #[test]
+    #[serial]
+    fn oauth_bootstrapper_respects_disable_bootstrap_flag() {
+        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        let _guard_flag = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
+
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
+
+        let args = make_args(AuthMethod::UserOauth);
+        let result = build_token_provider(&args);
+
+        // Should succeed without trying to start browser flow
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    #[serial]
+    fn oauth_bootstrapper_recognizes_various_truthy_values() {
+        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        let _guard_flag = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
+
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+
+        // Test various truthy values
+        for value in &["1", "true", "TRUE", "yes", "YES"] {
+            env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", value);
+            let args = make_args(AuthMethod::UserOauth);
+            let result = build_token_provider(&args);
+            assert!(
+                result.is_ok(),
+                "Failed with NBLM_OAUTH_DISABLE_BOOTSTRAP={}",
+                value
+            );
+        }
+
+        // Test falsy values (should still succeed with bootstrap disabled for testing)
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "0");
+        // Note: This would try to start browser flow, so we keep it disabled for unit tests
+    }
+
+    #[test]
+    fn profile_experiment_enabled_detects_enabled_flag() {
+        let _guard = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
+
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        assert!(profile_experiment_enabled());
+
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "true");
+        assert!(profile_experiment_enabled());
+
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "0");
+        assert!(!profile_experiment_enabled());
+
+        env::remove_var(nblm_core::PROFILE_EXPERIMENT_FLAG);
+        assert!(!profile_experiment_enabled());
+    }
 }

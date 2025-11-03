@@ -5,6 +5,10 @@ pub mod env;
 mod error;
 pub mod models;
 
+pub use auth::oauth::{
+    AuthorizeContext, AuthorizeParams, FileRefreshTokenStore, OAuthConfig, OAuthFlow, OAuthTokens,
+    RefreshTokenProvider, RefreshTokenStore, SerializedTokens, TokenCacheEntry, TokenStoreKey,
+};
 pub use auth::{
     ensure_drive_scope, EnvTokenProvider, GcloudTokenProvider, ProviderKind, StaticTokenProvider,
     TokenProvider,

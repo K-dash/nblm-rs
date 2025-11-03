@@ -1,7 +1,378 @@
+use std::net::TcpListener as StdTcpListener;
+use std::{env, sync::Arc};
+
+use anyhow::{anyhow, bail, Result};
+use nblm_core::auth::oauth::{
+    self, AuthorizeParams, FileRefreshTokenStore, OAuthConfig, OAuthFlow, RefreshTokenProvider,
+    SerializedTokens, TokenStoreKey,
+};
+use nblm_core::auth::{EnvTokenProvider, GcloudTokenProvider, StaticTokenProvider, TokenProvider};
+use nblm_core::ApiProfile;
+use nblm_core::RefreshTokenStore;
+use reqwest::Client;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener as AsyncTcpListener;
+use tokio::runtime::Handle;
+use tokio::task::block_in_place;
+use tokio::time::Duration as TokioDuration;
+use url::Url;
+
+use crate::args::{AuthMethod, GlobalArgs};
+
+pub fn build_token_provider(args: &GlobalArgs) -> Result<Arc<dyn TokenProvider>> {
+    if args.auth.requires_experimental_flag() && !profile_experiment_enabled() {
+        anyhow::bail!(
+            "auth method '{}' is experimental and not yet available. Set {}=1 to enable experimental auth methods.",
+            auth_method_label(args.auth),
+            nblm_core::PROFILE_EXPERIMENT_FLAG
+        );
+    }
+
+    Ok(match args.auth {
+        AuthMethod::Gcloud => Arc::new(build_gcloud_provider()?),
+        AuthMethod::Env => {
+            if let Some(token) = args.token.as_ref().or(args.env_token.as_ref()) {
+                Arc::new(StaticTokenProvider::new(token.clone()))
+            } else {
+                Arc::new(EnvTokenProvider::new("NBLM_ACCESS_TOKEN"))
+            }
+        }
+        AuthMethod::UserOauth => {
+            let bootstrapper = OAuthBootstrapper::new()?;
+            bootstrapper.bootstrap_provider(args)?
+        }
+    })
+}
+
+/// Bootstrap OAuth authentication flow
+pub struct OAuthBootstrapper {
+    store: Arc<FileRefreshTokenStore>,
+}
+
+impl OAuthBootstrapper {
+    /// Create a new OAuthBootstrapper
+    pub fn new() -> Result<Self> {
+        let store = Arc::new(FileRefreshTokenStore::new()?);
+        Ok(Self { store })
+    }
+
+    /// Get project number from args
+    fn get_project_number(args: &GlobalArgs) -> Result<String> {
+        args.project_number
+            .as_ref()
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "project-number is required for user-oauth authentication. Set --project-number or NBLM_PROJECT_NUMBER environment variable"
+                )
+            })
+            .cloned()
+    }
+
+    /// Create OAuth config from args
+    fn create_oauth_config(project_number: &str) -> Result<OAuthConfig> {
+        OAuthConfig::google_default(project_number)
+            .map_err(|e| anyhow::anyhow!("failed to create OAuth config: {}", e))
+    }
+
+    /// Create HTTP client for OAuth flow
+    fn create_http_client() -> Result<Arc<Client>> {
+        Client::builder()
+            .user_agent(concat!("nblm-cli/", env!("CARGO_PKG_VERSION")))
+            .build()
+            .map_err(|e| anyhow::anyhow!("failed to create HTTP client: {}", e))
+            .map(Arc::new)
+    }
+
+    /// Build token store key from args
+    fn build_store_key(args: &GlobalArgs, project_number: String) -> TokenStoreKey {
+        let profile: ApiProfile = args.profile.into();
+        TokenStoreKey {
+            profile,
+            project_number: Some(project_number),
+            endpoint_location: Some(args.endpoint_location.clone()),
+            user_hint: None,
+        }
+    }
+
+    /// Build a TokenProvider for the given args
+    fn build_provider(
+        &self,
+        args: &GlobalArgs,
+    ) -> Result<Arc<RefreshTokenProvider<FileRefreshTokenStore>>> {
+        let project_number = Self::get_project_number(args)?;
+        let config = Self::create_oauth_config(&project_number)?;
+        let http_client = Self::create_http_client()?;
+
+        let store_key = Self::build_store_key(args, project_number);
+        let flow = OAuthFlow::new(config, Arc::clone(&http_client))
+            .map_err(|e| anyhow!("failed to create OAuth flow: {}", e))?;
+        let provider = RefreshTokenProvider::new(flow, Arc::clone(&self.store), store_key);
+
+        Ok(Arc::new(provider))
+    }
+
+    /// Ensure tokens are available, starting browser flow if needed (blocking)
+    fn ensure_tokens_blocking(
+        &self,
+        args: &GlobalArgs,
+        project_number: &str,
+        store_key: &TokenStoreKey,
+    ) -> Result<()> {
+        block_in_place(|| {
+            let handle = Handle::try_current()
+                .map_err(|_| anyhow!("user-oauth authentication requires a Tokio runtime"))?;
+
+            handle.block_on(async {
+                if self.store.load(store_key).await?.is_some() {
+                    return Ok(());
+                }
+
+                self.start_browser_flow(args, project_number).await
+            })
+        })
+    }
+
+    /// Build provider and ensure refresh tokens exist, starting browser flow if needed
+    pub fn bootstrap_provider(&self, args: &GlobalArgs) -> Result<Arc<dyn TokenProvider>> {
+        let project_number = Self::get_project_number(args)?;
+        let store_key = Self::build_store_key(args, project_number.clone());
+
+        let skip_bootstrap = match env::var("NBLM_OAUTH_DISABLE_BOOTSTRAP") {
+            Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
+            Err(_) => false,
+        };
+
+        if !skip_bootstrap {
+            self.ensure_tokens_blocking(args, &project_number, &store_key)?;
+        }
+
+        let provider: Arc<RefreshTokenProvider<FileRefreshTokenStore>> =
+            self.build_provider(args)?;
+
+        if !skip_bootstrap {
+            // Optionally validate token availability so errors bubble up early.
+            block_in_place(|| {
+                let handle = Handle::try_current()
+                    .map_err(|_| anyhow!("user-oauth authentication requires a Tokio runtime"))?;
+                handle.block_on(async {
+                    provider
+                        .access_token()
+                        .await
+                        .map_err(|e| anyhow!("failed to obtain access token: {}", e))
+                        .map(|_| ())
+                })
+            })?;
+        }
+
+        let provider_dyn: Arc<dyn TokenProvider> = provider;
+        Ok(provider_dyn)
+    }
+
+    /// Start browser-based OAuth flow
+    async fn start_browser_flow(&self, args: &GlobalArgs, project_number: &str) -> Result<()> {
+        let mut config = Self::create_oauth_config(project_number)?;
+        let http_client = Self::create_http_client()?;
+
+        let mut listener: Option<AsyncTcpListener> = None;
+
+        if env::var("NBLM_OAUTH_REDIRECT_URI").is_err()
+            && config.redirect_uri == OAuthConfig::DEFAULT_REDIRECT_URI
+        {
+            let loopback = oauth::loopback::bind_loopback_listener(None)
+                .map_err(|e| anyhow!("failed to bind loopback listener: {}", e))?;
+            let port = loopback.port();
+            config.redirect_uri = oauth::loopback::build_redirect_uri(port);
+            let std_listener = loopback.into_std();
+            let async_listener = AsyncTcpListener::from_std(std_listener)
+                .map_err(|e| anyhow!("failed to create async listener: {}", e))?;
+            listener = Some(async_listener);
+        }
+
+        if listener.is_none() {
+            let redirect_url = Url::parse(&config.redirect_uri)
+                .map_err(|e| anyhow!("invalid redirect_uri: {}", e))?;
+            let addrs = redirect_url
+                .socket_addrs(|| None)
+                .map_err(|e| anyhow!("failed to parse redirect host: {}", e))?;
+            let addr = addrs
+                .into_iter()
+                .find(|addr| addr.ip().is_loopback())
+                .ok_or_else(|| anyhow!("redirect_uri must resolve to a loopback address"))?;
+            let std_listener = StdTcpListener::bind(addr)
+                .map_err(|e| anyhow!("failed to bind {}: {}", addr, e))?;
+            std_listener
+                .set_nonblocking(true)
+                .map_err(|e| anyhow!("failed to configure listener: {}", e))?;
+            let async_listener = AsyncTcpListener::from_std(std_listener)
+                .map_err(|e| anyhow!("failed to create async listener: {}", e))?;
+            listener = Some(async_listener);
+        }
+
+        let listener = listener.expect("listener must be initialized");
+        let flow = OAuthFlow::new(config, Arc::clone(&http_client))
+            .map_err(|e| anyhow!("failed to create OAuth flow: {}", e))?;
+
+        // Build authorization URL
+        let auth_context = flow.build_authorize_url(&AuthorizeParams {
+            state: None,
+            code_challenge: None,
+            code_challenge_method: None,
+        });
+
+        eprintln!("Opening browser for authentication...");
+        eprintln!("If the browser doesn't open, please visit:");
+        eprintln!("{}", auth_context.url);
+
+        // Try to open browser
+        if let Err(e) = webbrowser::open(&auth_context.url) {
+            eprintln!("Warning: Failed to open browser: {}", e);
+            eprintln!("Please manually visit the URL above");
+        }
+
+        // Start local server to receive callback
+        let callback_result = self.listen_for_callback(listener).await?;
+
+        // Verify state
+        if callback_result.state != auth_context.state {
+            bail!("OAuth state mismatch - possible CSRF attack");
+        }
+
+        // Exchange code for tokens
+        let tokens = flow
+            .exchange_code(&auth_context, &callback_result.code)
+            .await?;
+
+        // Save tokens
+        let store_key = Self::build_store_key(args, project_number.to_string());
+
+        let refresh_token = tokens
+            .refresh_token
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no refresh token received"))?;
+
+        let serialized = SerializedTokens {
+            refresh_token: refresh_token.clone(),
+            scopes: tokens
+                .scope
+                .as_ref()
+                .map(|s| s.split_whitespace().map(String::from).collect())
+                .unwrap_or_default(),
+            expires_at: Some(tokens.expires_at),
+            token_type: tokens.token_type,
+            updated_at: time::OffsetDateTime::now_utc(),
+        };
+
+        self.store.save(&store_key, &serialized).await?;
+
+        eprintln!("Authentication successful! Tokens have been saved.");
+
+        Ok(())
+    }
+
+    /// Listen for OAuth callback on localhost
+    async fn listen_for_callback(&self, listener: AsyncTcpListener) -> Result<CallbackResult> {
+        if let Ok(addr) = listener.local_addr() {
+            eprintln!("Listening for OAuth callback on {}", addr);
+        }
+        self.handle_callback(listener).await
+    }
+
+    /// Handle a single callback request
+    async fn handle_callback(&self, listener: AsyncTcpListener) -> Result<CallbackResult> {
+        const TIMEOUT: TokioDuration = TokioDuration::from_secs(600); // 10 minutes
+
+        let result = tokio::time::timeout(TIMEOUT, async {
+            let (mut stream, _) = listener.accept().await?;
+            let mut buffer = vec![0u8; 4096];
+            let n = stream.read(&mut buffer).await?;
+            let request = String::from_utf8_lossy(&buffer[..n]);
+
+            // Parse GET request
+            let mut code = None;
+            let mut state = None;
+            let mut error = None;
+
+            if let Some(query_start) = request.find('?') {
+                let query = &request[query_start + 1..];
+                if let Some(http_end) = query.find(" HTTP/") {
+                    let query = &query[..http_end];
+                    for param in query.split('&') {
+                        if let Some((key, value)) = param.split_once('=') {
+                            let value = urlencoding::decode(value)
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|_| value.to_string());
+                            match key {
+                                "code" => code = Some(value),
+                                "state" => state = Some(value),
+                                "error" => error = Some(value),
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Send response
+            let response = if error.is_some() {
+                format!(
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Authentication failed</h1><p>Error: {}</p></body></html>",
+                    error.as_ref().unwrap()
+                )
+            } else if code.is_some() && state.is_some() {
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Authentication successful!</h1><p>You can close this window.</p></body></html>".to_string()
+            } else {
+                "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Invalid request</h1></body></html>".to_string()
+            };
+
+            stream.write_all(response.as_bytes()).await?;
+            stream.flush().await?;
+
+            Ok::<CallbackResult, anyhow::Error>(CallbackResult {
+                code: code.ok_or_else(|| anyhow::anyhow!("no code parameter"))?,
+                state: state.ok_or_else(|| anyhow::anyhow!("no state parameter"))?,
+            })
+        })
+        .await;
+
+        match result {
+            Ok(Ok(callback)) => Ok(callback),
+            Ok(Err(e)) => Err(e),
+            Err(_) => bail!("OAuth callback timeout after 10 minutes"),
+        }
+    }
+}
+
+#[allow(dead_code)]
+struct CallbackResult {
+    code: String,
+    state: String,
+}
+
+fn build_gcloud_provider() -> Result<GcloudTokenProvider> {
+    let binary = env::var("NBLM_GCLOUD_PATH").unwrap_or_else(|_| "gcloud".to_string());
+    Ok(GcloudTokenProvider::new(binary))
+}
+
+fn profile_experiment_enabled() -> bool {
+    match env::var(nblm_core::PROFILE_EXPERIMENT_FLAG) {
+        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
+        Err(_) => false,
+    }
+}
+
+fn auth_method_label(method: AuthMethod) -> &'static str {
+    match method {
+        AuthMethod::Gcloud => "gcloud",
+        AuthMethod::Env => "env",
+        AuthMethod::UserOauth => "user-oauth",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::args::{AuthMethod, GlobalArgs, ProfileArg};
+    use nblm_core::auth::ProviderKind;
     use serial_test::serial;
 
     struct EnvGuard {
@@ -57,15 +428,48 @@ mod tests {
 
     #[test]
     #[serial]
-    fn user_oauth_returns_placeholder_when_flag_enabled() {
+    fn user_oauth_requires_project_number() {
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
         let _guard = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
         env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
+        let mut args = make_args(AuthMethod::UserOauth);
+        args.project_number = None;
+        match build_token_provider(&args) {
+            Ok(_) => panic!("expected error for missing project-number"),
+            Err(err) => assert!(format!("{err}").contains("project-number")),
+        }
+        env::remove_var("NBLM_OAUTH_CLIENT_ID");
+    }
+
+    #[test]
+    #[serial]
+    fn user_oauth_requires_client_id() {
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        let _guard = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        env::remove_var("NBLM_OAUTH_CLIENT_ID");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
+        let args = make_args(AuthMethod::UserOauth);
+        match build_token_provider(&args) {
+            Ok(_) => panic!("expected error for missing NBLM_OAUTH_CLIENT_ID"),
+            Err(err) => assert!(format!("{err}").contains("NBLM_OAUTH_CLIENT_ID")),
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn user_oauth_builds_provider_when_configured() {
+        let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
+        let _guard = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
+        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
+        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
+        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "1");
         let args = make_args(AuthMethod::UserOauth);
         let provider = build_token_provider(&args).expect("expected provider");
         assert_eq!(provider.kind(), ProviderKind::UserOauth);
-        let rt = tokio::runtime::Runtime::new().expect("runtime");
-        let err = rt.block_on(provider.access_token()).unwrap_err();
-        assert!(format!("{err}").contains("not implemented"));
+        env::remove_var("NBLM_OAUTH_CLIENT_ID");
     }
 
     #[test]
@@ -114,85 +518,5 @@ mod tests {
         let args = make_args(AuthMethod::Env);
         let provider = build_token_provider(&args).expect("expected provider");
         assert_eq!(provider.kind(), ProviderKind::StaticToken);
-    }
-
-    #[test]
-    fn pending_oauth_provider_returns_user_oauth_kind() {
-        let provider = PendingOAuthProvider::new();
-        assert_eq!(provider.kind(), ProviderKind::UserOauth);
-    }
-}
-use std::{env, sync::Arc};
-
-use anyhow::Result;
-use async_trait::async_trait;
-use nblm_core::auth::{
-    EnvTokenProvider, GcloudTokenProvider, ProviderKind, StaticTokenProvider, TokenProvider,
-};
-use nblm_core::{Error as CoreError, Result as CoreResult};
-
-use crate::args::{AuthMethod, GlobalArgs};
-
-pub fn build_token_provider(args: &GlobalArgs) -> Result<Arc<dyn TokenProvider>> {
-    if args.auth.requires_experimental_flag() && !profile_experiment_enabled() {
-        anyhow::bail!(
-            "auth method '{}' is experimental and not yet available. Set {}=1 to enable experimental auth methods.",
-            auth_method_label(args.auth),
-            nblm_core::PROFILE_EXPERIMENT_FLAG
-        );
-    }
-
-    Ok(match args.auth {
-        AuthMethod::Gcloud => Arc::new(build_gcloud_provider()?),
-        AuthMethod::Env => {
-            if let Some(token) = args.token.as_ref().or(args.env_token.as_ref()) {
-                Arc::new(StaticTokenProvider::new(token.clone()))
-            } else {
-                Arc::new(EnvTokenProvider::new("NBLM_ACCESS_TOKEN"))
-            }
-        }
-        AuthMethod::UserOauth => Arc::new(PendingOAuthProvider::new()),
-    })
-}
-
-fn build_gcloud_provider() -> Result<GcloudTokenProvider> {
-    let binary = env::var("NBLM_GCLOUD_PATH").unwrap_or_else(|_| "gcloud".to_string());
-    Ok(GcloudTokenProvider::new(binary))
-}
-
-fn profile_experiment_enabled() -> bool {
-    match env::var(nblm_core::PROFILE_EXPERIMENT_FLAG) {
-        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
-        Err(_) => false,
-    }
-}
-
-fn auth_method_label(method: AuthMethod) -> &'static str {
-    match method {
-        AuthMethod::Gcloud => "gcloud",
-        AuthMethod::Env => "env",
-        AuthMethod::UserOauth => "user-oauth",
-    }
-}
-
-#[derive(Debug, Clone)]
-struct PendingOAuthProvider;
-
-impl PendingOAuthProvider {
-    fn new() -> Self {
-        Self
-    }
-}
-
-#[async_trait]
-impl TokenProvider for PendingOAuthProvider {
-    async fn access_token(&self) -> CoreResult<String> {
-        Err(CoreError::TokenProvider(
-            "user OAuth flow is not implemented yet".to_string(),
-        ))
-    }
-
-    fn kind(&self) -> ProviderKind {
-        ProviderKind::UserOauth
     }
 }

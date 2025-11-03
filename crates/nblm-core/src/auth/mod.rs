@@ -7,6 +7,8 @@ use tokio::process::Command;
 
 use crate::error::{Error, Result};
 
+pub mod oauth;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProviderKind {
     GcloudOauth,

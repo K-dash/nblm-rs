@@ -5,7 +5,7 @@ const PROFILE_NAME_PERSONAL: &str = "personal";
 const PROFILE_NAME_WORKSPACE: &str = "workspace";
 
 /// API profile types supported by the SDK.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ApiProfile {
     Enterprise,
     Personal,

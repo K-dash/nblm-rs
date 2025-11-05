@@ -2,7 +2,8 @@ use anyhow::Result;
 use clap::Args;
 use colored::Colorize;
 use nblm_core::doctor::{
-    check_commands, check_drive_access_token, check_environment_variables, DiagnosticsSummary,
+    check_api_connectivity, check_commands, check_drive_access_token,
+    check_environment_variables, DiagnosticsSummary,
 };
 
 #[derive(Args)]
@@ -16,6 +17,7 @@ pub async fn run(_args: DoctorArgs) -> Result<()> {
     all_checks.extend(check_environment_variables());
     all_checks.extend(check_drive_access_token().await);
     all_checks.extend(check_commands());
+    all_checks.extend(check_api_connectivity().await);
 
     // Print individual check results
     for check in &all_checks {

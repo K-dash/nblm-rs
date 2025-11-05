@@ -332,6 +332,122 @@ pub async fn check_drive_access_token() -> Vec<CheckResult> {
     }
 }
 
+/// Check NotebookLM API connectivity by calling list_recently_viewed
+pub async fn check_api_connectivity() -> Vec<CheckResult> {
+    use crate::auth::GcloudTokenProvider;
+    use crate::client::NblmClient;
+    use crate::env::EnvironmentConfig;
+    use std::sync::Arc;
+
+    // Get required environment variables
+    let project_number = match env::var("NBLM_PROJECT_NUMBER") {
+        Ok(val) if !val.is_empty() => val,
+        _ => {
+            return vec![CheckResult::new(
+                "api_connectivity",
+                CheckStatus::Error,
+                "NBLM_PROJECT_NUMBER not set",
+            )
+            .with_suggestion("Set NBLM_PROJECT_NUMBER to run API connectivity check")];
+        }
+    };
+
+    let location = env::var("NBLM_LOCATION").unwrap_or_else(|_| "global".to_string());
+    let endpoint_location =
+        env::var("NBLM_ENDPOINT_LOCATION").unwrap_or_else(|_| "us-central1".to_string());
+
+    // Try to construct environment config
+    let env_config = match EnvironmentConfig::enterprise(project_number, location, endpoint_location)
+    {
+        Ok(config) => config,
+        Err(err) => {
+            return vec![CheckResult::new(
+                "api_connectivity",
+                CheckStatus::Error,
+                format!("Cannot construct environment config: {}", err),
+            )
+            .with_suggestion(
+                "Ensure NBLM_PROJECT_NUMBER, NBLM_LOCATION, and NBLM_ENDPOINT_LOCATION are valid",
+            )];
+        }
+    };
+
+    // Create token provider
+    let token_provider: Arc<dyn crate::auth::TokenProvider> =
+        match env::var("NBLM_ACCESS_TOKEN").ok().filter(|s| !s.is_empty()) {
+            Some(_) => Arc::new(crate::auth::EnvTokenProvider::new("NBLM_ACCESS_TOKEN")),
+            None => Arc::new(GcloudTokenProvider::new("gcloud")),
+        };
+
+    // Try to create client
+    let client = match NblmClient::new(token_provider, env_config) {
+        Ok(client) => client,
+        Err(err) => {
+            return vec![CheckResult::new(
+                "api_connectivity",
+                CheckStatus::Error,
+                format!("Failed to create API client: {}", err),
+            )
+            .with_suggestion("Check your environment configuration and credentials")];
+        }
+    };
+
+    // Try to call list_recently_viewed
+    match client.list_recently_viewed(Some(1)).await {
+        Ok(_) => vec![CheckResult::new(
+            "api_connectivity",
+            CheckStatus::Pass,
+            "Successfully connected to NotebookLM API",
+        )],
+        Err(err) => {
+            let err_string = err.to_string();
+            let (status, message, suggestion) = categorize_api_error(&err_string);
+
+            vec![CheckResult::new("api_connectivity", status, message).with_suggestion(suggestion)]
+        }
+    }
+}
+
+/// Categorize API errors and provide actionable suggestions
+fn categorize_api_error(error: &str) -> (CheckStatus, String, &'static str) {
+    let error_lower = error.to_lowercase();
+
+    if error_lower.contains("401") || error_lower.contains("unauthorized") {
+        (
+            CheckStatus::Error,
+            "Authentication failed (401 Unauthorized)".to_string(),
+            "Run `gcloud auth login` or `gcloud auth application-default login`",
+        )
+    } else if error_lower.contains("403") || error_lower.contains("permission denied") {
+        (
+            CheckStatus::Error,
+            "Permission denied (403 Forbidden)".to_string(),
+            "Ensure your account has NotebookLM API access and required IAM roles (e.g., aiplatform.user)",
+        )
+    } else if error_lower.contains("404") || error_lower.contains("not found") {
+        (
+            CheckStatus::Error,
+            "Resource not found (404)".to_string(),
+            "Verify NBLM_PROJECT_NUMBER is correct and the project has NotebookLM enabled",
+        )
+    } else if error_lower.contains("timeout")
+        || error_lower.contains("connection")
+        || error_lower.contains("network")
+    {
+        (
+            CheckStatus::Error,
+            format!("Network error: {}", error),
+            "Check your internet connection and firewall settings",
+        )
+    } else {
+        (
+            CheckStatus::Error,
+            format!("API error: {}", error),
+            "Check the error message above and your configuration",
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

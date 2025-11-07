@@ -12,7 +12,6 @@ This guide collects the most common issues reported for the NotebookLM Enterpris
 
 - Run `nblm-cli doctor` to double-check the `--project-number` and `--location` values.
 - Ensure the NotebookLM Enterprise API is enabled for the target project in Cloud Console.
-- When accessing shared notebooks, confirm that the owner has granted your service account or user principal the necessary permissions.
 
 ## Upload timeouts
 

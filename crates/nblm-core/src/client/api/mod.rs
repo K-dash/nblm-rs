@@ -8,7 +8,6 @@ use crate::models::enterprise::{
         BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse,
         Notebook,
     },
-    share::{AccountRole, ShareResponse},
     source::{
         BatchCreateSourcesRequest, BatchCreateSourcesResponse, BatchDeleteSourcesRequest,
         BatchDeleteSourcesResponse, NotebookSource, UploadSourceFileResponse, UserContent,
@@ -40,17 +39,6 @@ impl NblmClient {
         self.backends
             .notebooks()
             .delete_notebooks(notebook_names)
-            .await
-    }
-
-    pub async fn share_notebook(
-        &self,
-        notebook_id: &str,
-        accounts: Vec<AccountRole>,
-    ) -> Result<ShareResponse> {
-        self.backends
-            .notebooks()
-            .share_notebook(notebook_id, accounts)
             .await
     }
 

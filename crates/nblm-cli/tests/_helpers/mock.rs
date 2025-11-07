@@ -149,24 +149,6 @@ impl MockApi {
             .await;
     }
 
-    /// Stub for POST /v1alpha/projects/{project}/locations/{location}/notebooks/{notebook_id}:share
-    pub async fn stub_notebook_share(&self, project: &str, location: &str, notebook_id: &str) {
-        let path_str = format!(
-            "/v1alpha/projects/{}/locations/{}/notebooks/{}:share",
-            project, location, notebook_id
-        );
-        let response = json!({
-            "granted": 1
-        });
-
-        Mock::given(method("POST"))
-            .and(path(path_str))
-            .and(header("authorization", "Bearer DUMMY_TOKEN"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(response))
-            .mount(&self.server)
-            .await;
-    }
-
     /// Stub for 429 Too Many Requests with Retry-After header, then success
     pub async fn stub_notebooks_recent_429_then_success(
         &self,

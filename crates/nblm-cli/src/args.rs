@@ -70,8 +70,6 @@ pub enum Command {
     Sources(ops::sources::Command),
     #[command(subcommand)]
     Audio(ops::audio::Command),
-    #[command(subcommand)]
-    Share(ops::share::Command),
     Doctor(ops::doctor::DoctorArgs),
 }
 

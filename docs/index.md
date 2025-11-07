@@ -59,7 +59,6 @@ Complete command-line interface documentation:
 - [Notebooks Commands](cli/notebooks.md) - Create, list, and delete notebooks
 - [Sources Commands](cli/sources.md) - Add, upload, and manage sources
 - [Audio Commands](cli/audio.md) - Create and delete audio overviews
-- [Share Commands](cli/share.md) - Share notebooks with users
 - [Doctor Command](cli/doctor.md) - Run environment diagnostics
 
 ## Python SDK Reference

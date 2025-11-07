@@ -13,7 +13,6 @@ use crate::models::enterprise::{
         BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse,
         Notebook,
     },
-    share::{AccountRole, ShareResponse},
     source::{
         BatchCreateSourcesRequest, BatchCreateSourcesResponse, BatchDeleteSourcesRequest,
         BatchDeleteSourcesResponse, NotebookSource, UploadSourceFileResponse, UserContent,
@@ -51,11 +50,6 @@ pub(crate) trait NotebooksBackend: Send + Sync + 'static {
         &self,
         notebook_names: Vec<String>,
     ) -> Result<BatchDeleteNotebooksResponse>;
-    async fn share_notebook(
-        &self,
-        notebook_id: &str,
-        accounts: Vec<AccountRole>,
-    ) -> Result<ShareResponse>;
     async fn list_recently_viewed(
         &self,
         page_size: Option<u32>,

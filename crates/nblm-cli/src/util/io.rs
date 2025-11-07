@@ -1,7 +1,6 @@
 use anyhow::Result;
 use nblm_core::models::enterprise::{
     notebook::{ListRecentlyViewedResponse, Notebook},
-    share::ShareResponse,
     source::{BatchCreateSourcesResponse, NotebookSource, UploadSourceFileResponse},
 };
 use serde_json::json;
@@ -73,11 +72,6 @@ pub fn emit_uploaded_source(
             println!("Upload request accepted (source ID unavailable)");
         }
     }
-    Ok(())
-}
-
-pub fn emit_share(response: &ShareResponse, json_mode: bool) -> Result<()> {
-    emit_json(json!(response), json_mode);
     Ok(())
 }
 

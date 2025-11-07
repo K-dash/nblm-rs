@@ -3,18 +3,13 @@ use reqwest::Method;
 
 use crate::client::api::backends::{BackendContext, NotebooksBackend};
 use crate::error::Result;
-use crate::models::enterprise::{
-    notebook::{
-        BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse,
-        Notebook,
-    },
-    share::{AccountRole, ShareResponse},
+use crate::models::enterprise::notebook::{
+    BatchDeleteNotebooksRequest, BatchDeleteNotebooksResponse, ListRecentlyViewedResponse, Notebook,
 };
 
 use super::models::{
-    notebook as wire_notebook,
-    requests::{notebook as wire_notebook_req, share as wire_share_req},
-    responses::{list as wire_list_resp, share as wire_share_resp},
+    notebook as wire_notebook, requests::notebook as wire_notebook_req,
+    responses::list as wire_list_resp,
 };
 
 pub(crate) struct EnterpriseNotebooksBackend {
@@ -81,24 +76,6 @@ impl NotebooksBackend for EnterpriseNotebooksBackend {
             self.batch_delete_internal(request).await?;
         }
         Ok(BatchDeleteNotebooksResponse::default())
-    }
-
-    async fn share_notebook(
-        &self,
-        notebook_id: &str,
-        accounts: Vec<AccountRole>,
-    ) -> Result<ShareResponse> {
-        let path = format!("{}:share", self.ctx.url_builder.notebook_path(notebook_id));
-        let url = self.ctx.url_builder.build_url(&path)?;
-        let request = wire_share_req::ShareRequest {
-            account_and_roles: accounts.into_iter().map(Into::into).collect(),
-        };
-        let response: wire_share_resp::ShareResponse = self
-            .ctx
-            .http
-            .request_json(Method::POST, url, Some(&request))
-            .await?;
-        Ok(response.into())
     }
 
     async fn list_recently_viewed(
@@ -168,15 +145,6 @@ mod tests {
         let url = backend.ctx.url_builder.build_url(&path).unwrap();
         assert!(url.as_str().contains(":batchDelete"));
         assert!(url.as_str().contains("notebooks"));
-    }
-
-    #[test]
-    fn share_url_construction() {
-        let backend = create_test_backend();
-        let path = format!("{}:share", backend.ctx.url_builder.notebook_path("test-id"));
-        let url = backend.ctx.url_builder.build_url(&path).unwrap();
-        assert!(url.as_str().contains("test-id"));
-        assert!(url.as_str().contains(":share"));
     }
 
     #[test]

@@ -203,6 +203,17 @@ args = [
 ]
 
 # ------------------------- Docs -------------------------
+[tasks.docs-serve]
+description = "Serve documentation locally"
+command = "uv"
+args = [
+    "run",
+    "--project",
+    "docs",
+    "mkdocs",
+    "serve",
+]
+
 [tasks.docs-deploy]
 description = "Deploy documentation to GitHub Pages (manual emergency deployment)"
 command = "uv"

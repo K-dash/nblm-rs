@@ -339,29 +339,25 @@ pub async fn check_api_connectivity() -> Vec<CheckResult> {
     use crate::env::EnvironmentConfig;
     use std::sync::Arc;
 
-    // Get required environment variables
+    // Skip if required environment variables are missing
     let project_number = match env::var("NBLM_PROJECT_NUMBER") {
         Ok(val) if !val.is_empty() => val,
         _ => {
-            return vec![CheckResult::new(
-                "api_connectivity",
-                CheckStatus::Error,
-                "NBLM_PROJECT_NUMBER not set",
-            )
-            .with_suggestion("Set NBLM_PROJECT_NUMBER to run API connectivity check")];
+            // Don't report error here - env var check already handles this
+            return Vec::new();
         }
     };
 
     let location = env::var("NBLM_LOCATION").unwrap_or_else(|_| "global".to_string());
     let endpoint_location =
-        env::var("NBLM_ENDPOINT_LOCATION").unwrap_or_else(|_| "us-central1".to_string());
+        env::var("NBLM_ENDPOINT_LOCATION").unwrap_or_else(|_| "global".to_string());
 
     // Try to construct environment config
-    let env_config = match EnvironmentConfig::enterprise(project_number, location, endpoint_location)
-    {
-        Ok(config) => config,
-        Err(err) => {
-            return vec![CheckResult::new(
+    let env_config =
+        match EnvironmentConfig::enterprise(project_number, location, endpoint_location) {
+            Ok(config) => config,
+            Err(err) => {
+                return vec![CheckResult::new(
                 "api_connectivity",
                 CheckStatus::Error,
                 format!("Cannot construct environment config: {}", err),
@@ -369,14 +365,20 @@ pub async fn check_api_connectivity() -> Vec<CheckResult> {
             .with_suggestion(
                 "Ensure NBLM_PROJECT_NUMBER, NBLM_LOCATION, and NBLM_ENDPOINT_LOCATION are valid",
             )];
-        }
-    };
+            }
+        };
 
-    // Create token provider
+    // Create token provider - only use gcloud if NBLM_ACCESS_TOKEN is not set
     let token_provider: Arc<dyn crate::auth::TokenProvider> =
         match env::var("NBLM_ACCESS_TOKEN").ok().filter(|s| !s.is_empty()) {
             Some(_) => Arc::new(crate::auth::EnvTokenProvider::new("NBLM_ACCESS_TOKEN")),
-            None => Arc::new(GcloudTokenProvider::new("gcloud")),
+            None => {
+                // Skip API check if gcloud is not available to avoid interactive prompts
+                if !is_gcloud_available() {
+                    return Vec::new();
+                }
+                Arc::new(GcloudTokenProvider::new("gcloud"))
+            }
         };
 
     // Try to create client
@@ -406,6 +408,15 @@ pub async fn check_api_connectivity() -> Vec<CheckResult> {
             vec![CheckResult::new("api_connectivity", status, message).with_suggestion(suggestion)]
         }
     }
+}
+
+/// Check if gcloud command is available
+fn is_gcloud_available() -> bool {
+    std::process::Command::new("gcloud")
+        .arg("--version")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
 }
 
 /// Categorize API errors and provide actionable suggestions

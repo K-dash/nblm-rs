@@ -35,11 +35,12 @@ fn doctor_all_env_vars_present() {
     let common = _helpers::cmd::CommonArgs::default();
     common.apply(&mut cmd);
     cmd.env("NBLM_PROJECT_NUMBER", "224840249322");
-    cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
+    cmd.env("NBLM_ENDPOINT_LOCATION", "global");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
     cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
     cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
 
     let assert = cmd.assert();
     // Exit code may be 0 or 1 depending on whether gcloud is installed
@@ -53,7 +54,7 @@ fn doctor_all_env_vars_present() {
             "   [ok] NBLM_PROJECT_NUMBER=224840249322",
         ))
         .stdout(predicate::str::contains(
-            "   [ok] NBLM_ENDPOINT_LOCATION=us-central1",
+            "   [ok] NBLM_ENDPOINT_LOCATION=global",
         ))
         .stdout(predicate::str::contains("   [ok] NBLM_LOCATION=global"))
         .stdout(predicate::str::contains(
@@ -85,11 +86,12 @@ fn doctor_missing_or_empty_required_env_var(#[case] value: ProjectNumberValue) {
         ProjectNumberValue::Empty => cmd.env("NBLM_PROJECT_NUMBER", ""),
     };
 
-    cmd.env("NBLM_ENDPOINT_LOCATION", "us-central1");
+    cmd.env("NBLM_ENDPOINT_LOCATION", "global");
     cmd.env("NBLM_LOCATION", "global");
     cmd.env("NBLM_ACCESS_TOKEN", "test-token");
     cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
     cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
 
     let assert = cmd.assert();
     assert
@@ -113,6 +115,7 @@ fn doctor_missing_optional_env_vars() {
     cmd.env_remove("NBLM_LOCATION");
     cmd.env_remove("NBLM_ACCESS_TOKEN");
     cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
 
     let assert = cmd.assert();
     assert
@@ -146,6 +149,7 @@ fn doctor_all_env_vars_missing() {
     cmd.env_remove("NBLM_LOCATION");
     cmd.env_remove("NBLM_ACCESS_TOKEN");
     cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
 
     let assert = cmd.assert();
     assert

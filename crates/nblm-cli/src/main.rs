@@ -15,7 +15,24 @@ async fn main() -> Result<()> {
         if args.iter().any(|arg| arg == "--json") {
             anyhow::bail!("The --json flag is not supported for the 'doctor' command");
         }
-        return ops::doctor::run(ops::doctor::DoctorArgs {}).await;
+
+        // Parse doctor-specific arguments
+        use clap::Parser;
+        #[derive(Parser)]
+        #[command(name = "nblm")]
+        struct DoctorCli {
+            #[command(subcommand)]
+            command: DoctorCommand,
+        }
+
+        #[derive(clap::Subcommand)]
+        enum DoctorCommand {
+            Doctor(ops::doctor::DoctorArgs),
+        }
+
+        let doctor_cli = DoctorCli::parse();
+        let DoctorCommand::Doctor(doctor_args) = doctor_cli.command;
+        return ops::doctor::run(doctor_args).await;
     }
 
     let cli = args::Cli::parse();

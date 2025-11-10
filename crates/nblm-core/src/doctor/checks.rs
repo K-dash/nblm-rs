@@ -175,13 +175,13 @@ const ENV_VAR_CHECKS: &[EnvVarCheck] = &[
     EnvVarCheck {
         name: "NBLM_ENDPOINT_LOCATION",
         required: false,
-        suggestion: "export NBLM_ENDPOINT_LOCATION=us-central1",
+        suggestion: "export NBLM_ENDPOINT_LOCATION=us  # or 'eu' or 'global'",
         show_value: true,
     },
     EnvVarCheck {
         name: "NBLM_LOCATION",
         required: false,
-        suggestion: "export NBLM_LOCATION=us-central1",
+        suggestion: "export NBLM_LOCATION=global",
         show_value: true,
     },
     EnvVarCheck {
@@ -329,6 +329,132 @@ pub async fn check_drive_access_token() -> Vec<CheckResult> {
             }
         }
         _ => Vec::new(),
+    }
+}
+
+/// Check NotebookLM API connectivity by calling list_recently_viewed
+pub async fn check_api_connectivity() -> Vec<CheckResult> {
+    use crate::auth::GcloudTokenProvider;
+    use crate::client::NblmClient;
+    use crate::env::EnvironmentConfig;
+    use std::sync::Arc;
+
+    // Skip if required environment variables are missing
+    let project_number = match env::var("NBLM_PROJECT_NUMBER") {
+        Ok(val) if !val.is_empty() => val,
+        _ => {
+            // Don't report error here - env var check already handles this
+            return Vec::new();
+        }
+    };
+
+    let location = env::var("NBLM_LOCATION").unwrap_or_else(|_| "global".to_string());
+    let endpoint_location =
+        env::var("NBLM_ENDPOINT_LOCATION").unwrap_or_else(|_| "global".to_string());
+
+    // Try to construct environment config
+    let env_config =
+        match EnvironmentConfig::enterprise(project_number, location, endpoint_location) {
+            Ok(config) => config,
+            Err(err) => {
+                return vec![CheckResult::new(
+                "api_connectivity",
+                CheckStatus::Error,
+                format!("Cannot construct environment config: {}", err),
+            )
+            .with_suggestion(
+                "Ensure NBLM_PROJECT_NUMBER, NBLM_LOCATION, and NBLM_ENDPOINT_LOCATION are valid",
+            )];
+            }
+        };
+
+    // Create token provider - only use gcloud if NBLM_ACCESS_TOKEN is not set
+    let token_provider: Arc<dyn crate::auth::TokenProvider> =
+        match env::var("NBLM_ACCESS_TOKEN").ok().filter(|s| !s.is_empty()) {
+            Some(_) => Arc::new(crate::auth::EnvTokenProvider::new("NBLM_ACCESS_TOKEN")),
+            None => {
+                // Skip API check if gcloud is not available to avoid interactive prompts
+                if !is_gcloud_available() {
+                    return Vec::new();
+                }
+                Arc::new(GcloudTokenProvider::new("gcloud"))
+            }
+        };
+
+    // Try to create client
+    let client = match NblmClient::new(token_provider, env_config) {
+        Ok(client) => client,
+        Err(err) => {
+            return vec![CheckResult::new(
+                "api_connectivity",
+                CheckStatus::Error,
+                format!("Failed to create API client: {}", err),
+            )
+            .with_suggestion("Check your environment configuration and credentials")];
+        }
+    };
+
+    // Try to call list_recently_viewed
+    match client.list_recently_viewed(Some(1)).await {
+        Ok(_) => vec![CheckResult::new(
+            "api_connectivity",
+            CheckStatus::Pass,
+            "Successfully connected to NotebookLM API",
+        )],
+        Err(err) => {
+            let err_string = err.to_string();
+            let (status, message, suggestion) = categorize_api_error(&err_string);
+
+            vec![CheckResult::new("api_connectivity", status, message).with_suggestion(suggestion)]
+        }
+    }
+}
+
+/// Check if gcloud command is available
+fn is_gcloud_available() -> bool {
+    std::process::Command::new("gcloud")
+        .arg("--version")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+/// Categorize API errors and provide actionable suggestions
+fn categorize_api_error(error: &str) -> (CheckStatus, String, &'static str) {
+    let error_lower = error.to_lowercase();
+
+    match () {
+        _ if error_lower.contains("401") || error_lower.contains("unauthorized") => (
+            CheckStatus::Error,
+            "Authentication failed (401 Unauthorized)".to_string(),
+            "Run `gcloud auth login` or `gcloud auth application-default login`",
+        ),
+        _ if error_lower.contains("403") || error_lower.contains("permission denied") => (
+            CheckStatus::Error,
+            "Permission denied (403 Forbidden)".to_string(),
+            "Ensure your account has NotebookLM API access and required IAM roles (e.g., aiplatform.user)",
+        ),
+        _ if error_lower.contains("404") || error_lower.contains("not found") => (
+            CheckStatus::Error,
+            "Resource not found (404)".to_string(),
+            "Verify NBLM_PROJECT_NUMBER is correct and the project has NotebookLM enabled",
+        ),
+        _
+            if error_lower.contains("timeout")
+                || error_lower.contains("connection")
+                || error_lower.contains("network") =>
+        {
+            (
+                CheckStatus::Error,
+                format!("Network error: {}", error),
+                "Check your internet connection and firewall settings",
+            )
+        }
+        _ => (
+            CheckStatus::Error,
+            format!("API error: {}", error),
+            "Check the error message above and your configuration",
+        ),
     }
 }
 
@@ -571,5 +697,132 @@ mod tests {
 
         drop(token_guard);
         drop(endpoint_guard);
+    }
+
+    #[test]
+    fn test_categorize_api_error_401() {
+        let (status, message, suggestion) = categorize_api_error("401 Unauthorized");
+        assert_eq!(status, CheckStatus::Error);
+        assert!(message.contains("Authentication failed"));
+        assert!(suggestion.contains("gcloud auth login"));
+    }
+
+    #[test]
+    fn test_categorize_api_error_403() {
+        let (status, message, suggestion) = categorize_api_error("403 Permission denied");
+        assert_eq!(status, CheckStatus::Error);
+        assert!(message.contains("Permission denied"));
+        assert!(suggestion.contains("IAM roles"));
+    }
+
+    #[test]
+    fn test_categorize_api_error_404() {
+        let (status, message, suggestion) = categorize_api_error("404 Not found");
+        assert_eq!(status, CheckStatus::Error);
+        assert!(message.contains("Resource not found"));
+        assert!(suggestion.contains("NBLM_PROJECT_NUMBER"));
+    }
+
+    #[test]
+    fn test_categorize_api_error_timeout() {
+        let (status, message, suggestion) = categorize_api_error("Connection timeout");
+        assert_eq!(status, CheckStatus::Error);
+        assert!(message.contains("Network error"));
+        assert!(suggestion.contains("internet connection"));
+    }
+
+    #[test]
+    fn test_categorize_api_error_generic() {
+        let (status, message, suggestion) = categorize_api_error("Some random error");
+        assert_eq!(status, CheckStatus::Error);
+        assert!(message.contains("API error"));
+        assert!(suggestion.contains("configuration"));
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_check_api_connectivity_missing_project_number() {
+        let _guard = EnvGuard::new("NBLM_PROJECT_NUMBER");
+        env::remove_var("NBLM_PROJECT_NUMBER");
+
+        let results = check_api_connectivity().await;
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_is_gcloud_available() {
+        // This test just verifies that is_gcloud_available() doesn't panic
+        // The actual result depends on whether gcloud is installed
+        let _ = is_gcloud_available();
+    }
+
+    #[test]
+    fn test_diagnostics_summary_count_by_status() {
+        let summary = DiagnosticsSummary::new(vec![
+            CheckResult::new("test1", CheckStatus::Pass, "Pass"),
+            CheckResult::new("test2", CheckStatus::Warning, "Warning"),
+            CheckResult::new("test3", CheckStatus::Error, "Error"),
+            CheckResult::new("test4", CheckStatus::Pass, "Pass"),
+        ]);
+
+        assert_eq!(summary.count_by_status(CheckStatus::Pass), 2);
+        assert_eq!(summary.count_by_status(CheckStatus::Warning), 1);
+        assert_eq!(summary.count_by_status(CheckStatus::Error), 1);
+    }
+
+    #[test]
+    fn test_diagnostics_summary_format() {
+        let summary = DiagnosticsSummary::new(vec![
+            CheckResult::new("test1", CheckStatus::Pass, "Pass"),
+            CheckResult::new("test2", CheckStatus::Pass, "Pass"),
+        ]);
+        let formatted = summary.format_summary();
+        assert!(formatted.contains("All 2 checks passed"));
+
+        let summary_with_failures = DiagnosticsSummary::new(vec![
+            CheckResult::new("test1", CheckStatus::Pass, "Pass"),
+            CheckResult::new("test2", CheckStatus::Warning, "Warning"),
+        ]);
+        let formatted_fail = summary_with_failures.format_summary();
+        assert!(formatted_fail.contains("1 checks failing out of 2"));
+    }
+
+    #[test]
+    fn test_check_result_with_suggestion() {
+        let result = CheckResult::new("test", CheckStatus::Warning, "Something wrong")
+            .with_suggestion("Fix it this way");
+
+        assert_eq!(result.suggestion, Some("Fix it this way".to_string()));
+        assert!(result.format().contains("Suggestion: Fix it this way"));
+    }
+
+    #[test]
+    fn test_check_env_var_hidden_value() {
+        env::set_var("SECRET_VAR", "secret_value");
+        let config = EnvVarCheck {
+            name: "SECRET_VAR",
+            required: true,
+            suggestion: "export SECRET_VAR=value",
+            show_value: false,
+        };
+        let result = check_env_var(&config);
+        assert_eq!(result.status, CheckStatus::Pass);
+        assert!(result.message.contains("value hidden"));
+        assert!(!result.message.contains("secret_value"));
+        env::remove_var("SECRET_VAR");
+    }
+
+    #[test]
+    fn test_check_environment_variables_integration() {
+        let results = check_environment_variables();
+        // Should return results for all configured env vars
+        assert_eq!(results.len(), ENV_VAR_CHECKS.len());
+    }
+
+    #[test]
+    fn test_check_commands_integration() {
+        let results = check_commands();
+        // Should return results for all configured commands
+        assert_eq!(results.len(), COMMAND_CHECKS.len());
     }
 }

@@ -2,13 +2,18 @@ use anyhow::Result;
 use clap::Args;
 use colored::Colorize;
 use nblm_core::doctor::{
-    check_commands, check_drive_access_token, check_environment_variables, DiagnosticsSummary,
+    check_api_connectivity, check_commands, check_drive_access_token, check_environment_variables,
+    DiagnosticsSummary,
 };
 
 #[derive(Args)]
-pub struct DoctorArgs {}
+pub struct DoctorArgs {
+    /// Skip the API connectivity check
+    #[arg(long)]
+    pub skip_api_check: bool,
+}
 
-pub async fn run(_args: DoctorArgs) -> Result<()> {
+pub async fn run(args: DoctorArgs) -> Result<()> {
     println!("Running NotebookLM environment diagnostics...\n");
 
     // Run all checks
@@ -16,6 +21,11 @@ pub async fn run(_args: DoctorArgs) -> Result<()> {
     all_checks.extend(check_environment_variables());
     all_checks.extend(check_drive_access_token().await);
     all_checks.extend(check_commands());
+
+    // Only run API connectivity check if not skipped
+    if !args.skip_api_check {
+        all_checks.extend(check_api_connectivity().await);
+    }
 
     // Print individual check results
     for check in &all_checks {

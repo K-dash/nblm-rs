@@ -531,8 +531,8 @@ mod tests {
     fn build_store_key_includes_all_fields() {
         let args = GlobalArgs {
             project_number: Some("test-project-123".to_string()),
-            location: "us-central1".to_string(),
-            endpoint_location: "us-central1".to_string(),
+            location: "us".to_string(),
+            endpoint_location: "us".to_string(),
             profile: ProfileArg::Enterprise,
             auth: AuthMethod::UserOauth,
             token: None,
@@ -547,7 +547,7 @@ mod tests {
 
         assert_eq!(key.profile, ApiProfile::Enterprise);
         assert_eq!(key.project_number, Some("test-project-123".to_string()));
-        assert_eq!(key.endpoint_location, Some("us-central1".to_string()));
+        assert_eq!(key.endpoint_location, Some("us".to_string()));
         assert_eq!(key.user_hint, None);
     }
 
@@ -569,8 +569,8 @@ mod tests {
 
         let args2 = GlobalArgs {
             project_number: Some("project-2".to_string()),
-            location: "us-central1".to_string(),
-            endpoint_location: "us-central1".to_string(),
+            location: "us".to_string(),
+            endpoint_location: "us".to_string(),
             profile: ProfileArg::Enterprise,
             auth: AuthMethod::UserOauth,
             token: None,

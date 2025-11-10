@@ -302,7 +302,7 @@ mod tests {
     fn from_profile_succeeds_with_matching_enterprise_params() {
         let env = EnvironmentConfig::from_profile(
             ApiProfile::Enterprise,
-            ProfileParams::enterprise("456", "us-central1", "us"),
+            ProfileParams::enterprise("456", "us", "us"),
         )
         .unwrap();
         assert_eq!(env.profile(), ApiProfile::Enterprise);
@@ -310,7 +310,7 @@ mod tests {
             env.base_url(),
             "https://us-discoveryengine.googleapis.com/v1alpha"
         );
-        assert_eq!(env.parent_path(), "projects/456/locations/us-central1");
+        assert_eq!(env.parent_path(), "projects/456/locations/us");
     }
 
     #[test]

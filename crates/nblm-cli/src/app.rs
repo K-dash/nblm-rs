@@ -251,7 +251,7 @@ mod tests {
     fn resolve_profile_params_enterprise_accepts_valid_project_number() {
         let args = make_test_args(
             Some("123456".to_string()),
-            "us-central1",
+            "us",
             "us",
             ProfileArg::Enterprise,
         );

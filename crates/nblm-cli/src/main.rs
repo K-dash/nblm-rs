@@ -10,12 +10,15 @@ mod util;
 async fn main() -> Result<()> {
     // Check if this is the doctor command before requiring global args
     let args: Vec<String> = std::env::args().collect();
-    if args.len() > 1 && args[1] == "doctor" {
-        // Check if --json flag is present
-        if args.iter().any(|arg| arg == "--json") {
-            anyhow::bail!("The --json flag is not supported for the 'doctor' command");
-        }
+    let has_doctor = args.iter().any(|arg| arg == "doctor");
+    let has_json = args.iter().any(|arg| arg == "--json");
 
+    // If both doctor and --json are present, bail immediately
+    if has_doctor && has_json {
+        anyhow::bail!("The --json flag is not supported for the 'doctor' command");
+    }
+
+    if args.len() > 1 && args[1] == "doctor" {
         // Parse doctor-specific arguments
         use clap::Parser;
         #[derive(Parser)]

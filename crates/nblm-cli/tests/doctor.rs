@@ -127,11 +127,11 @@ fn doctor_missing_optional_env_vars() {
             " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
         .stdout(predicate::str::contains(
-            "Suggestion: export NBLM_ENDPOINT_LOCATION=us-central1",
+            "Suggestion: export NBLM_ENDPOINT_LOCATION=us",
         ))
         .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
         .stdout(predicate::str::contains(
-            "Suggestion: export NBLM_LOCATION=us-central1",
+            "Suggestion: export NBLM_LOCATION=global",
         ))
         .stdout(predicate::str::contains(
             " [warn] NBLM_ACCESS_TOKEN missing",
@@ -160,8 +160,71 @@ fn doctor_all_env_vars_missing() {
         .stdout(predicate::str::contains(
             " [warn] NBLM_ENDPOINT_LOCATION missing",
         ))
+        .stdout(predicate::str::contains(
+            "Suggestion: export NBLM_ENDPOINT_LOCATION=us",
+        ))
         .stdout(predicate::str::contains(" [warn] NBLM_LOCATION missing"))
+        .stdout(predicate::str::contains(
+            "Suggestion: export NBLM_LOCATION=global",
+        ))
         .stdout(predicate::str::contains(
             " [warn] NBLM_ACCESS_TOKEN missing",
         ));
+}
+
+#[test]
+#[serial]
+fn doctor_with_skip_api_check_flag() {
+    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
+    let mut cmd = _helpers::cmd::nblm();
+    let common = _helpers::cmd::CommonArgs::default();
+    common.apply(&mut cmd);
+    cmd.env("NBLM_PROJECT_NUMBER", "224840249322");
+    cmd.env("NBLM_ENDPOINT_LOCATION", "global");
+    cmd.env("NBLM_LOCATION", "global");
+    cmd.env("NBLM_ACCESS_TOKEN", "test-token");
+    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
+    cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
+
+    cmd.assert()
+        .code(function::function(|code: &i32| *code == 0 || *code == 1))
+        .stdout(predicate::str::contains(
+            "Running NotebookLM environment diagnostics",
+        ))
+        .stdout(predicate::str::contains("Successfully connected to NotebookLM API").not());
+}
+
+#[test]
+#[serial]
+fn doctor_with_json_flag_before_command() {
+    // Test --json flag before doctor command
+    let mut cmd = _helpers::cmd::nblm();
+    cmd.arg("--json");
+    cmd.arg("doctor");
+
+    let assert = cmd.assert();
+    assert.failure().stderr(predicate::str::contains(
+        "The --json flag is not supported for the 'doctor' command",
+    ));
+}
+
+#[test]
+#[serial]
+fn doctor_does_not_support_json_output() {
+    // The doctor command's output should not be JSON formatted
+    let (_runtime, _server, tokeninfo) = setup_drive_tokeninfo();
+    let mut cmd = _helpers::cmd::nblm();
+    let common = _helpers::cmd::CommonArgs::default();
+    common.apply(&mut cmd);
+    cmd.env("NBLM_PROJECT_NUMBER", "224840249322");
+    cmd.env("NBLM_TOKENINFO_ENDPOINT", &tokeninfo);
+    cmd.arg("doctor");
+    cmd.arg("--skip-api-check");
+
+    let assert = cmd.assert();
+    // Output should contain human-readable text, not JSON
+    assert.stdout(predicate::str::contains(
+        "Running NotebookLM environment diagnostics",
+    ));
 }

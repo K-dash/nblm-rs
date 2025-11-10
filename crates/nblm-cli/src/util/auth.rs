@@ -137,10 +137,7 @@ impl OAuthBootstrapper {
         let project_number = Self::get_project_number(args)?;
         let store_key = Self::build_store_key(args, project_number.clone());
 
-        let skip_bootstrap = match env::var("NBLM_OAUTH_DISABLE_BOOTSTRAP") {
-            Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
-            Err(_) => false,
-        };
+        let skip_bootstrap = is_bootstrap_disabled();
 
         if !skip_bootstrap {
             self.ensure_tokens_blocking(args, &project_number, &store_key)?;
@@ -340,6 +337,15 @@ impl OAuthBootstrapper {
             Err(_) => bail!("OAuth callback timeout after 10 minutes"),
         }
     }
+}
+
+fn is_bootstrap_disabled() -> bool {
+    env::var("NBLM_OAUTH_DISABLE_BOOTSTRAP")
+        .map(|value| {
+            let lower = value.trim().to_ascii_lowercase();
+            matches!(lower.as_str(), "1" | "true" | "yes" | "on")
+        })
+        .unwrap_or(false)
 }
 
 #[allow(dead_code)]
@@ -723,29 +729,26 @@ mod tests {
 
     #[test]
     #[serial]
-    fn oauth_bootstrapper_recognizes_various_truthy_values() {
-        let _guard_client = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
+    fn oauth_disable_flag_recognizes_truthy_values() {
         let _guard_bootstrap = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
-        let _guard_flag = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
 
-        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
-        env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");
-
-        // Test various truthy values
-        for value in &["1", "true", "TRUE", "yes", "YES"] {
+        for value in &["1", "true", "TRUE", "yes", "YES", "on", "ON"] {
             env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", value);
-            let args = make_args(AuthMethod::UserOauth);
-            let result = build_token_provider(&args);
             assert!(
-                result.is_ok(),
-                "Failed with NBLM_OAUTH_DISABLE_BOOTSTRAP={}",
+                is_bootstrap_disabled(),
+                "expected {:?} to disable bootstrap",
                 value
             );
         }
 
-        // Test falsy values (should still succeed with bootstrap disabled for testing)
-        env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", "0");
-        // Note: This would try to start browser flow, so we keep it disabled for unit tests
+        for value in &["0", "false", "", " off ", "noop"] {
+            env::set_var("NBLM_OAUTH_DISABLE_BOOTSTRAP", value);
+            assert!(
+                !is_bootstrap_disabled(),
+                "expected {:?} to keep bootstrap enabled",
+                value
+            );
+        }
     }
 
     #[test]

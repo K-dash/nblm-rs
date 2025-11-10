@@ -8,7 +8,7 @@ use nblm_core::{
 };
 
 use crate::args::{Cli, Command, GlobalArgs};
-use crate::ops::{audio, doctor, notebooks, share, sources};
+use crate::ops::{audio, doctor, notebooks, sources};
 use crate::util::auth::build_token_provider;
 
 pub struct NblmApp {
@@ -69,7 +69,6 @@ impl NblmApp {
             Command::Notebooks(cmd) => notebooks::run(cmd, &client, json_mode).await,
             Command::Sources(cmd) => sources::run(cmd, &client, json_mode).await,
             Command::Audio(cmd) => audio::run(cmd, &client, json_mode).await,
-            Command::Share(cmd) => share::run(cmd, &client, json_mode).await,
             Command::Doctor(cmd) => doctor::run(cmd).await,
         }
     }

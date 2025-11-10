@@ -1,18 +1,11 @@
 use crate::models::enterprise::{
-    audio as domain_audio, notebook as domain_notebook, share as domain_share,
-    source as domain_source,
+    audio as domain_audio, notebook as domain_notebook, source as domain_source,
 };
 
 use super::models::{
     notebook as wire_notebook,
-    requests::{
-        audio as wire_audio_req, notebook as wire_notebook_req, share as wire_share_req,
-        source as wire_source_req,
-    },
-    responses::{
-        audio as wire_audio_resp, list as wire_list_resp, share as wire_share_resp,
-        source as wire_source_resp,
-    },
+    requests::{audio as wire_audio_req, notebook as wire_notebook_req, source as wire_source_req},
+    responses::{audio as wire_audio_resp, list as wire_list_resp, source as wire_source_resp},
     source as wire_source,
 };
 
@@ -33,72 +26,6 @@ impl From<wire_audio_resp::AudioOverviewResponse> for domain_audio::AudioOvervie
 impl From<domain_audio::AudioOverviewRequest> for wire_audio_req::AudioOverviewRequest {
     fn from(_value: domain_audio::AudioOverviewRequest) -> Self {
         wire_audio_req::AudioOverviewRequest::default()
-    }
-}
-
-// ---------- Share ----------
-
-impl From<wire_share_resp::ShareResponse> for domain_share::ShareResponse {
-    fn from(value: wire_share_resp::ShareResponse) -> Self {
-        Self {
-            granted: value.granted,
-            extra: value.extra,
-        }
-    }
-}
-
-impl From<domain_share::AccountRole> for wire_share_req::AccountRole {
-    fn from(value: domain_share::AccountRole) -> Self {
-        Self {
-            email: value.email,
-            role: value.role.into(),
-        }
-    }
-}
-
-impl From<wire_share_req::ProjectRole> for domain_share::ProjectRole {
-    fn from(value: wire_share_req::ProjectRole) -> Self {
-        match value {
-            wire_share_req::ProjectRole::ProjectRoleOwner => {
-                domain_share::ProjectRole::ProjectRoleOwner
-            }
-            wire_share_req::ProjectRole::ProjectRoleWriter => {
-                domain_share::ProjectRole::ProjectRoleWriter
-            }
-            wire_share_req::ProjectRole::ProjectRoleReader => {
-                domain_share::ProjectRole::ProjectRoleReader
-            }
-            wire_share_req::ProjectRole::ProjectRoleNotShared => {
-                domain_share::ProjectRole::ProjectRoleNotShared
-            }
-        }
-    }
-}
-
-impl From<domain_share::ProjectRole> for wire_share_req::ProjectRole {
-    fn from(value: domain_share::ProjectRole) -> Self {
-        match value {
-            domain_share::ProjectRole::ProjectRoleOwner => {
-                wire_share_req::ProjectRole::ProjectRoleOwner
-            }
-            domain_share::ProjectRole::ProjectRoleWriter => {
-                wire_share_req::ProjectRole::ProjectRoleWriter
-            }
-            domain_share::ProjectRole::ProjectRoleReader => {
-                wire_share_req::ProjectRole::ProjectRoleReader
-            }
-            domain_share::ProjectRole::ProjectRoleNotShared => {
-                wire_share_req::ProjectRole::ProjectRoleNotShared
-            }
-        }
-    }
-}
-
-impl From<Vec<domain_share::AccountRole>> for wire_share_req::ShareRequest {
-    fn from(value: Vec<domain_share::AccountRole>) -> Self {
-        Self {
-            account_and_roles: value.into_iter().map(Into::into).collect(),
-        }
     }
 }
 
@@ -568,39 +495,6 @@ mod tests {
         }
     }
 
-    // ProjectRole round-trip conversion tests
-    #[test]
-    fn project_role_owner_round_trip() {
-        let domain = domain_share::ProjectRole::ProjectRoleOwner;
-        let wire: wire_share_req::ProjectRole = domain.into();
-        let back: domain_share::ProjectRole = wire.into();
-        assert_eq!(domain_share::ProjectRole::ProjectRoleOwner, back);
-    }
-
-    #[test]
-    fn project_role_writer_round_trip() {
-        let domain = domain_share::ProjectRole::ProjectRoleWriter;
-        let wire: wire_share_req::ProjectRole = domain.into();
-        let back: domain_share::ProjectRole = wire.into();
-        assert_eq!(domain_share::ProjectRole::ProjectRoleWriter, back);
-    }
-
-    #[test]
-    fn project_role_reader_round_trip() {
-        let domain = domain_share::ProjectRole::ProjectRoleReader;
-        let wire: wire_share_req::ProjectRole = domain.into();
-        let back: domain_share::ProjectRole = wire.into();
-        assert_eq!(domain_share::ProjectRole::ProjectRoleReader, back);
-    }
-
-    #[test]
-    fn project_role_not_shared_round_trip() {
-        let domain = domain_share::ProjectRole::ProjectRoleNotShared;
-        let wire: wire_share_req::ProjectRole = domain.into();
-        let back: domain_share::ProjectRole = wire.into();
-        assert_eq!(domain_share::ProjectRole::ProjectRoleNotShared, back);
-    }
-
     // NotebookSource nested structure conversion test
     #[test]
     fn notebook_source_with_all_fields() {
@@ -670,49 +564,5 @@ mod tests {
         assert!(back.metadata.is_none());
         assert!(back.settings.is_none());
         assert!(back.source_id.is_none());
-    }
-
-    // Vec conversion test
-    #[test]
-    fn share_request_empty_vec() {
-        let roles: Vec<domain_share::AccountRole> = vec![];
-        let wire: wire_share_req::ShareRequest = roles.into();
-        assert_eq!(wire.account_and_roles.len(), 0);
-    }
-
-    #[test]
-    fn share_request_single_element() {
-        let roles = vec![domain_share::AccountRole {
-            email: "test@example.com".to_string(),
-            role: domain_share::ProjectRole::ProjectRoleReader,
-        }];
-
-        let wire: wire_share_req::ShareRequest = roles.into();
-        assert_eq!(wire.account_and_roles.len(), 1);
-        assert_eq!(wire.account_and_roles[0].email, "test@example.com");
-    }
-
-    #[test]
-    fn share_request_multiple_elements() {
-        let roles = vec![
-            domain_share::AccountRole {
-                email: "owner@example.com".to_string(),
-                role: domain_share::ProjectRole::ProjectRoleOwner,
-            },
-            domain_share::AccountRole {
-                email: "writer@example.com".to_string(),
-                role: domain_share::ProjectRole::ProjectRoleWriter,
-            },
-            domain_share::AccountRole {
-                email: "reader@example.com".to_string(),
-                role: domain_share::ProjectRole::ProjectRoleReader,
-            },
-        ];
-
-        let wire: wire_share_req::ShareRequest = roles.into();
-        assert_eq!(wire.account_and_roles.len(), 3);
-        assert_eq!(wire.account_and_roles[0].email, "owner@example.com");
-        assert_eq!(wire.account_and_roles[1].email, "writer@example.com");
-        assert_eq!(wire.account_and_roles[2].email, "reader@example.com");
     }
 }

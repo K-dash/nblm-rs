@@ -51,6 +51,9 @@ pub struct OAuthConfig {
     pub additional_params: HashMap<String, String>,
 }
 
+const GOOGLE_REVOKE_ENDPOINT: &str = "https://oauth2.googleapis.com/revoke";
+const REVOKE_ENDPOINT_ENV: &str = "NBLM_OAUTH_REVOKE_ENDPOINT";
+
 impl OAuthConfig {
     pub const DEFAULT_REDIRECT_URI: &str = "http://127.0.0.1:4317";
     pub(crate) const AUTH_ENDPOINT: &str = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -225,6 +228,8 @@ pub trait RefreshTokenStore: Send + Sync {
 // FileRefreshTokenStore
 // ============================================================================
 
+const CONFIG_DIR_ENV: &str = "NBLM_CONFIG_DIR";
+
 /// File-based implementation of RefreshTokenStore
 pub struct FileRefreshTokenStore {
     file_path: std::path::PathBuf,
@@ -233,6 +238,11 @@ pub struct FileRefreshTokenStore {
 impl FileRefreshTokenStore {
     /// Create a new FileRefreshTokenStore
     pub fn new() -> Result<Self> {
+        if let Ok(custom_dir) = std::env::var(CONFIG_DIR_ENV) {
+            let file_path = PathBuf::from(custom_dir).join("credentials.json");
+            return Self::from_path(file_path);
+        }
+
         let dirs = directories::ProjectDirs::from("com", "nblm", "nblm-rs")
             .ok_or_else(|| OAuthError::Config("failed to find config directory".to_string()))?;
 
@@ -339,6 +349,15 @@ impl FileRefreshTokenStore {
             .map_err(|e| OAuthError::Config(format!("failed to rename temp file: {}", e)))?;
 
         Ok(())
+    }
+
+    /// Remove the entire credentials file from disk (best-effort).
+    pub async fn delete_file(&self) -> Result<()> {
+        match tokio::fs::remove_file(&self.file_path).await {
+            Ok(_) => Ok(()),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(err) => Err(OAuthError::Storage(err)),
+        }
     }
 }
 
@@ -517,10 +536,35 @@ impl OAuthFlow {
         ))
     }
 
-    /// Revoke refresh token (future use, NOOP for now)
-    pub async fn revoke(&self, _refresh_token: &str) -> Result<()> {
-        // TODO: Implement token revocation using oauth2-rs
-        Ok(())
+    /// Revoke a refresh token via Google's revocation endpoint.
+    pub async fn revoke_refresh_token(&self, refresh_token: &str) -> Result<()> {
+        if refresh_token.trim().is_empty() {
+            return Err(OAuthError::Revocation(
+                "refresh token cannot be empty".into(),
+            ));
+        }
+
+        let endpoint = std::env::var(REVOKE_ENDPOINT_ENV)
+            .unwrap_or_else(|_| GOOGLE_REVOKE_ENDPOINT.to_string());
+
+        let response = self
+            .http
+            .post(&endpoint)
+            .form(&[("token", refresh_token)])
+            .send()
+            .await
+            .map_err(|e| OAuthError::Revocation(format!("revocation request failed: {}", e)))?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            Err(OAuthError::Revocation(format!(
+                "revocation failed (status {}): {}",
+                status, body
+            )))
+        }
     }
 }
 
@@ -626,6 +670,7 @@ impl<S: RefreshTokenStore> TokenProvider for RefreshTokenProvider<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::auth::oauth::testing::fake::FakeOAuthServer;
     use tempfile::tempdir;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -912,6 +957,26 @@ mod tests {
         store.delete(&key).await.unwrap();
     }
 
+    #[test]
+    #[serial_test::serial]
+    fn test_file_store_respects_custom_config_dir() {
+        use std::env;
+
+        let temp_dir = tempdir().unwrap();
+        let key = CONFIG_DIR_ENV;
+        let original = env::var(key).ok();
+        env::set_var(key, temp_dir.path());
+
+        let store = FileRefreshTokenStore::new().expect("store should honor custom dir");
+        assert!(store.file_path.starts_with(temp_dir.path()));
+
+        if let Some(value) = original {
+            env::set_var(key, value);
+        } else {
+            env::remove_var(key);
+        }
+    }
+
     // Test 5: refresh_token omission handling tests
     #[tokio::test]
     #[serial_test::serial]
@@ -1137,5 +1202,80 @@ mod tests {
 
         assert_eq!(context.state, custom_state);
         assert!(context.url.contains(&format!("state={}", custom_state)));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn revoke_refresh_token_succeeds_with_fake_server() {
+        let server = FakeOAuthServer::start().await;
+        std::env::set_var(REVOKE_ENDPOINT_ENV, server.revoke_endpoint());
+
+        let config = OAuthConfig {
+            auth_endpoint: format!("{}/auth", server.base_uri()),
+            token_endpoint: server.token_endpoint(),
+            client_id: "client-id".into(),
+            client_secret: None,
+            redirect_uri: "http://localhost:1234".into(),
+            scopes: vec!["scope".into()],
+            audience: None,
+            additional_params: HashMap::new(),
+        };
+        let flow = OAuthFlow::new(config, Arc::new(Client::new())).unwrap();
+        flow.revoke_refresh_token("fake_refresh_token")
+            .await
+            .unwrap();
+        std::env::remove_var(REVOKE_ENDPOINT_ENV);
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn revoke_refresh_token_reports_error() {
+        let server = FakeOAuthServer::start().await;
+        std::env::set_var(
+            REVOKE_ENDPOINT_ENV,
+            format!("{}/invalid", server.base_uri()),
+        );
+
+        let config = OAuthConfig {
+            auth_endpoint: format!("{}/auth", server.base_uri()),
+            token_endpoint: server.token_endpoint(),
+            client_id: "client-id".into(),
+            client_secret: None,
+            redirect_uri: "http://localhost:1234".into(),
+            scopes: vec!["scope".into()],
+            audience: None,
+            additional_params: HashMap::new(),
+        };
+        let flow = OAuthFlow::new(config, Arc::new(Client::new())).unwrap();
+        let err = flow
+            .revoke_refresh_token("fake_refresh_token")
+            .await
+            .unwrap_err();
+        assert!(matches!(err, OAuthError::Revocation(_)));
+        std::env::remove_var(REVOKE_ENDPOINT_ENV);
+    }
+
+    #[tokio::test]
+    async fn delete_file_removes_credentials_file() {
+        let temp = tempdir().unwrap();
+        let path = temp.path().join("credentials.json");
+        let store = FileRefreshTokenStore::from_path(&path).unwrap();
+        let key = TokenStoreKey {
+            profile: ApiProfile::Enterprise,
+            project_number: Some("123".into()),
+            endpoint_location: Some("global".into()),
+            user_hint: None,
+        };
+        let serialized = SerializedTokens {
+            refresh_token: "token".into(),
+            scopes: vec![],
+            expires_at: None,
+            token_type: "Bearer".into(),
+            updated_at: OffsetDateTime::now_utc(),
+        };
+        store.save(&key, &serialized).await.unwrap();
+        assert!(path.exists());
+        store.delete_file().await.unwrap();
+        assert!(!path.exists());
     }
 }

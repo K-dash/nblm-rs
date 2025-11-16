@@ -171,6 +171,7 @@ mod tests {
     use crate::args::{AuthMethod, GlobalArgs, ProfileArg};
     use nblm_core::auth::ProviderKind;
     use serial_test::serial;
+    use tokio::runtime::Runtime;
 
     struct EnvGuard {
         key: &'static str,
@@ -249,6 +250,9 @@ mod tests {
     #[test]
     #[serial]
     fn build_provider_succeeds_with_valid_config() {
+        let runtime = Runtime::new().expect("runtime for oauth bootstrap test");
+        let _guard = runtime.enter();
+
         let _guard_id = EnvGuard::new("NBLM_OAUTH_CLIENT_ID");
         let _guard_disable = EnvGuard::new("NBLM_OAUTH_DISABLE_BOOTSTRAP");
         std::env::set_var("NBLM_OAUTH_CLIENT_ID", "test-client-id");

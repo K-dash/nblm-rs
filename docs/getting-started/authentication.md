@@ -4,12 +4,13 @@ This guide covers all authentication methods supported by nblm-rs for accessing 
 
 ## Overview
 
-nblm-rs supports two authentication methods:
+nblm-rs supports three authentication methods:
 
 | Method | Use Case | Operations Support | Recommended |
 |--------|----------|-------------------|-------------|
 | gcloud CLI | Local development, interactive use | Full (read + write) | ✓ Yes |
 | Environment Variable | CI/CD, automation, production | Full (read + write) | For automation |
+| OAuth2 (CLI + Python) | End-user scenarios requiring OAuth consent | CLI: Full, Python: Read-only | For NotebookLM users |
 
 ## Method 1: gcloud CLI (Recommended)
 
@@ -164,6 +165,49 @@ token_provider = EnvTokenProvider("MY_CUSTOM_TOKEN")
     - Token must be obtained from authenticated source
 
 </div>
+
+## Method 3: OAuth2 (User Authentication)
+
+Use this when you need to act as a specific Google user. The CLI completes the OAuth2 browser flow and stores a refresh token in `~/.config/nblm-rs/credentials.json`. Python can then reuse that token in a read-only fashion.
+
+!!! warning "Experimental feature"
+    OAuth2 support is still considered experimental. Set `NBLM_PROFILE_EXPERIMENT=1` before using `--auth user-oauth`, and be prepared for breaking changes while the implementation stabilizes.
+
+### Prerequisites
+
+1. In Google Cloud Console, create an OAuth 2.0 **Desktop application** client ID for your project.
+2. Copy both the **client ID** and the generated **client secret**; they must be provided via `NBLM_OAUTH_CLIENT_ID` and `NBLM_OAUTH_CLIENT_SECRET`.
+3. Ensure the redirect URI `http://127.0.0.1:4317` is allowed (add it if necessary).
+
+### Setup
+
+```bash
+export NBLM_OAUTH_CLIENT_ID="YOUR_CLIENT_ID"
+nblm --auth user-oauth --project-number PROJECT_NUMBER notebooks list
+```
+
+### Python Usage
+
+```python
+from nblm import NblmClient
+
+client = NblmClient.with_user_oauth(
+    project_number=PROJECT_NUMBER,
+    location="global",
+)
+```
+
+If you need direct access to the provider (for dependency injection or advanced scenarios), instantiate it explicitly:
+
+```python
+from nblm import UserOAuthProvider
+
+provider = UserOAuthProvider.from_file(project_number=PROJECT_NUMBER)
+```
+
+!!! note "Python scope"
+    The Python SDK currently supports read-only access via OAuth2. All write operations still require the CLI.
+
 
 ## Configuration
 

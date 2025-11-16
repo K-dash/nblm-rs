@@ -44,6 +44,26 @@ class NblmClient:
             NblmError: If the client cannot be created
         """
 
+    @staticmethod
+    def with_user_oauth(
+        project_number: int | None = ...,
+        location: str = "global",
+        user: str | None = ...,
+        endpoint_location: str | None = ...,
+    ) -> NblmClient:
+        """
+        Create a client that reuses refresh tokens produced by `nblm --auth user-oauth`.
+
+        Args:
+            project_number: Project number used when bootstrapping the token
+            location: Notebook location (e.g., "us-central1")
+            user: Optional user hint when multiple credentials exist
+            endpoint_location: Override the API endpoint location (defaults to "global")
+
+        Returns:
+            NblmClient: Configured client that uses the stored refresh token
+        """
+
     def create_notebook(self, title: str) -> Notebook:
         """
         Create a new notebook with the given title

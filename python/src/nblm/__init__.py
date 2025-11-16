@@ -30,6 +30,7 @@ from .nblm import (
     NotebookSourceYoutubeMetadata,
     TextSource,
     UploadSourceFileResponse,
+    UserOAuthProvider,
     VideoSource,
     WebSource,
 )
@@ -63,6 +64,7 @@ __all__ = [
     "NotebookSourceYoutubeMetadata",
     "TextSource",
     "UploadSourceFileResponse",
+    "UserOAuthProvider",
     "VideoSource",
     "WebSource",
 ]

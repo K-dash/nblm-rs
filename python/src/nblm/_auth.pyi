@@ -28,4 +28,20 @@ class EnvTokenProvider:
             key: Environment variable name (default: DEFAULT_ENV_TOKEN_KEY)
         """
 
-TokenProvider = GcloudTokenProvider | EnvTokenProvider
+class UserOAuthProvider:
+    """Token provider that reuses refresh tokens created via the CLI's user-oauth flow"""
+
+    @staticmethod
+    def from_file(
+        project_number: int | None = ...,
+        location: str = "global",
+        user: str | None = ...,
+        endpoint_location: str | None = ...,
+    ) -> UserOAuthProvider:
+        """Load refresh tokens from the shared credentials file."""
+
+    @property
+    def endpoint_location(self) -> str:
+        """Return the endpoint location associated with the stored token."""
+
+TokenProvider = GcloudTokenProvider | EnvTokenProvider | UserOAuthProvider

@@ -6,6 +6,7 @@ from ._auth import (
     EnvTokenProvider,
     GcloudTokenProvider,
     NblmError,
+    UserOAuthProvider,
 )
 from ._client import NblmClient
 from ._models import (
@@ -54,6 +55,7 @@ __all__ = [
     "NotebookSourceYoutubeMetadata",
     "TextSource",
     "UploadSourceFileResponse",
+    "UserOAuthProvider",
     "VideoSource",
     "WebSource",
 ]

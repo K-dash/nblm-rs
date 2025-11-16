@@ -30,6 +30,7 @@ def test_classes_available() -> None:
         NblmClient,
         NblmError,
         Notebook,
+        UserOAuthProvider,
     )
 
     assert NblmClient is not None
@@ -37,6 +38,7 @@ def test_classes_available() -> None:
     assert EnvTokenProvider is not None
     assert NblmError is not None
     assert Notebook is not None
+    assert UserOAuthProvider is not None
     assert ListRecentlyViewedResponse is not None
     assert BatchCreateSourcesResponse is not None
     assert BatchDeleteSourcesResponse is not None

@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::{anyhow, bail, Result};
 use tracing_subscriber::EnvFilter;
 
+use nblm_core::env::profile_experiment_enabled;
 use nblm_core::{
     ApiProfile, EnvironmentConfig, NblmClient, ProfileParams, RetryConfig, PROFILE_EXPERIMENT_FLAG,
 };
@@ -112,13 +113,6 @@ fn resolve_profile_params(args: &GlobalArgs, profile: ApiProfile) -> Result<Prof
     }
 }
 
-fn profile_experiment_enabled() -> bool {
-    match std::env::var(PROFILE_EXPERIMENT_FLAG) {
-        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
-        Err(_) => false,
-    }
-}
-
 fn init_logging() {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let _ = tracing_subscriber::fmt()
@@ -135,24 +129,24 @@ mod tests {
     use rstest::rstest;
     use serial_test::serial;
 
-    // Test helpers
-    struct TestEnvGuard {
-        key: &'static str,
+    struct ExperimentFlagGuard {
         original: Option<String>,
     }
 
-    impl TestEnvGuard {
-        fn new(key: &'static str) -> Self {
-            let original = std::env::var(key).ok();
-            Self { key, original }
+    impl ExperimentFlagGuard {
+        fn new() -> Self {
+            Self {
+                original: std::env::var(PROFILE_EXPERIMENT_FLAG).ok(),
+            }
         }
     }
 
-    impl Drop for TestEnvGuard {
+    impl Drop for ExperimentFlagGuard {
         fn drop(&mut self) {
-            match &self.original {
-                Some(value) => std::env::set_var(self.key, value),
-                None => std::env::remove_var(self.key),
+            if let Some(value) = &self.original {
+                std::env::set_var(PROFILE_EXPERIMENT_FLAG, value);
+            } else {
+                std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
             }
         }
     }
@@ -178,37 +172,6 @@ mod tests {
         }
     }
 
-    // Tests for profile_experiment_enabled()
-    #[test]
-    #[serial]
-    fn profile_experiment_enabled_recognizes_truthy_values() {
-        let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
-        for value in ["1", "true", "TRUE", "yes", "YES"] {
-            std::env::set_var(PROFILE_EXPERIMENT_FLAG, value);
-            assert!(
-                profile_experiment_enabled(),
-                "expected '{}' to enable experiment",
-                value
-            );
-        }
-    }
-
-    #[test]
-    #[serial]
-    fn profile_experiment_enabled_rejects_other_values() {
-        let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
-        for value in ["0", "false", "no", "maybe", ""] {
-            std::env::set_var(PROFILE_EXPERIMENT_FLAG, value);
-            assert!(
-                !profile_experiment_enabled(),
-                "expected '{}' to not enable experiment",
-                value
-            );
-        }
-        std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
-        assert!(!profile_experiment_enabled());
-    }
-
     // Tests for ApiProfile::requires_experimental_flag()
     #[rstest]
     #[case::personal(ApiProfile::Personal, true)]
@@ -220,7 +183,7 @@ mod tests {
         #[case] profile: ApiProfile,
         #[case] requires_flag: bool,
     ) {
-        let _guard = TestEnvGuard::new(PROFILE_EXPERIMENT_FLAG);
+        let _guard = ExperimentFlagGuard::new();
         std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
 
         assert_eq!(profile.requires_experimental_flag(), requires_flag);

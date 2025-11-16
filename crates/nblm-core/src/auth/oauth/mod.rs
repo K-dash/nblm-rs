@@ -17,9 +17,22 @@ use time::OffsetDateTime;
 
 use crate::auth::{ProviderKind, TokenProvider};
 use crate::env::ApiProfile;
-use crate::error::{Error, Result};
+use crate::error::{Error as CoreError, Result as CoreResult};
 
+mod config;
+mod error;
 pub mod loopback;
+#[cfg(test)]
+pub mod testing;
+
+pub use config::OAuthClientConfig;
+pub use error::{OAuthError, Result};
+
+impl From<OAuthError> for CoreError {
+    fn from(err: OAuthError) -> Self {
+        CoreError::TokenProvider(err.to_string())
+    }
+}
 
 // ============================================================================
 // OAuth Configuration
@@ -40,35 +53,14 @@ pub struct OAuthConfig {
 
 impl OAuthConfig {
     pub const DEFAULT_REDIRECT_URI: &str = "http://127.0.0.1:4317";
-    const AUTH_ENDPOINT: &str = "https://accounts.google.com/o/oauth2/v2/auth";
-    const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
-    const SCOPE_CLOUD_PLATFORM: &str = "https://www.googleapis.com/auth/cloud-platform";
-    const SCOPE_DRIVE_FILE: &str = "https://www.googleapis.com/auth/drive.file";
+    pub(crate) const AUTH_ENDPOINT: &str = "https://accounts.google.com/o/oauth2/v2/auth";
+    pub(crate) const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
+    pub(crate) const SCOPE_CLOUD_PLATFORM: &str = "https://www.googleapis.com/auth/cloud-platform";
+    pub(crate) const SCOPE_DRIVE_FILE: &str = "https://www.googleapis.com/auth/drive.file";
 
     /// Create a default Google OAuth2 configuration for NotebookLM Enterprise
     pub fn google_default(_project_number: &str) -> Result<Self> {
-        let client_id = std::env::var("NBLM_OAUTH_CLIENT_ID").map_err(|_| {
-            Error::TokenProvider(
-                "NBLM_OAUTH_CLIENT_ID is required for user OAuth authentication".to_string(),
-            )
-        })?;
-
-        let audience = std::env::var("NBLM_OAUTH_AUDIENCE").ok();
-
-        Ok(Self {
-            auth_endpoint: Self::AUTH_ENDPOINT.to_string(),
-            token_endpoint: Self::TOKEN_ENDPOINT.to_string(),
-            client_id,
-            client_secret: std::env::var("NBLM_OAUTH_CLIENT_SECRET").ok(),
-            redirect_uri: std::env::var("NBLM_OAUTH_REDIRECT_URI")
-                .unwrap_or_else(|_| Self::DEFAULT_REDIRECT_URI.to_string()),
-            scopes: vec![
-                Self::SCOPE_CLOUD_PLATFORM.to_string(),
-                Self::SCOPE_DRIVE_FILE.to_string(),
-            ],
-            audience,
-            additional_params: HashMap::new(),
-        })
+        OAuthClientConfig::from_env().map(|cfg| cfg.into_oauth_config())
     }
 }
 
@@ -242,7 +234,7 @@ impl FileRefreshTokenStore {
     /// Create a new FileRefreshTokenStore
     pub fn new() -> Result<Self> {
         let dirs = directories::ProjectDirs::from("com", "nblm", "nblm-rs")
-            .ok_or_else(|| Error::TokenProvider("failed to find config directory".to_string()))?;
+            .ok_or_else(|| OAuthError::Config("failed to find config directory".to_string()))?;
 
         let config_dir = dirs.config_dir();
         let file_path = config_dir.join("credentials.json");
@@ -261,7 +253,7 @@ impl FileRefreshTokenStore {
     async fn ensure_config_dir(&self) -> Result<()> {
         if let Some(config_dir) = self.file_path.parent() {
             tokio::fs::create_dir_all(config_dir).await.map_err(|e| {
-                Error::TokenProvider(format!("failed to create config directory: {}", e))
+                OAuthError::Config(format!("failed to create config directory: {}", e))
             })?;
 
             #[cfg(unix)]
@@ -270,14 +262,14 @@ impl FileRefreshTokenStore {
                 let mut perms = tokio::fs::metadata(config_dir)
                     .await
                     .map_err(|e| {
-                        Error::TokenProvider(format!("failed to get config dir metadata: {}", e))
+                        OAuthError::Config(format!("failed to get config dir metadata: {}", e))
                     })?
                     .permissions();
                 perms.set_mode(0o700);
                 tokio::fs::set_permissions(config_dir, perms)
                     .await
                     .map_err(|e| {
-                        Error::TokenProvider(format!("failed to set config dir permissions: {}", e))
+                        OAuthError::Config(format!("failed to set config dir permissions: {}", e))
                     })?;
             }
         }
@@ -294,11 +286,10 @@ impl FileRefreshTokenStore {
 
         let content = tokio::fs::read_to_string(&self.file_path)
             .await
-            .map_err(|e| Error::TokenProvider(format!("failed to read credentials file: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("failed to read credentials file: {}", e)))?;
 
-        let file: CredentialsFile = serde_json::from_str(&content).map_err(|e| {
-            Error::TokenProvider(format!("failed to parse credentials file: {}", e))
-        })?;
+        let file: CredentialsFile = serde_json::from_str(&content)
+            .map_err(|e| OAuthError::Config(format!("failed to parse credentials file: {}", e)))?;
 
         Ok(file)
     }
@@ -308,7 +299,7 @@ impl FileRefreshTokenStore {
         self.ensure_config_dir().await?;
 
         let content = serde_json::to_string_pretty(file)
-            .map_err(|e| Error::TokenProvider(format!("failed to serialize credentials: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("failed to serialize credentials: {}", e)))?;
 
         // Write to temp file first, then rename (atomic write)
         // Use a unique temporary file name to avoid conflicts in concurrent writes
@@ -329,9 +320,9 @@ impl FileRefreshTokenStore {
                 .unwrap_or("credentials.json"),
             random_suffix
         ));
-        tokio::fs::write(&temp_path, content).await.map_err(|e| {
-            Error::TokenProvider(format!("failed to write credentials file: {}", e))
-        })?;
+        tokio::fs::write(&temp_path, content)
+            .await
+            .map_err(|e| OAuthError::Config(format!("failed to write credentials file: {}", e)))?;
 
         #[cfg(unix)]
         {
@@ -345,7 +336,7 @@ impl FileRefreshTokenStore {
 
         tokio::fs::rename(&temp_path, &self.file_path)
             .await
-            .map_err(|e| Error::TokenProvider(format!("failed to rename temp file: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("failed to rename temp file: {}", e)))?;
 
         Ok(())
     }
@@ -410,11 +401,11 @@ impl OAuthFlow {
     pub fn new(config: OAuthConfig, http: Arc<Client>) -> Result<Self> {
         let client_id = ClientId::new(config.client_id.clone());
         let auth_url = AuthUrl::new(config.auth_endpoint.clone())
-            .map_err(|e| Error::TokenProvider(format!("invalid auth_url: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("invalid auth_url: {}", e)))?;
         let token_url = TokenUrl::new(config.token_endpoint.clone())
-            .map_err(|e| Error::TokenProvider(format!("invalid token_url: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("invalid token_url: {}", e)))?;
         let redirect_url = RedirectUrl::new(config.redirect_uri.clone())
-            .map_err(|e| Error::TokenProvider(format!("invalid redirect_url: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("invalid redirect_url: {}", e)))?;
 
         let mut client_builder = BasicClient::new(client_id)
             .set_auth_uri(auth_url)
@@ -501,7 +492,7 @@ impl OAuthFlow {
         let token_response = token_request
             .request_async(self.http.as_ref())
             .await
-            .map_err(|e| Error::TokenProvider(format!("oauth token exchange failed: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("oauth token exchange failed: {}", e)))?;
 
         Ok(OAuthTokens::from_oauth2_response(
             token_response,
@@ -518,7 +509,7 @@ impl OAuthFlow {
         let token_response = token_request
             .request_async(self.http.as_ref())
             .await
-            .map_err(|e| Error::TokenProvider(format!("oauth token refresh failed: {}", e)))?;
+            .map_err(|e| OAuthError::Config(format!("oauth token refresh failed: {}", e)))?;
 
         Ok(OAuthTokens::from_oauth2_response(
             token_response,
@@ -574,7 +565,7 @@ impl<S: RefreshTokenStore> RefreshTokenProvider<S> {
             .store
             .load(&self.store_key)
             .await?
-            .ok_or_else(|| Error::TokenProvider("refresh token unavailable".to_string()))?;
+            .ok_or_else(|| OAuthError::Config("refresh token unavailable".to_string()))?;
 
         // Refresh access token
         let tokens = self.flow.refresh(&stored.refresh_token).await?;
@@ -617,14 +608,13 @@ impl<S: RefreshTokenStore> RefreshTokenProvider<S> {
 
 #[async_trait]
 impl<S: RefreshTokenStore> TokenProvider for RefreshTokenProvider<S> {
-    async fn access_token(&self) -> Result<String> {
-        let tokens = self.ensure_tokens(false).await?;
+    async fn access_token(&self) -> CoreResult<String> {
+        let tokens = self.ensure_tokens(false).await.map_err(CoreError::from)?;
         Ok(tokens.access_token)
     }
 
-    async fn refresh_token(&self) -> Result<String> {
-        // Force refresh to get new access token
-        let tokens = self.ensure_tokens(true).await?;
+    async fn refresh_token(&self) -> CoreResult<String> {
+        let tokens = self.ensure_tokens(true).await.map_err(CoreError::from)?;
         Ok(tokens.access_token)
     }
 

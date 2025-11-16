@@ -68,8 +68,9 @@ def test_user_oauth_provider_missing_client_id(
 
 
 def test_user_oauth_provider_missing_credentials(
-    monkeypatch: pytest.MonkeyPatch, _temp_config_dir: Path
+    monkeypatch: pytest.MonkeyPatch, temp_config_dir: Path
 ) -> None:
+    _ = temp_config_dir  # ensure fixture runs without lint complaints
     monkeypatch.setenv("NBLM_OAUTH_CLIENT_ID", "fake-client-id")
 
     with pytest.raises(ValueError, match="No refresh token found"):

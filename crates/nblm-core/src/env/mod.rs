@@ -37,6 +37,15 @@ impl ApiProfile {
 
 pub const PROFILE_EXPERIMENT_FLAG: &str = "NBLM_PROFILE_EXPERIMENT";
 
+/// Returns `true` when experimental profile support is enabled via
+/// `NBLM_PROFILE_EXPERIMENT`.
+pub fn profile_experiment_enabled() -> bool {
+    match std::env::var(PROFILE_EXPERIMENT_FLAG) {
+        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
+        Err(_) => false,
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ProfileParams {
     Enterprise {
@@ -195,6 +204,29 @@ fn profile_params_mismatch_error(expected: ApiProfile, provided: ApiProfile) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
+
+    struct EnvGuard {
+        key: &'static str,
+        original: Option<String>,
+    }
+
+    impl EnvGuard {
+        fn new(key: &'static str) -> Self {
+            let original = std::env::var(key).ok();
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
 
     #[test]
     fn enterprise_constructor_builds_expected_urls() {
@@ -366,5 +398,33 @@ mod tests {
         assert!(!ApiProfile::Enterprise.requires_experimental_flag());
         assert!(ApiProfile::Personal.requires_experimental_flag());
         assert!(ApiProfile::Workspace.requires_experimental_flag());
+    }
+
+    #[test]
+    #[serial]
+    fn profile_experiment_enabled_accepts_truthy_values() {
+        let _guard = EnvGuard::new(PROFILE_EXPERIMENT_FLAG);
+        for value in ["1", "true", "TRUE", "yes", "YES"] {
+            std::env::set_var(PROFILE_EXPERIMENT_FLAG, value);
+            assert!(
+                profile_experiment_enabled(),
+                "{value} should enable experiment"
+            );
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn profile_experiment_enabled_rejects_other_values() {
+        let _guard = EnvGuard::new(PROFILE_EXPERIMENT_FLAG);
+        for value in ["0", "false", "no", "maybe", ""] {
+            std::env::set_var(PROFILE_EXPERIMENT_FLAG, value);
+            assert!(
+                !profile_experiment_enabled(),
+                "{value} should not enable experiment"
+            );
+        }
+        std::env::remove_var(PROFILE_EXPERIMENT_FLAG);
+        assert!(!profile_experiment_enabled());
     }
 }

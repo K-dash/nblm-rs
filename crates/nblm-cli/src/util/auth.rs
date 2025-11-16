@@ -7,6 +7,7 @@ use nblm_core::auth::oauth::{
     SerializedTokens, TokenStoreKey,
 };
 use nblm_core::auth::{EnvTokenProvider, GcloudTokenProvider, StaticTokenProvider, TokenProvider};
+use nblm_core::env::profile_experiment_enabled;
 use nblm_core::ApiProfile;
 use nblm_core::RefreshTokenStore;
 use reqwest::Client;
@@ -357,13 +358,6 @@ struct CallbackResult {
 fn build_gcloud_provider() -> Result<GcloudTokenProvider> {
     let binary = env::var("NBLM_GCLOUD_PATH").unwrap_or_else(|_| "gcloud".to_string());
     Ok(GcloudTokenProvider::new(binary))
-}
-
-fn profile_experiment_enabled() -> bool {
-    match env::var(nblm_core::PROFILE_EXPERIMENT_FLAG) {
-        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
-        Err(_) => false,
-    }
 }
 
 fn auth_method_label(method: AuthMethod) -> &'static str {
@@ -749,22 +743,5 @@ mod tests {
                 value
             );
         }
-    }
-
-    #[test]
-    fn profile_experiment_enabled_detects_enabled_flag() {
-        let _guard = EnvGuard::new(nblm_core::PROFILE_EXPERIMENT_FLAG);
-
-        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "1");
-        assert!(profile_experiment_enabled());
-
-        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "true");
-        assert!(profile_experiment_enabled());
-
-        env::set_var(nblm_core::PROFILE_EXPERIMENT_FLAG, "0");
-        assert!(!profile_experiment_enabled());
-
-        env::remove_var(nblm_core::PROFILE_EXPERIMENT_FLAG);
-        assert!(!profile_experiment_enabled());
     }
 }

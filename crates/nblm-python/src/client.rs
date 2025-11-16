@@ -12,10 +12,11 @@ use crate::models::{
     ListRecentlyViewedResponse, Notebook, NotebookSource, TextSource, UploadSourceFileResponse,
     VideoSource, WebSource,
 };
+use nblm_core::env::{profile_experiment_enabled, PROFILE_EXPERIMENT_FLAG};
 use nblm_core::models::enterprise::source::{
     GoogleDriveContent, TextContent, UserContent, VideoContent, WebContent,
 };
-use nblm_core::{ApiProfile, EnvironmentConfig, ProfileParams, PROFILE_EXPERIMENT_FLAG};
+use nblm_core::{ApiProfile, EnvironmentConfig, ProfileParams};
 
 #[pyclass(module = "nblm")]
 pub struct NblmClient {
@@ -430,13 +431,6 @@ impl NblmClient {
             let future = async move { inner.delete_audio_overview(&notebook_id).await };
             block_on_with_runtime(future)
         })
-    }
-}
-
-fn profile_experiment_enabled() -> bool {
-    match std::env::var(PROFILE_EXPERIMENT_FLAG) {
-        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
-        Err(_) => false,
     }
 }
 

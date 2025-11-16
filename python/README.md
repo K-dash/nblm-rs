@@ -81,6 +81,38 @@ client = NblmClient(
 )
 ```
 
+### OAuth2 (Read-only)
+
+> **Experimental:** OAuth2 support currently requires setting `NBLM_PROFILE_EXPERIMENT=1`. Users must create an OAuth 2.0 **Desktop application** client ID in Google Cloud Console, including the client secret, before running this flow.
+
+First, run the CLI once to complete the browser flow and store a refresh token:
+
+```bash
+export NBLM_OAUTH_CLIENT_ID="123-abc.apps.googleusercontent.com"
+export NBLM_OAUTH_CLIENT_SECRET="your-desktop-client-secret"
+export NBLM_PROFILE_EXPERIMENT=1
+nblm --auth user-oauth --project-number 123456 notebooks list
+```
+
+Then reuse that token from Python without re-authenticating:
+
+```python
+from nblm import NblmClient
+
+client = NblmClient.with_user_oauth(
+    project_number=123456,
+    location="us-central1",
+)
+```
+
+You can also instantiate the provider directly:
+
+```python
+from nblm import UserOAuthProvider
+
+provider = UserOAuthProvider.from_file(project_number=123456)
+```
+
 ## Documentation
 
 **Complete Python SDK documentation:**

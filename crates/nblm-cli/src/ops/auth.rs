@@ -7,19 +7,26 @@ use crate::args::{AuthCommand, AuthSubcommand};
 
 pub async fn run(cmd: AuthCommand) -> Result<()> {
     match cmd.command {
-        AuthSubcommand::Login => login().await,
+        AuthSubcommand::Login(args) => login(args).await,
         AuthSubcommand::Status => status().await,
     }
 }
 
-async fn login() -> Result<()> {
+async fn login(args: crate::args::LoginArgs) -> Result<()> {
     println!("{}", "Starting Google Cloud authentication...".cyan());
     println!("This will open your browser to authenticate with Google.");
-    println!("(Executing: gcloud auth login)\n");
 
-    let status = Command::new("gcloud")
-        .arg("auth")
-        .arg("login")
+    let mut command = Command::new("gcloud");
+    command.arg("auth").arg("login");
+
+    if args.drive_access {
+        println!("(Requesting Google Drive access)");
+        command.arg("--enable-gdrive-access");
+    }
+
+    println!("(Executing: {:?})\n", command);
+
+    let status = command
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())

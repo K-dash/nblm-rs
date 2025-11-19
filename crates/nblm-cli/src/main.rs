@@ -38,6 +38,27 @@ async fn main() -> Result<()> {
         return ops::doctor::run(doctor_args).await;
     }
 
+    if args.len() > 1 && args[1] == "auth" {
+        // Parse auth-specific arguments to bypass NblmApp/Client initialization
+        // which requires project_number.
+        use clap::Parser;
+        #[derive(Parser)]
+        #[command(name = "nblm")]
+        struct AuthCli {
+            #[command(subcommand)]
+            command: AuthCommandWrapper,
+        }
+
+        #[derive(clap::Subcommand)]
+        enum AuthCommandWrapper {
+            Auth(args::AuthCommand),
+        }
+
+        let auth_cli = AuthCli::parse();
+        let AuthCommandWrapper::Auth(auth_cmd) = auth_cli.command;
+        return ops::auth::run(auth_cmd).await;
+    }
+
     let cli = args::Cli::parse();
     app::NblmApp::new(cli)?.run().await
 }

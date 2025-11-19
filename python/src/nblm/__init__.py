@@ -33,6 +33,7 @@ from .nblm import (
     UserOAuthProvider,
     VideoSource,
     WebSource,
+    login,
 )
 
 try:
@@ -67,4 +68,5 @@ __all__ = [
     "UserOAuthProvider",
     "VideoSource",
     "WebSource",
+    "login",
 ]

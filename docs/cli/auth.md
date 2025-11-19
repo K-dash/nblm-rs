@@ -13,12 +13,16 @@ The `auth` command simplifies the authentication process by wrapping the Google 
 Log in to Google Cloud using the `gcloud` CLI. This command opens a browser window to authenticate with your Google account.
 
 ```bash
-nblm auth login
+nblm auth login [OPTIONS]
 ```
+
+**Options:**
+
+- `--drive-access`: Request Google Drive access. This adds the `https://www.googleapis.com/auth/drive` scope to your credentials, which is required for notebooks that access Drive files.
 
 **Behavior:**
 
-1.  Executes `gcloud auth login` in the background.
+1.  Executes `gcloud auth login` (with `--enable-gdrive-access` if requested).
 2.  Opens your default web browser for Google authentication.
 3.  Saves credentials to the standard `gcloud` configuration location.
 

@@ -130,6 +130,23 @@ sources: BatchCreateSourcesResponse = client.add_sources(...)
 audio: AudioOverviewResponse = client.create_audio_overview(...)
 ```
 
+## Quick Start
+
+```python
+import nblm
+
+# 1. Authenticate (opens browser)
+nblm.login()
+
+# 2. Initialize client (uses gcloud credentials by default)
+client = nblm.NblmClient()
+
+# 3. List recent notebooks
+response = client.list_notebooks()
+for notebook in response.notebooks:
+    print(f"{notebook.title} ({notebook.notebook_id})")
+```
+
 ## Error Handling
 
 ```python

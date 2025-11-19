@@ -84,9 +84,16 @@ pub struct AuthCommand {
 #[derive(Subcommand)]
 pub enum AuthSubcommand {
     /// Log in via Google Cloud SDK (gcloud auth login)
-    Login,
+    Login(LoginArgs),
     /// Check current authentication status
     Status,
+}
+
+#[derive(Args)]
+pub struct LoginArgs {
+    /// Request Google Drive access (adds --enable-gdrive-access to gcloud)
+    #[arg(long)]
+    pub drive_access: bool,
 }
 
 #[derive(Copy, Clone, ValueEnum)]
@@ -139,7 +146,16 @@ mod tests {
         let args = Cli::parse_from(["nblm", "auth", "login"]);
         match args.command {
             Command::Auth(cmd) => match cmd.command {
-                AuthSubcommand::Login => {}
+                AuthSubcommand::Login(_) => {}
+                _ => panic!("expected Login subcommand"),
+            },
+            _ => panic!("expected Auth command"),
+        }
+
+        let args = Cli::parse_from(["nblm", "auth", "login", "--drive-access"]);
+        match args.command {
+            Command::Auth(cmd) => match cmd.command {
+                AuthSubcommand::Login(args) => assert!(args.drive_access),
                 _ => panic!("expected Login subcommand"),
             },
             _ => panic!("expected Auth command"),

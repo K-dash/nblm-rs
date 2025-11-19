@@ -7,6 +7,7 @@ from ._auth import (
     GcloudTokenProvider,
     NblmError,
     UserOAuthProvider,
+    login,
 )
 from ._client import NblmClient
 from ._models import (
@@ -58,4 +59,5 @@ __all__ = [
     "UserOAuthProvider",
     "VideoSource",
     "WebSource",
+    "login",
 ]

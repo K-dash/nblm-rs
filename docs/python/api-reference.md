@@ -137,11 +137,26 @@ Delete an audio overview.
 client.delete_audio_overview(notebook_id="abc123")
 ```
 
+## Authentication
+
+### `nblm.login(drive_access=False, force=False)`
+
+Log in via Google Cloud SDK (`gcloud auth login`). This function opens a browser window to authenticate the user.
+
+**Arguments:**
+
+- `drive_access` (bool): If `True`, requests Google Drive access (adds `--enable-gdrive-access` to gcloud command). Required for notebooks that use Drive sources. Default: `False`.
+- `force` (bool): If `True`, forces re-authentication even if valid credentials already exist. Default: `False`.
+
+**Raises:**
+
+- `RuntimeError`: If `gcloud` is not found or authentication fails.
+
 ## Token Providers
 
 ### GcloudTokenProvider
 
-Use gcloud CLI for authentication.
+CLI for authentication.
 
 ```python
 from nblm import GcloudTokenProvider
@@ -258,11 +273,11 @@ source = GoogleDriveSource(
 
 #### Attributes
 
-| Attribute     | Type          | Description                          |
-| ------------- | ------------- | ------------------------------------ |
-| `document_id` | str           | Google Drive document ID             |
-| `mime_type`   | str           | MIME type returned by the Drive API  |
-| `name`        | Optional[str] | Display name shown in NotebookLM     |
+| Attribute     | Type          | Description                         |
+| ------------- | ------------- | ----------------------------------- |
+| `document_id` | str           | Google Drive document ID            |
+| `mime_type`   | str           | MIME type returned by the Drive API |
+| `name`        | Optional[str] | Display name shown in NotebookLM    |
 
 ### VideoSource
 

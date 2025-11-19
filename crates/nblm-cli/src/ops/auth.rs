@@ -16,13 +16,7 @@ async fn login(args: crate::args::LoginArgs) -> Result<()> {
     println!("{}", "Starting Google Cloud authentication...".cyan());
     println!("This will open your browser to authenticate with Google.");
 
-    let mut command = Command::new("gcloud");
-    command.arg("auth").arg("login");
-
-    if args.drive_access {
-        println!("(Requesting Google Drive access)");
-        command.arg("--enable-gdrive-access");
-    }
+    let mut command = build_login_command(&args);
 
     println!("(Executing: {:?})\n", command);
 
@@ -84,4 +78,42 @@ async fn status() -> Result<()> {
     println!("Backend: gcloud");
 
     Ok(())
+}
+
+fn build_login_command(args: &crate::args::LoginArgs) -> Command {
+    let mut command = Command::new("gcloud");
+    command.arg("auth").arg("login");
+
+    if args.drive_access {
+        println!("(Requesting Google Drive access)");
+        command.arg("--enable-gdrive-access");
+    }
+    command
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::args::LoginArgs;
+
+    #[test]
+    fn test_build_login_command_default() {
+        let args = LoginArgs {
+            drive_access: false,
+        };
+        let cmd = build_login_command(&args);
+        let cmd_str = format!("{:?}", cmd);
+        assert!(cmd_str.contains("gcloud"));
+        assert!(cmd_str.contains("auth"));
+        assert!(cmd_str.contains("login"));
+        assert!(!cmd_str.contains("--enable-gdrive-access"));
+    }
+
+    #[test]
+    fn test_build_login_command_drive_access() {
+        let args = LoginArgs { drive_access: true };
+        let cmd = build_login_command(&args);
+        let cmd_str = format!("{:?}", cmd);
+        assert!(cmd_str.contains("--enable-gdrive-access"));
+    }
 }

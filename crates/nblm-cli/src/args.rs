@@ -137,9 +137,93 @@ impl From<ProfileArg> for ApiProfile {
     }
 }
 
+pub enum SpecialCommand {
+    Doctor(crate::ops::doctor::DoctorArgs),
+    Auth(AuthCommand),
+}
+
+pub fn parse_pre_command(args: &[String]) -> Option<SpecialCommand> {
+    if args.len() <= 1 {
+        return None;
+    }
+
+    match args[1].as_str() {
+        "doctor" => {
+            #[derive(Parser)]
+            #[command(name = "nblm")]
+            struct DoctorCli {
+                #[command(subcommand)]
+                command: DoctorCommand,
+            }
+
+            #[derive(Subcommand)]
+            enum DoctorCommand {
+                Doctor(crate::ops::doctor::DoctorArgs),
+            }
+
+            // We use try_parse_from to avoid exiting the process on error/help
+            // But for main logic we might want to just parse.
+            // Here we are replicating main.rs logic which assumes if "doctor" is present
+            // we treat it as doctor command.
+            // However, main.rs used `parse()` which exits.
+            // To keep it testable, we should probably use `try_parse_from`.
+            // But `main.rs` logic was: if args[1] == "doctor", parse as DoctorCli.
+
+            // If parsing fails (e.g. --help), we might want to let main handle it or return None?
+            // In main.rs, it called `parse()`, so it would exit.
+            // For exact behavior preservation:
+            let cli = DoctorCli::parse_from(args);
+            let DoctorCommand::Doctor(args) = cli.command;
+            Some(SpecialCommand::Doctor(args))
+        }
+        "auth" => {
+            #[derive(Parser)]
+            #[command(name = "nblm")]
+            struct AuthCli {
+                #[command(subcommand)]
+                command: AuthCommandWrapper,
+            }
+
+            #[derive(Subcommand)]
+            enum AuthCommandWrapper {
+                Auth(AuthCommand),
+            }
+
+            let cli = AuthCli::parse_from(args);
+            let AuthCommandWrapper::Auth(cmd) = cli.command;
+            Some(SpecialCommand::Auth(cmd))
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_pre_command() {
+        // Test doctor
+        let args = vec!["nblm".to_string(), "doctor".to_string()];
+        match parse_pre_command(&args) {
+            Some(SpecialCommand::Doctor(_)) => {}
+            _ => panic!("expected Doctor command"),
+        }
+
+        // Test auth
+        let args = vec!["nblm".to_string(), "auth".to_string(), "login".to_string()];
+        match parse_pre_command(&args) {
+            Some(SpecialCommand::Auth(cmd)) => match cmd.command {
+                AuthSubcommand::Login(_) => {}
+                _ => panic!("expected Login subcommand"),
+            },
+            _ => panic!("expected Auth command"),
+        }
+
+        // Test normal command
+        let args = vec!["nblm".to_string(), "notebooks".to_string()];
+        assert!(parse_pre_command(&args).is_none());
+    }
 
     #[test]
     fn parse_auth_command() {

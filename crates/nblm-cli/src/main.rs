@@ -18,45 +18,12 @@ async fn main() -> Result<()> {
         anyhow::bail!("The --json flag is not supported for the 'doctor' command");
     }
 
-    if args.len() > 1 && args[1] == "doctor" {
-        // Parse doctor-specific arguments
-        use clap::Parser;
-        #[derive(Parser)]
-        #[command(name = "nblm")]
-        struct DoctorCli {
-            #[command(subcommand)]
-            command: DoctorCommand,
+    // Check for special commands that need to bypass NblmApp initialization
+    if let Some(cmd) = args::parse_pre_command(&args) {
+        match cmd {
+            args::SpecialCommand::Doctor(args) => return ops::doctor::run(args).await,
+            args::SpecialCommand::Auth(cmd) => return ops::auth::run(cmd).await,
         }
-
-        #[derive(clap::Subcommand)]
-        enum DoctorCommand {
-            Doctor(ops::doctor::DoctorArgs),
-        }
-
-        let doctor_cli = DoctorCli::parse();
-        let DoctorCommand::Doctor(doctor_args) = doctor_cli.command;
-        return ops::doctor::run(doctor_args).await;
-    }
-
-    if args.len() > 1 && args[1] == "auth" {
-        // Parse auth-specific arguments to bypass NblmApp/Client initialization
-        // which requires project_number.
-        use clap::Parser;
-        #[derive(Parser)]
-        #[command(name = "nblm")]
-        struct AuthCli {
-            #[command(subcommand)]
-            command: AuthCommandWrapper,
-        }
-
-        #[derive(clap::Subcommand)]
-        enum AuthCommandWrapper {
-            Auth(args::AuthCommand),
-        }
-
-        let auth_cli = AuthCli::parse();
-        let AuthCommandWrapper::Auth(auth_cmd) = auth_cli.command;
-        return ops::auth::run(auth_cmd).await;
     }
 
     let cli = args::Cli::parse();

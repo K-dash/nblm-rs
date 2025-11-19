@@ -27,13 +27,14 @@ Options that can be used with any command:
 
 ## Commands
 
-| Command     | Description                    | Documentation                |
-| ----------- | -------------------------------- | ---------------------------- |
-| `doctor`    | Run environment diagnostics      | [doctor.md](doctor.md)       |
-| `notebooks` | Manage notebooks                 | [notebooks.md](notebooks.md) |
-| `sources`   | Manage notebook sources          | [sources.md](sources.md)     |
-| `audio`     | Manage audio overviews           | [audio.md](audio.md)         |
-| `share`     | Share notebooks with users       | [share.md](share.md)         |
+| Command     | Description                 | Documentation                |
+| ----------- | --------------------------- | ---------------------------- |
+| `doctor`    | Run environment diagnostics | [doctor.md](doctor.md)       |
+| `auth`      | Manage authentication       | [auth.md](auth.md)           |
+| `notebooks` | Manage notebooks            | [notebooks.md](notebooks.md) |
+| `sources`   | Manage notebook sources     | [sources.md](sources.md)     |
+| `audio`     | Manage audio overviews      | [audio.md](audio.md)         |
+| `share`     | Share notebooks with users  | [share.md](share.md)         |
 
 ## Authentication
 
@@ -204,3 +205,4 @@ nblm --json notebooks recent | jq '.notebooks | length'
 - [Notebooks Commands](notebooks.md) - Notebook management
 - [Sources Commands](sources.md) - Source management
 - [Audio Commands](audio.md) - Audio overview operations
+- [Auth Commands](auth.md) - Authentication management

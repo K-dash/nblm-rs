@@ -70,7 +70,23 @@ pub enum Command {
     Sources(ops::sources::Command),
     #[command(subcommand)]
     Audio(ops::audio::Command),
+    /// Manage authentication using Google Cloud SDK (gcloud)
+    Auth(AuthCommand),
     Doctor(ops::doctor::DoctorArgs),
+}
+
+#[derive(Args)]
+pub struct AuthCommand {
+    #[command(subcommand)]
+    pub command: AuthSubcommand,
+}
+
+#[derive(Subcommand)]
+pub enum AuthSubcommand {
+    /// Log in via Google Cloud SDK (gcloud auth login)
+    Login,
+    /// Check current authentication status
+    Status,
 }
 
 #[derive(Copy, Clone, ValueEnum)]
@@ -110,6 +126,32 @@ impl From<ProfileArg> for ApiProfile {
             ProfileArg::Enterprise => ApiProfile::Enterprise,
             ProfileArg::Personal => ApiProfile::Personal,
             ProfileArg::Workspace => ApiProfile::Workspace,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_auth_command() {
+        let args = Cli::parse_from(["nblm", "auth", "login"]);
+        match args.command {
+            Command::Auth(cmd) => match cmd.command {
+                AuthSubcommand::Login => {}
+                _ => panic!("expected Login subcommand"),
+            },
+            _ => panic!("expected Auth command"),
+        }
+
+        let args = Cli::parse_from(["nblm", "auth", "status"]);
+        match args.command {
+            Command::Auth(cmd) => match cmd.command {
+                AuthSubcommand::Status => {}
+                _ => panic!("expected Status subcommand"),
+            },
+            _ => panic!("expected Auth command"),
         }
     }
 }

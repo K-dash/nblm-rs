@@ -7,8 +7,8 @@ mod models;
 mod runtime;
 
 pub use auth::{
-    EnvTokenProvider, GcloudTokenProvider, TokenProvider, UserOAuthProvider, DEFAULT_ENV_TOKEN_KEY,
-    DEFAULT_GCLOUD_BINARY,
+    login, EnvTokenProvider, GcloudTokenProvider, TokenProvider, UserOAuthProvider,
+    DEFAULT_ENV_TOKEN_KEY, DEFAULT_GCLOUD_BINARY,
 };
 pub use client::NblmClient;
 pub use error::NblmError;
@@ -23,6 +23,7 @@ pub use models::{
 /// NotebookLM Enterprise API client for Python
 #[pymodule]
 fn nblm(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(auth::login, m)?)?;
     m.add_class::<NblmClient>()?;
     m.add_class::<GcloudTokenProvider>()?;
     m.add_class::<EnvTokenProvider>()?;

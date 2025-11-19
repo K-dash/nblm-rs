@@ -235,3 +235,50 @@ fn store_contains_entry(store: &Arc<FileRefreshTokenStore>, key: &TokenStoreKey)
     let future = async move { store.load(&key_clone).await.map_err(CoreError::from) };
     block_on_with_runtime(future).map(|entry| entry.is_some())
 }
+
+#[pyfunction]
+#[pyo3(signature = (drive_access=false, force=false))]
+/// Log in via Google Cloud SDK (gcloud auth login).
+///
+/// This function executes `gcloud auth login` to authenticate the user.
+/// It opens a browser window for the authentication flow.
+///
+/// Args:
+///     drive_access (bool): If True, requests Google Drive access (adds --enable-gdrive-access).
+///     force (bool): If True, forces re-authentication even if valid credentials exist.
+///
+/// Raises:
+///     RuntimeError: If gcloud is not found or authentication fails.
+pub fn login(drive_access: bool, force: bool) -> PyResult<()> {
+    use std::process::{Command, Stdio};
+
+    let mut command = Command::new(DEFAULT_GCLOUD_BINARY);
+    command.arg("auth").arg("login");
+
+    if drive_access {
+        command.arg("--enable-gdrive-access");
+    }
+
+    if force {
+        command.arg("--force");
+    }
+
+    // Inherit stdio to allow browser interaction
+    let status = command
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()
+        .map_err(|err| {
+            PyRuntimeError::new_err(format!(
+                "Failed to execute gcloud command. Make sure gcloud CLI is installed and in PATH.\nError: {}",
+                err
+            ))
+        })?;
+
+    if !status.success() {
+        return Err(PyRuntimeError::new_err("gcloud auth login failed"));
+    }
+
+    Ok(())
+}

@@ -70,6 +70,7 @@ impl NblmApp {
             Command::Notebooks(cmd) => notebooks::run(cmd, &client, json_mode).await,
             Command::Sources(cmd) => sources::run(cmd, &client, json_mode).await,
             Command::Audio(cmd) => audio::run(cmd, &client, json_mode).await,
+            Command::Auth(cmd) => crate::ops::auth::run(cmd).await,
             Command::Doctor(cmd) => doctor::run(cmd).await,
         }
     }

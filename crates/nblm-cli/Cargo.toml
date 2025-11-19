@@ -1,6 +1,6 @@
 [package]
 name = "nblm-cli"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 license = "MIT"
 description = "Command-line interface for NotebookLM Enterprise API"
@@ -28,7 +28,7 @@ tracing-subscriber = { version = "0.3.20", features = [
     "fmt",
     "json",
 ] }
-nblm-core = { version = "0.2.2", path = "../nblm-core" }
+nblm-core = { version = "0.2.3", path = "../nblm-core" }
 humantime = "2.3.0"
 url = "2.5.7"
 mime_guess = "2.0.5"

@@ -3,6 +3,15 @@
 DEFAULT_GCLOUD_BINARY: str
 DEFAULT_ENV_TOKEN_KEY: str
 
+def login(drive_access: bool = False, force: bool = False) -> None:
+    """
+    Log in via Google Cloud SDK (gcloud auth login).
+
+    Args:
+        drive_access: If True, requests Google Drive access.
+        force: If True, forces re-authentication.
+    """
+
 class NblmError(Exception):
     """Base exception for nblm errors"""
 

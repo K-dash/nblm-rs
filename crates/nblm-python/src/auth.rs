@@ -149,8 +149,10 @@ impl PyTokenProvider {
     }
 }
 
-impl<'py> FromPyObject<'py> for PyTokenProvider {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<Self> {
+impl<'a, 'py> FromPyObject<'a, 'py> for PyTokenProvider {
+    type Error = PyErr;
+
+    fn extract(ob: pyo3::Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
         if let Ok(p) = ob.extract::<GcloudTokenProvider>() {
             return Ok(PyTokenProvider::Gcloud(p));
         }

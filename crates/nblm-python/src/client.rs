@@ -91,10 +91,10 @@ impl NblmClient {
     ///     NblmError: If the notebook creation fails
     fn create_notebook(&self, py: Python, title: String) -> PyResult<Notebook> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.create_notebook(title).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| Notebook::from_core(py, result))
+            Python::attach(|py| Notebook::from_core(py, result))
         })
     }
 
@@ -115,10 +115,10 @@ impl NblmClient {
         page_size: Option<u32>,
     ) -> PyResult<ListRecentlyViewedResponse> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.list_recently_viewed(page_size).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| ListRecentlyViewedResponse::from_core(py, result))
+            Python::attach(|py| ListRecentlyViewedResponse::from_core(py, result))
         })
     }
 
@@ -144,10 +144,10 @@ impl NblmClient {
     ) -> PyResult<BatchDeleteNotebooksResponse> {
         let inner = self.inner.clone();
         let names_clone = notebook_names.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.delete_notebooks(notebook_names).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| {
+            Python::attach(|py| {
                 // All notebooks were deleted successfully if we reach here
                 BatchDeleteNotebooksResponse::from_core(py, result, names_clone, vec![])
             })
@@ -179,7 +179,7 @@ impl NblmClient {
         video_sources: Option<Vec<VideoSource>>,
     ) -> PyResult<BatchCreateSourcesResponse> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move {
                 let mut contents = Vec::<UserContent>::new();
 
@@ -263,7 +263,7 @@ impl NblmClient {
             };
 
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| BatchCreateSourcesResponse::from_core(py, result))
+            Python::attach(|py| BatchCreateSourcesResponse::from_core(py, result))
         })
     }
 
@@ -345,14 +345,14 @@ impl NblmClient {
             });
 
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move {
                 inner
                     .upload_source_file(&notebook_id, &file_name, &content_type, data)
                     .await
             };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| UploadSourceFileResponse::from_core(py, result))
+            Python::attach(|py| UploadSourceFileResponse::from_core(py, result))
         })
     }
 
@@ -374,10 +374,10 @@ impl NblmClient {
         source_names: Vec<String>,
     ) -> PyResult<BatchDeleteSourcesResponse> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.delete_sources(&notebook_id, source_names).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| BatchDeleteSourcesResponse::from_core(py, result))
+            Python::attach(|py| BatchDeleteSourcesResponse::from_core(py, result))
         })
     }
 
@@ -399,10 +399,10 @@ impl NblmClient {
         source_id: String,
     ) -> PyResult<NotebookSource> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.get_source(&notebook_id, &source_id).await };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| NotebookSource::from_core(py, result))
+            Python::attach(|py| NotebookSource::from_core(py, result))
         })
     }
 
@@ -431,14 +431,14 @@ impl NblmClient {
     ) -> PyResult<AudioOverviewResponse> {
         let inner = self.inner.clone();
         let req = request.unwrap_or_default();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move {
                 inner
                     .create_audio_overview(&notebook_id, req.to_core())
                     .await
             };
             let result = block_on_with_runtime(future)?;
-            Python::with_gil(|py| AudioOverviewResponse::from_core(py, result))
+            Python::attach(|py| AudioOverviewResponse::from_core(py, result))
         })
     }
 
@@ -454,7 +454,7 @@ impl NblmClient {
     ///     NblmError: If the request fails
     fn delete_audio_overview(&self, py: Python, notebook_id: String) -> PyResult<()> {
         let inner = self.inner.clone();
-        py.allow_threads(move || {
+        py.detach(move || {
             let future = async move { inner.delete_audio_overview(&notebook_id).await };
             block_on_with_runtime(future)
         })

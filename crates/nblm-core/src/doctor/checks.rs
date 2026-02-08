@@ -495,6 +495,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_status_colored_markers() {
         // Force colored output in tests (OK if target ignores it)
         colored::control::set_override(true);
@@ -531,6 +532,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_result_format_colored() {
         // Force colored output in tests
         colored::control::set_override(true);

@@ -62,13 +62,13 @@ jobs:
           restore-keys: ${{ runner.os }}-ci-${{ matrix.target }}-
 
       - name: Install cargo-make
-        uses: taiki-e/install-action@1cf3de8de323df92fe08c793e53eaef58799aec4 # v2.68.3
+        uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
         with:
           tool: cargo-make
 
       - name: Install cross
         if: matrix.use-cross == true
-        uses: taiki-e/install-action@1cf3de8de323df92fe08c793e53eaef58799aec4 # v2.68.3
+        uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
         with:
           tool: cross
 

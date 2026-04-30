@@ -65,7 +65,7 @@ jobs:
           restore-keys: ${{ runner.os }}-python-ci-
 
       - name: Install cargo-make
-        uses: taiki-e/install-action@787505cde8a44ea468a00478fe52baf23b15bccd # v2.75.21
+        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
         with:
           tool: cargo-make
 

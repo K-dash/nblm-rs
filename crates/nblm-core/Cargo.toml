@@ -17,7 +17,7 @@ doctest = false
 [dependencies]
 anyhow = "1.0.100"
 async-trait = "0.1.89"
-reqwest = { version = "0.12.24", default-features = false, features = [
+reqwest = { version = "0.13.0", default-features = false, features = [
     "json",
     "rustls-tls",
 ] }
